@@ -1,0 +1,17 @@
+/Users/andrew/Projects/Opsi/Opsi.Services/bin/Debug/net6.0/Opsi.Services.deps.json
+/Users/andrew/Projects/Opsi/Opsi.Services/bin/Debug/net6.0/Opsi.Services.dll
+/Users/andrew/Projects/Opsi/Opsi.Services/bin/Debug/net6.0/Opsi.Services.pdb
+/Users/andrew/Projects/Opsi/Opsi.Services/bin/Debug/net6.0/Opsi.Common.dll
+/Users/andrew/Projects/Opsi/Opsi.Services/bin/Debug/net6.0/Opsi.Pocos.dll
+/Users/andrew/Projects/Opsi/Opsi.Services/bin/Debug/net6.0/Opsi.Common.pdb
+/Users/andrew/Projects/Opsi/Opsi.Services/bin/Debug/net6.0/Opsi.Pocos.pdb
+/Users/andrew/Projects/Opsi/Opsi.Services/obj/Debug/net6.0/Opsi.Services.csproj.AssemblyReference.cache
+/Users/andrew/Projects/Opsi/Opsi.Services/obj/Debug/net6.0/Opsi.Services.GeneratedMSBuildEditorConfig.editorconfig
+/Users/andrew/Projects/Opsi/Opsi.Services/obj/Debug/net6.0/Opsi.Services.AssemblyInfoInputs.cache
+/Users/andrew/Projects/Opsi/Opsi.Services/obj/Debug/net6.0/Opsi.Services.AssemblyInfo.cs
+/Users/andrew/Projects/Opsi/Opsi.Services/obj/Debug/net6.0/Opsi.Services.csproj.CoreCompileInputs.cache
+/Users/andrew/Projects/Opsi/Opsi.Services/obj/Debug/net6.0/Opsi.Services.csproj.CopyComplete
+/Users/andrew/Projects/Opsi/Opsi.Services/obj/Debug/net6.0/Opsi.Services.dll
+/Users/andrew/Projects/Opsi/Opsi.Services/obj/Debug/net6.0/refint/Opsi.Services.dll
+/Users/andrew/Projects/Opsi/Opsi.Services/obj/Debug/net6.0/Opsi.Services.pdb
+/Users/andrew/Projects/Opsi/Opsi.Services/obj/Debug/net6.0/ref/Opsi.Services.dll
