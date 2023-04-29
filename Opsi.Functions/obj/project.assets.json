@@ -646,20 +646,20 @@
           }
         }
       },
-      "Microsoft.Azure.WebJobs.Extensions.Storage/5.1.1": {
+      "Microsoft.Azure.WebJobs.Extensions.Storage/5.1.2": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Azure.WebJobs.Extensions.Storage.Blobs": "5.1.1",
-          "Microsoft.Azure.WebJobs.Extensions.Storage.Queues": "5.1.1"
+          "Microsoft.Azure.WebJobs.Extensions.Storage.Blobs": "5.1.2",
+          "Microsoft.Azure.WebJobs.Extensions.Storage.Queues": "5.1.2"
         }
       },
-      "Microsoft.Azure.WebJobs.Extensions.Storage.Blobs/5.1.1": {
+      "Microsoft.Azure.WebJobs.Extensions.Storage.Blobs/5.1.2": {
         "type": "package",
         "dependencies": {
-          "Azure.Storage.Blobs": "12.15.1",
-          "Azure.Storage.Queues": "12.13.1",
+          "Azure.Storage.Blobs": "12.16.0",
+          "Azure.Storage.Queues": "12.14.0",
           "Microsoft.Azure.WebJobs": "3.0.36",
-          "Microsoft.Extensions.Azure": "1.6.0"
+          "Microsoft.Extensions.Azure": "1.6.3"
         },
         "compile": {
           "lib/netstandard2.0/Microsoft.Azure.WebJobs.Extensions.Storage.Blobs.dll": {
@@ -672,12 +672,12 @@
           }
         }
       },
-      "Microsoft.Azure.WebJobs.Extensions.Storage.Queues/5.1.1": {
+      "Microsoft.Azure.WebJobs.Extensions.Storage.Queues/5.1.2": {
         "type": "package",
         "dependencies": {
-          "Azure.Storage.Queues": "12.13.1",
+          "Azure.Storage.Queues": "12.14.0",
           "Microsoft.Azure.WebJobs": "3.0.36",
-          "Microsoft.Extensions.Azure": "1.6.0"
+          "Microsoft.Extensions.Azure": "1.6.3"
         },
         "compile": {
           "lib/netstandard2.0/Microsoft.Azure.WebJobs.Extensions.Storage.Queues.dll": {
@@ -751,10 +751,10 @@
           "lib/netstandard1.3/Microsoft.DotNet.PlatformAbstractions.dll": {}
         }
       },
-      "Microsoft.Extensions.Azure/1.6.0": {
+      "Microsoft.Extensions.Azure/1.6.3": {
         "type": "package",
         "dependencies": {
-          "Azure.Core": "1.25.0",
+          "Azure.Core": "1.30.0",
           "Azure.Identity": "1.7.0",
           "Microsoft.Extensions.Configuration.Abstractions": "2.1.0",
           "Microsoft.Extensions.Configuration.Binder": "2.1.0",
@@ -1008,46 +1008,51 @@
           }
         }
       },
-      "Microsoft.Extensions.Http/6.0.0": {
+      "Microsoft.Extensions.Http/7.0.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0",
-          "Microsoft.Extensions.Logging": "6.0.0",
-          "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
-          "Microsoft.Extensions.Options": "6.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "7.0.0",
+          "Microsoft.Extensions.Logging": "7.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "7.0.0",
+          "Microsoft.Extensions.Options": "7.0.0"
         },
         "compile": {
-          "lib/netstandard2.0/Microsoft.Extensions.Http.dll": {
+          "lib/net6.0/Microsoft.Extensions.Http.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/netstandard2.0/Microsoft.Extensions.Http.dll": {
+          "lib/net6.0/Microsoft.Extensions.Http.dll": {
             "related": ".xml"
           }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
         }
       },
-      "Microsoft.Extensions.Logging/6.0.0": {
+      "Microsoft.Extensions.Logging/7.0.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection": "6.0.0",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0",
-          "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
-          "Microsoft.Extensions.Options": "6.0.0",
-          "System.Diagnostics.DiagnosticSource": "6.0.0"
+          "Microsoft.Extensions.DependencyInjection": "7.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "7.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "7.0.0",
+          "Microsoft.Extensions.Options": "7.0.0"
         },
         "compile": {
-          "lib/netstandard2.1/Microsoft.Extensions.Logging.dll": {
+          "lib/net6.0/Microsoft.Extensions.Logging.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/netstandard2.1/Microsoft.Extensions.Logging.dll": {
+          "lib/net6.0/Microsoft.Extensions.Logging.dll": {
             "related": ".xml"
           }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
         }
       },
-      "Microsoft.Extensions.Logging.Abstractions/6.0.0": {
+      "Microsoft.Extensions.Logging.Abstractions/7.0.0": {
         "type": "package",
         "compile": {
           "lib/net6.0/Microsoft.Extensions.Logging.Abstractions.dll": {
@@ -1060,7 +1065,7 @@
           }
         },
         "build": {
-          "buildTransitive/netcoreapp3.1/_._": {}
+          "buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets": {}
         }
       },
       "Microsoft.Extensions.Logging.Configuration/2.1.0": {
@@ -1093,21 +1098,24 @@
           }
         }
       },
-      "Microsoft.Extensions.Options/6.0.0": {
+      "Microsoft.Extensions.Options/7.0.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0",
-          "Microsoft.Extensions.Primitives": "6.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "7.0.0",
+          "Microsoft.Extensions.Primitives": "7.0.0"
         },
         "compile": {
-          "lib/netstandard2.1/Microsoft.Extensions.Options.dll": {
+          "lib/net6.0/Microsoft.Extensions.Options.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/netstandard2.1/Microsoft.Extensions.Options.dll": {
+          "lib/net6.0/Microsoft.Extensions.Options.dll": {
             "related": ".xml"
           }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
         }
       },
       "Microsoft.Extensions.Options.ConfigurationExtensions/2.1.0": {
@@ -1129,7 +1137,7 @@
           }
         }
       },
-      "Microsoft.Extensions.Primitives/6.0.0": {
+      "Microsoft.Extensions.Primitives/7.0.0": {
         "type": "package",
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
@@ -1145,7 +1153,7 @@
           }
         },
         "build": {
-          "buildTransitive/netcoreapp3.1/_._": {}
+          "buildTransitive/net6.0/_._": {}
         }
       },
       "Microsoft.Identity.Client/4.39.0": {
@@ -1195,7 +1203,7 @@
           }
         }
       },
-      "Microsoft.NET.Sdk.Functions/4.1.3": {
+      "Microsoft.NET.Sdk.Functions/4.2.0": {
         "type": "package",
         "dependencies": {
           "Microsoft.Azure.Functions.Analyzers": "[1.0.0, 2.0.0)",
@@ -1647,23 +1655,17 @@
           }
         }
       },
-      "System.Diagnostics.DiagnosticSource/6.0.0": {
+      "System.Diagnostics.DiagnosticSource/4.6.0": {
         "type": "package",
-        "dependencies": {
-          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
-        },
         "compile": {
-          "lib/net6.0/System.Diagnostics.DiagnosticSource.dll": {
+          "lib/netstandard1.3/System.Diagnostics.DiagnosticSource.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net6.0/System.Diagnostics.DiagnosticSource.dll": {
+          "lib/netstandard1.3/System.Diagnostics.DiagnosticSource.dll": {
             "related": ".xml"
           }
-        },
-        "build": {
-          "buildTransitive/netcoreapp3.1/_._": {}
         }
       },
       "System.Diagnostics.Tools/4.3.0": {
@@ -2833,7 +2835,7 @@
           "AzureFunctions.Extensions.DependencyInjection": "1.1.3",
           "Microsoft.Azure.Functions.Extensions": "1.1.0",
           "Microsoft.Extensions.DependencyInjection": "7.0.0",
-          "Microsoft.Extensions.Http": "6.0.0",
+          "Microsoft.Extensions.Http": "7.0.0",
           "Opsi.Common": "1.0.0",
           "System.IO.Compression.ZipFile": "4.3.0"
         },
@@ -3390,24 +3392,24 @@
         "microsoft.azure.webjobs.extensions.servicebus.nuspec"
       ]
     },
-    "Microsoft.Azure.WebJobs.Extensions.Storage/5.1.1": {
-      "sha512": "jJ0b5a9flg8rOlCq46E3EfAt6KzQBnzj8HlItGkuUpdjnUVQSw46RbRYRxFVSBPI9I8Bd4rmWH6NIGUgCV2YPA==",
+    "Microsoft.Azure.WebJobs.Extensions.Storage/5.1.2": {
+      "sha512": "27zsOW+uhQ+rIDkT2ySCB1ZE5Vi8p9BKpHGYRPMDqCVpFSlpPUAbrk/Ofvp9Ho1cM0SMpxjUpuI7Ny/fMgUtog==",
       "type": "package",
-      "path": "microsoft.azure.webjobs.extensions.storage/5.1.1",
+      "path": "microsoft.azure.webjobs.extensions.storage/5.1.2",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "CHANGELOG.md",
         "README.md",
         "azureicon.png",
-        "microsoft.azure.webjobs.extensions.storage.5.1.1.nupkg.sha512",
+        "microsoft.azure.webjobs.extensions.storage.5.1.2.nupkg.sha512",
         "microsoft.azure.webjobs.extensions.storage.nuspec"
       ]
     },
-    "Microsoft.Azure.WebJobs.Extensions.Storage.Blobs/5.1.1": {
-      "sha512": "QRtYGnfngyNRnFp2T7YfLiY2VzwwgfuazrQfKEH59mtN7/o6pO+ayi5uYfkIfW4ytRf6h0Is2zxRhgjUlwdONQ==",
+    "Microsoft.Azure.WebJobs.Extensions.Storage.Blobs/5.1.2": {
+      "sha512": "c0xAeeE9eiimVJTabQTDSjGxeINE1ljD5Hxeb6C5peLNar6hOpMrYciHrjrrZ8la3HDKcr6rN5YHMe/W2oJFwQ==",
       "type": "package",
-      "path": "microsoft.azure.webjobs.extensions.storage.blobs/5.1.1",
+      "path": "microsoft.azure.webjobs.extensions.storage.blobs/5.1.2",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3416,14 +3418,14 @@
         "azureicon.png",
         "lib/netstandard2.0/Microsoft.Azure.WebJobs.Extensions.Storage.Blobs.dll",
         "lib/netstandard2.0/Microsoft.Azure.WebJobs.Extensions.Storage.Blobs.xml",
-        "microsoft.azure.webjobs.extensions.storage.blobs.5.1.1.nupkg.sha512",
+        "microsoft.azure.webjobs.extensions.storage.blobs.5.1.2.nupkg.sha512",
         "microsoft.azure.webjobs.extensions.storage.blobs.nuspec"
       ]
     },
-    "Microsoft.Azure.WebJobs.Extensions.Storage.Queues/5.1.1": {
-      "sha512": "ZQvTy94e8yK9OlkOXYbt3MAPX4fYdddql69HK7ceSReECz0L77E6q3Qgg0LPkgceRBFiImcBGmJSU0SGNdFWEw==",
+    "Microsoft.Azure.WebJobs.Extensions.Storage.Queues/5.1.2": {
+      "sha512": "aGAw8V85JCb80L0L2xLabqrL5IpZkDI1At3GQRXwShfq5CnyBdZfAe7GNPS5AKsJG56fsmDrCFgxvNSKa/w6Gw==",
       "type": "package",
-      "path": "microsoft.azure.webjobs.extensions.storage.queues/5.1.1",
+      "path": "microsoft.azure.webjobs.extensions.storage.queues/5.1.2",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3432,7 +3434,7 @@
         "azureicon.png",
         "lib/netstandard2.0/Microsoft.Azure.WebJobs.Extensions.Storage.Queues.dll",
         "lib/netstandard2.0/Microsoft.Azure.WebJobs.Extensions.Storage.Queues.xml",
-        "microsoft.azure.webjobs.extensions.storage.queues.5.1.1.nupkg.sha512",
+        "microsoft.azure.webjobs.extensions.storage.queues.5.1.2.nupkg.sha512",
         "microsoft.azure.webjobs.extensions.storage.queues.nuspec"
       ]
     },
@@ -3607,10 +3609,10 @@
         "microsoft.dotnet.platformabstractions.nuspec"
       ]
     },
-    "Microsoft.Extensions.Azure/1.6.0": {
-      "sha512": "Lv1sN8CJi5KuR2WDxLvonJMocTPIsGGFZfk0JZUBK3bWP2TsKwHAKHLIJjID2bAkelFfyalq0nPSB9716db2sA==",
+    "Microsoft.Extensions.Azure/1.6.3": {
+      "sha512": "7vffx5i+g4Fo7JS5sa38DLHSge83k1U4zTn0dc5enzTN5btdraH/l4CUds9sj2eJW2tQekoE9ZXqEIYKYgcyqA==",
       "type": "package",
-      "path": "microsoft.extensions.azure/1.6.0",
+      "path": "microsoft.extensions.azure/1.6.3",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3619,7 +3621,7 @@
         "azureicon.png",
         "lib/netstandard2.0/Microsoft.Extensions.Azure.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Azure.xml",
-        "microsoft.extensions.azure.1.6.0.nupkg.sha512",
+        "microsoft.extensions.azure.1.6.3.nupkg.sha512",
         "microsoft.extensions.azure.nuspec"
       ]
     },
@@ -3840,50 +3842,66 @@
         "microsoft.extensions.hosting.abstractions.nuspec"
       ]
     },
-    "Microsoft.Extensions.Http/6.0.0": {
-      "sha512": "15+pa2G0bAMHbHewaQIdr/y6ag2H3yh4rd9hTXavtWDzQBkvpe2RMqFg8BxDpcQWssmjmBApGPcw93QRz6YcMg==",
+    "Microsoft.Extensions.Http/7.0.0": {
+      "sha512": "9Pq9f/CvOSz0t9yQa6g1uWpxa2sm13daLFm8EZwy9MaQUjKXWdNUXQwIxwhmba5N83UIqURiPHSNqGK1vfWF2w==",
       "type": "package",
-      "path": "microsoft.extensions.http/6.0.0",
+      "path": "microsoft.extensions.http/7.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
-        "lib/net461/Microsoft.Extensions.Http.dll",
-        "lib/net461/Microsoft.Extensions.Http.xml",
+        "buildTransitive/net461/Microsoft.Extensions.Http.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Http.targets",
+        "lib/net462/Microsoft.Extensions.Http.dll",
+        "lib/net462/Microsoft.Extensions.Http.xml",
+        "lib/net6.0/Microsoft.Extensions.Http.dll",
+        "lib/net6.0/Microsoft.Extensions.Http.xml",
+        "lib/net7.0/Microsoft.Extensions.Http.dll",
+        "lib/net7.0/Microsoft.Extensions.Http.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Http.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Http.xml",
-        "microsoft.extensions.http.6.0.0.nupkg.sha512",
+        "microsoft.extensions.http.7.0.0.nupkg.sha512",
         "microsoft.extensions.http.nuspec",
         "useSharedDesignerContext.txt"
       ]
     },
-    "Microsoft.Extensions.Logging/6.0.0": {
-      "sha512": "eIbyj40QDg1NDz0HBW0S5f3wrLVnKWnDJ/JtZ+yJDFnDj90VoPuoPmFkeaXrtu+0cKm5GRAwoDf+dBWXK0TUdg==",
+    "Microsoft.Extensions.Logging/7.0.0": {
+      "sha512": "Nw2muoNrOG5U5qa2ZekXwudUn2BJcD41e65zwmDHb1fQegTX66UokLWZkJRpqSSHXDOWZ5V0iqhbxOEky91atA==",
       "type": "package",
-      "path": "microsoft.extensions.logging/6.0.0",
+      "path": "microsoft.extensions.logging/7.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
-        "lib/net461/Microsoft.Extensions.Logging.dll",
-        "lib/net461/Microsoft.Extensions.Logging.xml",
+        "buildTransitive/net461/Microsoft.Extensions.Logging.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Logging.targets",
+        "lib/net462/Microsoft.Extensions.Logging.dll",
+        "lib/net462/Microsoft.Extensions.Logging.xml",
+        "lib/net6.0/Microsoft.Extensions.Logging.dll",
+        "lib/net6.0/Microsoft.Extensions.Logging.xml",
+        "lib/net7.0/Microsoft.Extensions.Logging.dll",
+        "lib/net7.0/Microsoft.Extensions.Logging.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Logging.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Logging.xml",
         "lib/netstandard2.1/Microsoft.Extensions.Logging.dll",
         "lib/netstandard2.1/Microsoft.Extensions.Logging.xml",
-        "microsoft.extensions.logging.6.0.0.nupkg.sha512",
+        "microsoft.extensions.logging.7.0.0.nupkg.sha512",
         "microsoft.extensions.logging.nuspec",
         "useSharedDesignerContext.txt"
       ]
     },
-    "Microsoft.Extensions.Logging.Abstractions/6.0.0": {
-      "sha512": "/HggWBbTwy8TgebGSX5DBZ24ndhzi93sHUBDvP1IxbZD7FDokYzdAr6+vbWGjw2XAfR2EJ1sfKUotpjHnFWPxA==",
+    "Microsoft.Extensions.Logging.Abstractions/7.0.0": {
+      "sha512": "kmn78+LPVMOWeITUjIlfxUPDsI0R6G0RkeAMBmQxAJ7vBJn4q2dTva7pWi65ceN5vPGjJ9q/Uae2WKgvfktJAw==",
       "type": "package",
-      "path": "microsoft.extensions.logging.abstractions/6.0.0",
+      "path": "microsoft.extensions.logging.abstractions/7.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3918,16 +3936,34 @@
         "analyzers/dotnet/roslyn4.0/cs/tr/Microsoft.Extensions.Logging.Generators.resources.dll",
         "analyzers/dotnet/roslyn4.0/cs/zh-Hans/Microsoft.Extensions.Logging.Generators.resources.dll",
         "analyzers/dotnet/roslyn4.0/cs/zh-Hant/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "build/Microsoft.Extensions.Logging.Abstractions.targets",
+        "analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Logging.Generators.dll",
+        "analyzers/dotnet/roslyn4.4/cs/cs/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/de/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/es/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/fr/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/it/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/ja/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/ko/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/pl/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/pt-BR/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/ru/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/tr/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/zh-Hans/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "analyzers/dotnet/roslyn4.4/cs/zh-Hant/Microsoft.Extensions.Logging.Generators.resources.dll",
+        "buildTransitive/net461/Microsoft.Extensions.Logging.Abstractions.targets",
+        "buildTransitive/net462/Microsoft.Extensions.Logging.Abstractions.targets",
+        "buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets",
         "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Logging.Abstractions.targets",
-        "buildTransitive/netcoreapp3.1/_._",
-        "lib/net461/Microsoft.Extensions.Logging.Abstractions.dll",
-        "lib/net461/Microsoft.Extensions.Logging.Abstractions.xml",
+        "buildTransitive/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.targets",
+        "lib/net462/Microsoft.Extensions.Logging.Abstractions.dll",
+        "lib/net462/Microsoft.Extensions.Logging.Abstractions.xml",
         "lib/net6.0/Microsoft.Extensions.Logging.Abstractions.dll",
         "lib/net6.0/Microsoft.Extensions.Logging.Abstractions.xml",
+        "lib/net7.0/Microsoft.Extensions.Logging.Abstractions.dll",
+        "lib/net7.0/Microsoft.Extensions.Logging.Abstractions.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.xml",
-        "microsoft.extensions.logging.abstractions.6.0.0.nupkg.sha512",
+        "microsoft.extensions.logging.abstractions.7.0.0.nupkg.sha512",
         "microsoft.extensions.logging.abstractions.nuspec",
         "useSharedDesignerContext.txt"
       ]
@@ -3958,23 +3994,31 @@
         "microsoft.extensions.objectpool.nuspec"
       ]
     },
-    "Microsoft.Extensions.Options/6.0.0": {
-      "sha512": "dzXN0+V1AyjOe2xcJ86Qbo233KHuLEY0njf/P2Kw8SfJU+d45HNS2ctJdnEnrWbM9Ye2eFgaC5Mj9otRMU6IsQ==",
+    "Microsoft.Extensions.Options/7.0.0": {
+      "sha512": "lP1yBnTTU42cKpMozuafbvNtQ7QcBjr/CcK3bYOGEMH55Fjt+iecXjT6chR7vbgCMqy3PG3aNQSZgo/EuY/9qQ==",
       "type": "package",
-      "path": "microsoft.extensions.options/6.0.0",
+      "path": "microsoft.extensions.options/7.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
-        "lib/net461/Microsoft.Extensions.Options.dll",
-        "lib/net461/Microsoft.Extensions.Options.xml",
+        "buildTransitive/net461/Microsoft.Extensions.Options.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Options.targets",
+        "lib/net462/Microsoft.Extensions.Options.dll",
+        "lib/net462/Microsoft.Extensions.Options.xml",
+        "lib/net6.0/Microsoft.Extensions.Options.dll",
+        "lib/net6.0/Microsoft.Extensions.Options.xml",
+        "lib/net7.0/Microsoft.Extensions.Options.dll",
+        "lib/net7.0/Microsoft.Extensions.Options.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Options.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Options.xml",
         "lib/netstandard2.1/Microsoft.Extensions.Options.dll",
         "lib/netstandard2.1/Microsoft.Extensions.Options.xml",
-        "microsoft.extensions.options.6.0.0.nupkg.sha512",
+        "microsoft.extensions.options.7.0.0.nupkg.sha512",
         "microsoft.extensions.options.nuspec",
         "useSharedDesignerContext.txt"
       ]
@@ -3992,27 +4036,29 @@
         "microsoft.extensions.options.configurationextensions.nuspec"
       ]
     },
-    "Microsoft.Extensions.Primitives/6.0.0": {
-      "sha512": "9+PnzmQFfEFNR9J2aDTfJGGupShHjOuGw4VUv+JB044biSHrnmCIMD+mJHmb2H7YryrfBEXDurxQ47gJZdCKNQ==",
+    "Microsoft.Extensions.Primitives/7.0.0": {
+      "sha512": "um1KU5kxcRp3CNuI8o/GrZtD4AIOXDk+RLsytjZ9QPok3ttLUelLKpilVPuaFT3TFjOhSibUAso0odbOaCDj3Q==",
       "type": "package",
-      "path": "microsoft.extensions.primitives/6.0.0",
+      "path": "microsoft.extensions.primitives/7.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net461/Microsoft.Extensions.Primitives.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
         "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Primitives.targets",
-        "buildTransitive/netcoreapp3.1/_._",
-        "lib/net461/Microsoft.Extensions.Primitives.dll",
-        "lib/net461/Microsoft.Extensions.Primitives.xml",
+        "lib/net462/Microsoft.Extensions.Primitives.dll",
+        "lib/net462/Microsoft.Extensions.Primitives.xml",
         "lib/net6.0/Microsoft.Extensions.Primitives.dll",
         "lib/net6.0/Microsoft.Extensions.Primitives.xml",
-        "lib/netcoreapp3.1/Microsoft.Extensions.Primitives.dll",
-        "lib/netcoreapp3.1/Microsoft.Extensions.Primitives.xml",
+        "lib/net7.0/Microsoft.Extensions.Primitives.dll",
+        "lib/net7.0/Microsoft.Extensions.Primitives.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Primitives.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Primitives.xml",
-        "microsoft.extensions.primitives.6.0.0.nupkg.sha512",
+        "microsoft.extensions.primitives.7.0.0.nupkg.sha512",
         "microsoft.extensions.primitives.nuspec",
         "useSharedDesignerContext.txt"
       ]
@@ -4079,10 +4125,10 @@
         "microsoft.net.http.headers.nuspec"
       ]
     },
-    "Microsoft.NET.Sdk.Functions/4.1.3": {
-      "sha512": "vpIoJxjvesBn7YOTDLLajYzlpu0DnuhV3qK+phPJ3Ywv62RwWdvqruFvZ2NtoUU8/Ad32mdhYWC3PcpuWPuyZw==",
+    "Microsoft.NET.Sdk.Functions/4.2.0": {
+      "sha512": "Ttsa6BkGXH77CPP72UtKSuPiyTKP+hke4Vl+oR6bD2sjIObvAjFGUVxs877/uDVBrw9sT0rzmIJUo/1FStjR1w==",
       "type": "package",
-      "path": "microsoft.net.sdk.functions/4.1.3",
+      "path": "microsoft.net.sdk.functions/4.2.0",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
@@ -4095,7 +4141,7 @@
         "build/Microsoft.NET.Sdk.Functions.Publish.targets",
         "build/Microsoft.NET.Sdk.Functions.props",
         "build/Microsoft.NET.Sdk.Functions.targets",
-        "microsoft.net.sdk.functions.4.1.3.nupkg.sha512",
+        "microsoft.net.sdk.functions.4.2.0.nupkg.sha512",
         "microsoft.net.sdk.functions.nuspec",
         "tools/net6.0/Microsoft.NET.Sdk.Functions.Generator.dll",
         "tools/net6.0/Microsoft.NET.Sdk.Functions.Generator.runtimeconfig.json",
@@ -4931,29 +4977,29 @@
         "system.diagnostics.debug.nuspec"
       ]
     },
-    "System.Diagnostics.DiagnosticSource/6.0.0": {
-      "sha512": "frQDfv0rl209cKm1lnwTgFPzNigy2EKk1BS3uAvHvlBVKe5cymGyHO+Sj+NLv5VF/AhHsqPIUUwya5oV4CHMUw==",
+    "System.Diagnostics.DiagnosticSource/4.6.0": {
+      "sha512": "mbBgoR0rRfl2uimsZ2avZY8g7Xnh1Mza0rJZLPcxqiMWlkGukjmRkuMJ/er+AhQuiRIh80CR/Hpeztr80seV5g==",
       "type": "package",
-      "path": "system.diagnostics.diagnosticsource/6.0.0",
+      "path": "system.diagnostics.diagnosticsource/4.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
-        "buildTransitive/netcoreapp2.0/System.Diagnostics.DiagnosticSource.targets",
-        "buildTransitive/netcoreapp3.1/_._",
-        "lib/net461/System.Diagnostics.DiagnosticSource.dll",
-        "lib/net461/System.Diagnostics.DiagnosticSource.xml",
-        "lib/net5.0/System.Diagnostics.DiagnosticSource.dll",
-        "lib/net5.0/System.Diagnostics.DiagnosticSource.xml",
-        "lib/net6.0/System.Diagnostics.DiagnosticSource.dll",
-        "lib/net6.0/System.Diagnostics.DiagnosticSource.xml",
-        "lib/netstandard2.0/System.Diagnostics.DiagnosticSource.dll",
-        "lib/netstandard2.0/System.Diagnostics.DiagnosticSource.xml",
-        "system.diagnostics.diagnosticsource.6.0.0.nupkg.sha512",
+        "lib/net45/System.Diagnostics.DiagnosticSource.dll",
+        "lib/net45/System.Diagnostics.DiagnosticSource.xml",
+        "lib/net46/System.Diagnostics.DiagnosticSource.dll",
+        "lib/net46/System.Diagnostics.DiagnosticSource.xml",
+        "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.dll",
+        "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.xml",
+        "lib/netstandard1.3/System.Diagnostics.DiagnosticSource.dll",
+        "lib/netstandard1.3/System.Diagnostics.DiagnosticSource.xml",
+        "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.dll",
+        "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.xml",
+        "system.diagnostics.diagnosticsource.4.6.0.nupkg.sha512",
         "system.diagnostics.diagnosticsource.nuspec",
-        "useSharedDesignerContext.txt"
+        "useSharedDesignerContext.txt",
+        "version.txt"
       ]
     },
     "System.Diagnostics.Tools/4.3.0": {
@@ -8052,9 +8098,9 @@
     "net6.0": [
       "Microsoft.Azure.Functions.Extensions >= 1.1.0",
       "Microsoft.Azure.WebJobs.Extensions.ServiceBus >= 5.9.0",
-      "Microsoft.Azure.WebJobs.Extensions.Storage >= 5.1.1",
+      "Microsoft.Azure.WebJobs.Extensions.Storage >= 5.1.2",
       "Microsoft.Extensions.DependencyInjection >= 7.0.0",
-      "Microsoft.NET.Sdk.Functions >= 4.1.3",
+      "Microsoft.NET.Sdk.Functions >= 4.2.0",
       "Opsi.Common >= 1.0.0",
       "Opsi.Pocos >= 1.0.0",
       "Opsi.Services >= 1.0.0",
@@ -8121,7 +8167,7 @@
           },
           "Microsoft.Azure.WebJobs.Extensions.Storage": {
             "target": "Package",
-            "version": "[5.1.1, )"
+            "version": "[5.1.2, )"
           },
           "Microsoft.Extensions.DependencyInjection": {
             "target": "Package",
@@ -8129,7 +8175,7 @@
           },
           "Microsoft.NET.Sdk.Functions": {
             "target": "Package",
-            "version": "[4.1.3, )"
+            "version": "[4.2.0, )"
           }
         },
         "imports": [

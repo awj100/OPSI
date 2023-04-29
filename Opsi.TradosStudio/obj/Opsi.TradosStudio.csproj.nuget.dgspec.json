@@ -109,7 +109,7 @@
             },
             "Microsoft.Extensions.Http": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[7.0.0, )"
             },
             "System.IO.Compression.ZipFile": {
               "target": "Package",
