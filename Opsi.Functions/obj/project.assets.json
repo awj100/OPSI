@@ -2787,6 +2787,27 @@
           }
         }
       },
+      "Opsi.AzureStorage/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v6.0",
+        "dependencies": {
+          "Azure.Data.Tables": "12.8.0",
+          "Azure.Storage.Blobs": "12.16.0",
+          "Azure.Storage.Queues": "12.14.0",
+          "Microsoft.AspNetCore.Http": "2.2.2",
+          "Microsoft.Azure.Functions.Extensions": "1.1.0",
+          "Microsoft.Extensions.DependencyInjection": "7.0.0",
+          "Opsi.Common": "1.0.0",
+          "Opsi.Pocos": "1.0.0",
+          "SendGrid.Extensions.DependencyInjection": "1.0.1"
+        },
+        "compile": {
+          "bin/placeholder/Opsi.AzureStorage.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Opsi.AzureStorage.dll": {}
+        }
+      },
       "Opsi.Common/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v6.0",
@@ -2805,27 +2826,6 @@
         },
         "runtime": {
           "bin/placeholder/Opsi.Pocos.dll": {}
-        }
-      },
-      "Opsi.Services/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v6.0",
-        "dependencies": {
-          "Azure.Data.Tables": "12.8.0",
-          "Azure.Storage.Blobs": "12.16.0",
-          "Azure.Storage.Queues": "12.14.0",
-          "Microsoft.AspNetCore.Http": "2.2.2",
-          "Microsoft.Azure.Functions.Extensions": "1.1.0",
-          "Microsoft.Extensions.DependencyInjection": "7.0.0",
-          "Opsi.Common": "1.0.0",
-          "Opsi.Pocos": "1.0.0",
-          "SendGrid.Extensions.DependencyInjection": "1.0.1"
-        },
-        "compile": {
-          "bin/placeholder/Opsi.Services.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/Opsi.Services.dll": {}
         }
       },
       "Opsi.TradosStudio/1.0.0": {
@@ -8073,6 +8073,11 @@
         "windowsazure.storage.nuspec"
       ]
     },
+    "Opsi.AzureStorage/1.0.0": {
+      "type": "project",
+      "path": "../Opsi.Services/Opsi.AzureStorage.csproj",
+      "msbuildProject": "../Opsi.Services/Opsi.AzureStorage.csproj"
+    },
     "Opsi.Common/1.0.0": {
       "type": "project",
       "path": "../Opsi.Common/Opsi.Common.csproj",
@@ -8082,11 +8087,6 @@
       "type": "project",
       "path": "../Opsi.Pocos/Opsi.Pocos.csproj",
       "msbuildProject": "../Opsi.Pocos/Opsi.Pocos.csproj"
-    },
-    "Opsi.Services/1.0.0": {
-      "type": "project",
-      "path": "../Opsi.Services/Opsi.Services.csproj",
-      "msbuildProject": "../Opsi.Services/Opsi.Services.csproj"
     },
     "Opsi.TradosStudio/1.0.0": {
       "type": "project",
@@ -8101,9 +8101,9 @@
       "Microsoft.Azure.WebJobs.Extensions.Storage >= 5.1.2",
       "Microsoft.Extensions.DependencyInjection >= 7.0.0",
       "Microsoft.NET.Sdk.Functions >= 4.2.0",
+      "Opsi.AzureStorage >= 1.0.0",
       "Opsi.Common >= 1.0.0",
       "Opsi.Pocos >= 1.0.0",
-      "Opsi.Services >= 1.0.0",
       "Opsi.TradosStudio >= 1.0.0"
     ]
   },
@@ -8138,8 +8138,8 @@
             "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj": {
               "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj"
             },
-            "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.Services.csproj": {
-              "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.Services.csproj"
+            "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.AzureStorage.csproj": {
+              "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.AzureStorage.csproj"
             },
             "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/Opsi.TradosStudio.csproj": {
               "projectPath": "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/Opsi.TradosStudio.csproj"

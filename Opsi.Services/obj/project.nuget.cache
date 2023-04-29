@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "+rQqM7qDBLC9HhDVWcYiaRnKSlZvl/j0HGNtWZElU8jaZNL5s1zptrFplPW4REXMfpyfvqr0Ps3gzDv8U+kDHA==",
+  "dgSpecHash": "40z7qPb09YVLJyf89kNxGOiS0ZxtCbIHJLC9OQLio3uGZ67YnVqbZg82CisLEiiaxFOQWzckex+oB5WAzn3KSg==",
   "success": true,
-  "projectFilePath": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.Services.csproj",
+  "projectFilePath": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.AzureStorage.csproj",
   "expectedPackageFiles": [
     "/Users/andrew/.nuget/packages/azure.core/1.31.0/azure.core.1.31.0.nupkg.sha512",
     "/Users/andrew/.nuget/packages/azure.data.tables/12.8.0/azure.data.tables.12.8.0.nupkg.sha512",

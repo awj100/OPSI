@@ -1,7 +1,7 @@
 ﻿using Opsi.Common;
-using Opsi.Services.TableEntities;
+using Opsi.AzureStorage.TableEntities;
 
-namespace Opsi.Services
+namespace Opsi.AzureStorage
 {
     public interface IProjectsService
     {

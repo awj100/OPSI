@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Opsi.Functions.BaseFunctions;
 using Opsi.Functions.Dependencies;
 using Opsi.Pocos;
-using Opsi.Services;
+using Opsi.AzureStorage;
 
 namespace Opsi.Functions.PackageHandlers;
 

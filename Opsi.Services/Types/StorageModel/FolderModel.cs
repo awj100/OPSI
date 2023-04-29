@@ -1,4 +1,4 @@
-﻿namespace Opsi.Services.Types.StorageModel;
+﻿namespace Opsi.AzureStorage.Types.StorageModel;
 
 public class FolderModel : BlobModel
 {

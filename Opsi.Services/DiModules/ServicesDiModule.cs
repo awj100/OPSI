@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SendGrid;
 using SendGrid.Extensions.DependencyInjection;
 
-namespace Opsi.Services.DiModules;
+namespace Opsi.AzureStorage.DiModules;
 
 public static class ServicesDiModule
 {

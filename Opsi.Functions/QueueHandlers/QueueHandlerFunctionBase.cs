@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using Opsi.Common;
 using Opsi.Functions.BaseFunctions;
 using Opsi.Functions.Dependencies;
-using Opsi.Services;
-using Opsi.Services.TableEntities;
+using Opsi.AzureStorage;
+using Opsi.AzureStorage.TableEntities;
 using Opsi.TradosStudio;
 
 namespace Opsi.Functions;

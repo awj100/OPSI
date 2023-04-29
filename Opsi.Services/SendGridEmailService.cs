@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
-namespace Opsi.Services;
+namespace Opsi.AzureStorage;
 
 internal class SendGridEmailService : IEmailNotificationService
 {

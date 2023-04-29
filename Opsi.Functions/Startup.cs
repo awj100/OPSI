@@ -1,6 +1,6 @@
 ﻿using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Opsi.Functions.DiModules;
-using Opsi.Services.DiModules;
+using Opsi.AzureStorage.DiModules;
 using Opsi.TradosStudio.DiModules;
 
 [assembly: FunctionsStartup(typeof(Opsi.Functions.Startup))]

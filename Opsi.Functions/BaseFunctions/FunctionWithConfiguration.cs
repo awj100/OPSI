@@ -1,6 +1,5 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Configuration;
-using Opsi.Services;
 
 namespace Opsi.Functions.BaseFunctions;
 

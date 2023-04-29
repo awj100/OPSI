@@ -2,7 +2,7 @@
 using Opsi.Pocos;
 using System.Text.Json;
 
-namespace Opsi.Services;
+namespace Opsi.AzureStorage;
 
 internal class QueueService : IQueueService
 {

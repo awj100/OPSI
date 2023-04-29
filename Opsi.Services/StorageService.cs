@@ -1,7 +1,7 @@
 ﻿using Azure.Storage.Blobs;
-using Opsi.Services.Types;
+using Opsi.AzureStorage.Types;
 
-namespace Opsi.Services;
+namespace Opsi.AzureStorage;
 
 internal class StorageService : IStorageService
 {

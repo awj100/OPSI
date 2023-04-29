@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Opsi.Pocos;
 
-namespace Opsi.Services;
+namespace Opsi.AzureStorage;
 
 public interface IManifestService
 {

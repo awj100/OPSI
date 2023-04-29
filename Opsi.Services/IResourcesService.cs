@@ -1,7 +1,7 @@
-﻿using Opsi.Services.TableEntities;
-using Opsi.Services.Types;
+﻿using Opsi.AzureStorage.TableEntities;
+using Opsi.AzureStorage.Types;
 
-namespace Opsi.Services
+namespace Opsi.AzureStorage
 {
     public interface IResourcesService
     {

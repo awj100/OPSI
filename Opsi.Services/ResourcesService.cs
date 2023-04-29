@@ -1,10 +1,9 @@
-﻿using System.Collections.Concurrent;
-using Azure.Data.Tables;
+﻿using Azure.Data.Tables;
+using Opsi.AzureStorage.TableEntities;
+using Opsi.AzureStorage.Types;
 using Opsi.Common.Exceptions;
-using Opsi.Services.TableEntities;
-using Opsi.Services.Types;
 
-namespace Opsi.Services;
+namespace Opsi.AzureStorage;
 
 internal class ResourcesService : TableServiceBase, IResourcesService
 {

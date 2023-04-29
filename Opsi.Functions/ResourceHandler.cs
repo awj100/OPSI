@@ -10,8 +10,8 @@ using Microsoft.Extensions.Logging;
 using Opsi.Functions.BaseFunctions;
 using Opsi.Functions.Dependencies;
 using Opsi.Pocos;
-using Opsi.Services.TableEntities;
-using Opsi.Services.Types;
+using Opsi.AzureStorage.TableEntities;
+using Opsi.AzureStorage.Types;
 
 namespace Opsi.Functions;
 

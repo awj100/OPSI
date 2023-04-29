@@ -1,8 +1,8 @@
 {
   "extensions":[
-    { "name": "AzureStorageQueues", "typeName":"Microsoft.Azure.WebJobs.Extensions.Storage.AzureStorageQueuesWebJobsStartup, Microsoft.Azure.WebJobs.Extensions.Storage.Queues, Version=5.1.1.0, Culture=neutral, PublicKeyToken=92742159e12e44c8"},
+    { "name": "AzureStorageQueues", "typeName":"Microsoft.Azure.WebJobs.Extensions.Storage.AzureStorageQueuesWebJobsStartup, Microsoft.Azure.WebJobs.Extensions.Storage.Queues, Version=5.1.2.0, Culture=neutral, PublicKeyToken=92742159e12e44c8"},
     { "name": "ServiceBus", "typeName":"Microsoft.Azure.WebJobs.ServiceBus.ServiceBusWebJobsStartup, Microsoft.Azure.WebJobs.Extensions.ServiceBus, Version=5.9.0.0, Culture=neutral, PublicKeyToken=92742159e12e44c8"},
     { "name": "Startup", "typeName":"Opsi.Functions.Startup, Opsi.Functions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"},
-    { "name": "AzureStorageBlobs", "typeName":"Microsoft.Azure.WebJobs.Extensions.Storage.AzureStorageBlobsWebJobsStartup, Microsoft.Azure.WebJobs.Extensions.Storage.Blobs, Version=5.1.1.0, Culture=neutral, PublicKeyToken=92742159e12e44c8"}
+    { "name": "AzureStorageBlobs", "typeName":"Microsoft.Azure.WebJobs.Extensions.Storage.AzureStorageBlobsWebJobsStartup, Microsoft.Azure.WebJobs.Extensions.Storage.Blobs, Version=5.1.2.0, Culture=neutral, PublicKeyToken=92742159e12e44c8"}
   ]
 }

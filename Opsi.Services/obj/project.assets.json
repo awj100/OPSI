@@ -3008,9 +3008,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.Services.csproj",
-      "projectName": "Opsi.Services",
-      "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.Services.csproj",
+      "projectUniqueName": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.AzureStorage.csproj",
+      "projectName": "Opsi.AzureStorage",
+      "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.AzureStorage.csproj",
       "packagesPath": "/Users/andrew/.nuget/packages/",
       "outputPath": "/Users/andrew/Projects/Opsi/Opsi.Services/obj/",
       "projectStyle": "PackageReference",

@@ -1,5 +1,5 @@
 ﻿using System;
-using Opsi.Services;
+using Opsi.AzureStorage;
 
 namespace Opsi.Functions.Dependencies;
 

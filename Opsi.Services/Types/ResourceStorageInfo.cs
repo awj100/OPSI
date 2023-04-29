@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Opsi.Services.Types;
+namespace Opsi.AzureStorage.Types;
 
 public readonly struct ResourceStorageInfo
 {

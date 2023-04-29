@@ -1,5 +1,5 @@
 {
-  "generatedBy": "Microsoft.NET.Sdk.Functions.Generator-4.1.3",
+  "generatedBy": "Microsoft.NET.Sdk.Functions.Generator-4.2.0",
   "configurationSource": "attributes",
   "bindings": [
     {

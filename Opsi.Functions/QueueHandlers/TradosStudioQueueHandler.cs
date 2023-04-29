@@ -8,7 +8,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Opsi.Functions.Dependencies;
 using Opsi.Pocos;
-using Opsi.Services.TableEntities;
+using Opsi.AzureStorage.TableEntities;
 using Opsi.TradosStudio;
 
 namespace Opsi.Functions.PackageHandlers;

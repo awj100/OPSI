@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Opsi.Pocos;
 
-namespace Opsi.Services;
+namespace Opsi.AzureStorage;
 
 public class ManifestService : IManifestService
 {

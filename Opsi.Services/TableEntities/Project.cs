@@ -1,7 +1,7 @@
 ﻿using Azure;
 using Azure.Data.Tables;
 
-namespace Opsi.Services.TableEntities;
+namespace Opsi.AzureStorage.TableEntities;
 
 public record Project : ITableEntity
 {

@@ -1,6 +1,6 @@
 ﻿using Opsi.Common;
 
-namespace Opsi.Services.Types
+namespace Opsi.AzureStorage.Types
 {
     public struct VersionInfo
     {

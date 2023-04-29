@@ -1,7 +1,7 @@
 ﻿using Azure.Data.Tables;
-using Opsi.Services.TableEntities;
+using Opsi.AzureStorage.TableEntities;
 
-namespace Opsi.Services;
+namespace Opsi.AzureStorage;
 
 public abstract class TableServiceBase
 {
