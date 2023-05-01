@@ -1,6 +1,4 @@
-﻿using Opsi.Pocos;
-
-namespace Opsi.AzureStorage;
+﻿namespace Opsi.AzureStorage;
 
 public interface IQueueService
 {

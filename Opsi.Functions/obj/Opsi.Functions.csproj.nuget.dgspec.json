@@ -4,6 +4,96 @@
     "/Users/andrew/Projects/Opsi/Opsi.Functions/Opsi.Functions.csproj": {}
   },
   "projects": {
+    "/Users/andrew/Projects/Opsi/Opsi.AzureStorage/Opsi.AzureStorage.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/andrew/Projects/Opsi/Opsi.AzureStorage/Opsi.AzureStorage.csproj",
+        "projectName": "Opsi.AzureStorage",
+        "projectPath": "/Users/andrew/Projects/Opsi/Opsi.AzureStorage/Opsi.AzureStorage.csproj",
+        "packagesPath": "/Users/andrew/.nuget/packages/",
+        "outputPath": "/Users/andrew/Projects/Opsi/Opsi.AzureStorage/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/andrew/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {
+              "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj": {
+                "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj"
+              },
+              "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj": {
+                "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "Azure.Data.Tables": {
+              "target": "Package",
+              "version": "[12.8.0, )"
+            },
+            "Azure.Storage.Blobs": {
+              "target": "Package",
+              "version": "[12.16.0, )"
+            },
+            "Azure.Storage.Queues": {
+              "target": "Package",
+              "version": "[12.14.0, )"
+            },
+            "Microsoft.AspNetCore.Http": {
+              "target": "Package",
+              "version": "[2.2.2, )"
+            },
+            "Microsoft.Azure.Functions.Extensions": {
+              "target": "Package",
+              "version": "[1.1.0, )"
+            },
+            "Microsoft.Extensions.DependencyInjection": {
+              "target": "Package",
+              "version": "[7.0.0, )"
+            },
+            "SendGrid.Extensions.DependencyInjection": {
+              "target": "Package",
+              "version": "[1.0.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.203/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
     "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj": {
       "version": "1.0.0",
       "restore": {
@@ -79,14 +169,14 @@
           "net6.0": {
             "targetAlias": "net6.0",
             "projectReferences": {
+              "/Users/andrew/Projects/Opsi/Opsi.AzureStorage/Opsi.AzureStorage.csproj": {
+                "projectPath": "/Users/andrew/Projects/Opsi/Opsi.AzureStorage/Opsi.AzureStorage.csproj"
+              },
               "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj": {
                 "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj"
               },
               "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj": {
                 "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj"
-              },
-              "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.AzureStorage.csproj": {
-                "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.AzureStorage.csproj"
               },
               "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/Opsi.TradosStudio.csproj": {
                 "projectPath": "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/Opsi.TradosStudio.csproj"
@@ -197,96 +287,6 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.203/RuntimeIdentifierGraph.json"
-        }
-      }
-    },
-    "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.AzureStorage.csproj": {
-      "version": "1.0.0",
-      "restore": {
-        "projectUniqueName": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.AzureStorage.csproj",
-        "projectName": "Opsi.AzureStorage",
-        "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.AzureStorage.csproj",
-        "packagesPath": "/Users/andrew/.nuget/packages/",
-        "outputPath": "/Users/andrew/Projects/Opsi/Opsi.Services/obj/",
-        "projectStyle": "PackageReference",
-        "configFilePaths": [
-          "/Users/andrew/.nuget/NuGet/NuGet.Config"
-        ],
-        "originalTargetFrameworks": [
-          "net6.0"
-        ],
-        "sources": {
-          "https://api.nuget.org/v3/index.json": {}
-        },
-        "frameworks": {
-          "net6.0": {
-            "targetAlias": "net6.0",
-            "projectReferences": {
-              "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj": {
-                "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj"
-              },
-              "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj": {
-                "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj"
-              }
-            }
-          }
-        },
-        "warningProperties": {
-          "warnAsError": [
-            "NU1605"
-          ]
-        }
-      },
-      "frameworks": {
-        "net6.0": {
-          "targetAlias": "net6.0",
-          "dependencies": {
-            "Azure.Data.Tables": {
-              "target": "Package",
-              "version": "[12.8.0, )"
-            },
-            "Azure.Storage.Blobs": {
-              "target": "Package",
-              "version": "[12.16.0, )"
-            },
-            "Azure.Storage.Queues": {
-              "target": "Package",
-              "version": "[12.14.0, )"
-            },
-            "Microsoft.AspNetCore.Http": {
-              "target": "Package",
-              "version": "[2.2.2, )"
-            },
-            "Microsoft.Azure.Functions.Extensions": {
-              "target": "Package",
-              "version": "[1.1.0, )"
-            },
-            "Microsoft.Extensions.DependencyInjection": {
-              "target": "Package",
-              "version": "[7.0.0, )"
-            },
-            "SendGrid.Extensions.DependencyInjection": {
-              "target": "Package",
-              "version": "[1.0.1, )"
-            }
-          },
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48",
-            "net481"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "frameworkReferences": {
-            "Microsoft.NETCore.App": {
-              "privateAssets": "all"
-            }
-          },
           "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.203/RuntimeIdentifierGraph.json"
         }
       }

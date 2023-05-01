@@ -36,7 +36,7 @@
     <ProjectReference Include="..\Opsi.Pocos\Opsi.Pocos.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
     </ProjectReference>
-    <ProjectReference Include="..\Opsi.Services\Opsi.AzureStorage.csproj">
+    <ProjectReference Include="..\Opsi.AzureStorage\Opsi.AzureStorage.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
     </ProjectReference>
   </ItemGroup>

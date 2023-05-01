@@ -5,7 +5,7 @@ VisualStudioVersion = 25.0.1706.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.Functions", "Opsi.Functions\Opsi.Functions.csproj", "{D8CEE4F9-24AA-48F3-A8D8-ABAFAE7B5085}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.AzureStorage", "Opsi.Services\Opsi.AzureStorage.csproj", "{31D2A6C3-8ACD-423B-9C33-0BDD4983D640}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.AzureStorage", "Opsi.AzureStorage\Opsi.AzureStorage.csproj", "{31D2A6C3-8ACD-423B-9C33-0BDD4983D640}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.Common", "Opsi.Common\Opsi.Common.csproj", "{89C7D9BE-CDDD-4F78-ABE5-549401D9D168}"
 EndProject
