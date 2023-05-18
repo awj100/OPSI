@@ -11,5 +11,5 @@
   ],
   "disabled": false,
   "scriptFile": "../bin/Opsi.Functions.dll",
-  "entryPoint": "Opsi.Functions.PackageHandlers.ErrorQueueHandler.Run"
+  "entryPoint": "Opsi.Functions.ErrorQueueHandler.Run"
 }

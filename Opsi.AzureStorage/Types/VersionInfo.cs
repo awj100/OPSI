@@ -7,13 +7,13 @@ namespace Opsi.AzureStorage.Types
         public VersionInfo(int version, string? lockedTo = null)
         {
             LockedTo = lockedTo != null ? Option<string>.Some(lockedTo) : Option<string>.None();
-            Version = version;
+            Index = version;
         }
 
         /// <summary>
-        /// Gets or sets the version of a resource.
+        /// Gets or sets the numerical version of a resource.
         /// </summary>
-        public int Version { get; set; }
+        public int Index { get; set; }
 
         /// <summary>
         /// Gets or sets an <see cref="Option{string}"/> specifying the username of the user to whom the resource is locked.
@@ -26,14 +26,14 @@ namespace Opsi.AzureStorage.Types
         /// <param name="shouldLockToSameUser">
         /// If <c>true</c>, the current instance's <see cref="LockedTo"/> property is cloned to the returned instance.
         /// </param>
-        /// <returns>A <see cref="VersionInfo"/> object with <see cref="Version"/> incremented.</returns>
+        /// <returns>A <see cref="VersionInfo"/> object with <see cref="Index"/> incremented.</returns>
         public VersionInfo GetNextVersionInfo(bool shouldLockToSameUser = false)
         {
             var lockTo = shouldLockToSameUser && LockedTo.IsSome
                 ? LockedTo.Value
                 : null;
 
-            return new VersionInfo(Version + 1, lockTo);
+            return new VersionInfo(Index + 1, lockTo);
         }
     }
 }

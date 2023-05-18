@@ -1,6 +1,7 @@
 ﻿using Azure.Data.Tables;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.AzureStorage.Types;
+using Opsi.Common;
 using Opsi.Common.Exceptions;
 
 namespace Opsi.AzureStorage;
@@ -10,8 +11,23 @@ internal class ResourcesService : TableServiceBase, IResourcesService
     private const int StringComparisonMatch = 0;
     private const string TableName = "resources";
 
-    public ResourcesService(string storageConnectionString) : base(storageConnectionString, TableName)
+    public ResourcesService(ISettingsProvider settingsProvider) : base(settingsProvider, TableName)
     {
+    }
+
+    public async Task DeleteResourceAsync(ResourceStorageInfo resourceStorageInfo)
+    {
+        await DeleteResourceAsync(resourceStorageInfo.ProjectId, resourceStorageInfo.RestOfPath!);
+    }
+
+    public async Task DeleteResourceAsync(Resource resource)
+    {
+        await DeleteResourceAsync(resource.ProjectId, resource.FullName!);
+    }
+
+    public async Task DeleteResourceAsync(Guid projectId, string fullName)
+    {
+        await DeleteTableEntityAsync(projectId.ToString(), fullName);
     }
 
     public async Task<VersionInfo> GetCurrentVersionInfo(Guid projectId, string fullName)
@@ -21,17 +37,17 @@ internal class ResourcesService : TableServiceBase, IResourcesService
         var tableClient = GetTableClient();
 
         var pageableResources = tableClient.QueryAsync<Resource>(resource => resource.PartitionKey == projectId.ToString()
-                                                                            && String.Compare(resource.FullName, fullName, StringComparison.OrdinalIgnoreCase) == StringComparisonMatch);
+                                                                             && String.Compare(resource.FullName, fullName, StringComparison.OrdinalIgnoreCase) == StringComparisonMatch);
 
         await foreach (var resource in pageableResources)
         {
             resources.Add(resource);
         }
 
-        var latestVersion = resources.OrderByDescending(resource => resource.Version).FirstOrDefault();
+        var latestVersion = resources.OrderByDescending(resource => resource.VersionIndex).FirstOrDefault();
 
         return latestVersion != null
-            ? new VersionInfo(latestVersion.Version, latestVersion.LockedTo)
+            ? new VersionInfo(latestVersion.VersionIndex, latestVersion.LockedTo)
             : new VersionInfo(0);
     }
 
@@ -80,7 +96,8 @@ internal class ResourcesService : TableServiceBase, IResourcesService
             LockedTo = resourceStorageInfo.VersionInfo.LockedTo.IsSome ? resourceStorageInfo.VersionInfo.LockedTo.Value : null,
             ProjectId = resourceStorageInfo.ProjectId,
             Username = resourceStorageInfo.Username,
-            Version = resourceStorageInfo.VersionInfo.Version
+            VersionId = resourceStorageInfo.VersionId,
+            VersionIndex = resourceStorageInfo.VersionInfo.Index
         };
 
         await StoreTableEntityAsync(resource);
@@ -152,6 +169,6 @@ internal class ResourcesService : TableServiceBase, IResourcesService
             throw new ResourceNotFoundException(projectId, fullName);
         }
 
-        return allResources.OrderByDescending(resource => resource.Version).First();
+        return allResources.OrderByDescending(resource => resource.VersionIndex).First();
     }
 }

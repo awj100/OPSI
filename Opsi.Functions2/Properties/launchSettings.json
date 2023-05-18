@@ -1,0 +1,9 @@
+﻿{
+  "profiles": {
+    "Opsi.Functions2": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7069",
+      "launchBrowser": false
+    }
+  }
+}

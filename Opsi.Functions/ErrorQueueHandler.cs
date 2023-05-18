@@ -1,92 +1,26 @@
-﻿using System;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
-using Opsi.Functions.BaseFunctions;
-using Opsi.Functions.Dependencies;
+using Opsi.Constants;
+using Opsi.ErrorReporting.Services;
 using Opsi.Pocos;
-using Opsi.AzureStorage;
 
-namespace Opsi.Functions.PackageHandlers;
+namespace Opsi.Functions;
 
-public class ErrorQueueHandler : FunctionWithConfiguration
+public class ErrorQueueHandler
 {
-    private readonly IEmailNotificationService _emailNotificationService;
+    private readonly IErrorService _errorService;
 
-    public ErrorQueueHandler(IEmailNotificationService emailNotificationService, IStorageFunctionDependencies storageFunctionDependencies) : base()
+    public ErrorQueueHandler(IErrorService errorService)
     {
-        _emailNotificationService = emailNotificationService;
+        _errorService = errorService;
     }
 
     [FunctionName(nameof(ErrorQueueHandler))]
-    public async Task Run(
-        [QueueTrigger(Constants.QueueNames.Error, Connection = "AzureWebJobsStorage")]Error error,
-        ILogger log,
-        ExecutionContext context)
+    public async Task Run([QueueTrigger(QueueNames.Error, Connection = "AzureWebJobsStorage")] Error error, ILogger log)
     {
         log.LogInformation($"{nameof(ErrorQueueHandler)} triggered by an exception in {error.Origin}.");
 
-        Init(context);
-
-        try
-        {
-            var emailBody = GetErrorEmailBody(error);
-            var emailRecipient = GetErrorEmailRecipient();
-            var emailSubject = GetErrorEmailSubject();
-
-            await _emailNotificationService.SendAsync(emailSubject, emailBody, emailRecipient);
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, nameof(ErrorQueueHandler));
-        }
-    }
-
-    private string GetErrorEmailRecipient()
-    {
-        const string configEmailRecipient = "emailNotifications.errorRecipientEmail";
-        return Configuration[configEmailRecipient];
-    }
-
-    private string GetErrorEmailSubject()
-    {
-        const string configEmailSubject = "emailNotifications.errorSubject";
-        return Configuration[configEmailSubject];
-    }
-
-    private static string GetErrorEmailBody(Error error)
-    {
-        static void ErrorToHtmlString(StringBuilder sb, Error error)
-        {
-            sb.Append("<p>An error occurred in ");
-            sb.Append(error.Origin);
-            sb.AppendLine(".</p>");
-
-            if (!String.IsNullOrWhiteSpace(error.Message))
-            {
-                sb.Append("<p>");
-                sb.Append(error.Message);
-                sb.AppendLine("</p>");
-            }
-
-            if (!String.IsNullOrWhiteSpace(error.StackTrace))
-            {
-                sb.AppendLine("<h4>Stack trace:</h4");
-                sb.AppendLine(error.StackTrace.Replace("\n", "<br/>"));
-            }
-
-            if (error.InnerError != null)
-            {
-                sb.AppendLine("<h4 style=\"margin-top: 15px;\">Inner error</h4>");
-                ErrorToHtmlString(sb, error.InnerError);
-            }
-        }
-
-        var sb = new StringBuilder();
-        sb.AppendLine("<h2 style=\"color: red;\">Error</h2>");
-        ErrorToHtmlString(sb, error);
-
-        return sb.ToString();
+        await _errorService.ReportAsync(error);
     }
 }

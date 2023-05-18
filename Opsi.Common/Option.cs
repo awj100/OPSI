@@ -36,7 +36,9 @@ namespace Opsi.Common
 
         public static Option<T> Some(T value)
         {
+#pragma warning disable CS8604 // Possible null reference argument.
             Validate.NotNull(value, nameof(value));
+#pragma warning restore CS8604 // Possible null reference argument.
             return new Option<T>(value);
         }
     }

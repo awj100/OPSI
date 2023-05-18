@@ -1,0 +1,16 @@
+﻿{
+    "version": "2.0",
+    "extensions": {
+        "queues": {
+            "messageEncoding": "none"
+        }
+    },
+    "logging": {
+        "applicationInsights": {
+            "samplingSettings": {
+                "isEnabled": true,
+                "excludedTypes": "Request"
+            }
+        }
+    }
+}

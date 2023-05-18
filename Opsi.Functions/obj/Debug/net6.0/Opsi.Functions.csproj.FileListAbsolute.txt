@@ -101,7 +101,6 @@
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Azure.Storage.Blobs.dll
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Azure.Storage.Common.dll
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Azure.Storage.Queues.dll
-/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/AzureFunctions.Extensions.DependencyInjection.dll
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/System.Net.Http.Formatting.dll
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Microsoft.AspNetCore.Authentication.Abstractions.dll
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Microsoft.AspNetCore.Authentication.Core.dll
@@ -174,9 +173,7 @@
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.AzureStorage.dll
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Common.dll
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Pocos.dll
-/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.TradosStudio.dll
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Common.pdb
-/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.TradosStudio.pdb
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Pocos.pdb
 /Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.AzureStorage.pdb
 /Users/andrew/Projects/Opsi/Opsi.Functions/obj/Debug/net6.0/Opsi.Functions.csproj.CopyComplete
@@ -184,3 +181,13 @@
 /Users/andrew/Projects/Opsi/Opsi.Functions/obj/Debug/net6.0/refint/Opsi.Functions.dll
 /Users/andrew/Projects/Opsi/Opsi.Functions/obj/Debug/net6.0/Opsi.Functions.pdb
 /Users/andrew/Projects/Opsi/Opsi.Functions/obj/Debug/net6.0/ref/Opsi.Functions.dll
+/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Constants.dll
+/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.ErrorReporting.Services.dll
+/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Notifications.Abstractions.dll
+/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Notifications.SendGrid.dll
+/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Services.dll
+/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Services.pdb
+/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Notifications.SendGrid.pdb
+/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Notifications.Abstractions.pdb
+/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.ErrorReporting.Services.pdb
+/Users/andrew/Projects/Opsi/Opsi.Functions/bin/Debug/net6.0/Opsi.Constants.pdb

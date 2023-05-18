@@ -5,6 +5,12 @@ namespace Opsi.AzureStorage
 {
     public interface IResourcesService
     {
+        Task DeleteResourceAsync(ResourceStorageInfo resourceStorageInfo);
+
+        Task DeleteResourceAsync(Resource resource);
+
+        Task DeleteResourceAsync(Guid projectId, string fullName);
+
         /// <summary>
         /// The current version is the most recent version in this resource's history.
         /// </summary>

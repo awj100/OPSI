@@ -46,10 +46,12 @@ public record Resource : ITableEntity
 
     public string Username { get; set; } = default!;
 
-    public int Version { get; set; } = default!;
+    public string? VersionId { get; set; } = default!;
+
+    public int VersionIndex { get; set; } = default!;
 
     public override string ToString()
     {
-        return $"{FullName} ({Version})";
+        return $"{FullName} ({VersionIndex})";
     }
 }

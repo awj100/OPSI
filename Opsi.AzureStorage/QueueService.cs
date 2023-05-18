@@ -1,24 +1,22 @@
-﻿using Azure.Storage.Queues;
-using Opsi.Pocos;
-using System.Text.Json;
+﻿using System.Text.Json;
+using Azure.Storage.Queues;
+using Opsi.Common;
 
 namespace Opsi.AzureStorage;
 
-internal class QueueService : IQueueService
+internal class QueueService : StorageServiceBase, IQueueService
 {
     private readonly string _queueName;
-    private readonly string _storageConnectionString;
 
-    public QueueService(string storageConnectionString, string queueName)
+    public QueueService(ISettingsProvider settingsProvider, string queueName) : base(settingsProvider)
     {
         _queueName = queueName;
-        _storageConnectionString = storageConnectionString;
     }
 
     public async Task AddMessageAsync(Object obj)
     {
         var objectAsJson = JsonSerializer.Serialize(obj);
-        var queueClient = GetQueueClient(_queueName);
+        var queueClient = GetQueueClient();
         var queueExists = await EnsureQueueAsync(queueClient);
 
         if (queueExists)
@@ -51,8 +49,8 @@ internal class QueueService : IQueueService
         }
     }
 
-    private QueueClient GetQueueClient(string queueName)
+    private QueueClient GetQueueClient()
     {
-        return new QueueClient(_storageConnectionString, queueName);
+        return new QueueClient(StorageConnectionString.Value, _queueName);
     }
 }

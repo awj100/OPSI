@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Opsi.AzureStorage\Opsi.AzureStorage.csproj" />
+    <ProjectReference Include="..\Opsi.Pocos\Opsi.Pocos.csproj" />
+    <ProjectReference Include="..\Opsi.Common\Opsi.Common.csproj" />
+    <ProjectReference Include="..\Opsi.Notifications.Abstractions\Opsi.Notifications.Abstractions.csproj" />
+    <ProjectReference Include="..\Opsi.Constants\Opsi.Constants.csproj" />
+    <ProjectReference Include="..\Opsi.Abstractions\Opsi.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="DiModules\" />
+    <None Remove="QueueHandlers\" />
+    <None Remove="QueueHandlers\Dependencies\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DiModules\" />
+    <Folder Include="QueueHandlers\" />
+    <Folder Include="QueueHandlers\Dependencies\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
+  </ItemGroup>
+</Project>

@@ -1,22 +1,29 @@
 ﻿using Azure.Data.Tables;
-using Opsi.AzureStorage.TableEntities;
+using Opsi.Common;
 
 namespace Opsi.AzureStorage;
 
-public abstract class TableServiceBase
+public abstract class TableServiceBase : StorageServiceBase
 {
-    private readonly string _storageConnectionString;
     private readonly string _tableName;
 
-    public TableServiceBase(string storageConnectionString, string tableName)
+    public TableServiceBase(ISettingsProvider settingsProvider, string tableName) : base(settingsProvider)
     {
-        _storageConnectionString = storageConnectionString;
         _tableName = tableName;
+    }
+
+    protected virtual async Task DeleteTableEntityAsync(string partitionKey, string rowKey)
+    {
+        var tableClient = GetTableClient();
+
+        await tableClient.CreateIfNotExistsAsync();
+
+        await tableClient.DeleteEntityAsync(partitionKey, rowKey);
     }
 
     protected virtual TableClient GetTableClient()
     {
-        var tableServiceClient = new TableServiceClient(_storageConnectionString);
+        var tableServiceClient = new TableServiceClient(StorageConnectionString.Value);
         return tableServiceClient.GetTableClient(_tableName);
     }
 

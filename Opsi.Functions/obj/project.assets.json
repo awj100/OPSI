@@ -151,19 +151,6 @@
           }
         }
       },
-      "AzureFunctions.Extensions.DependencyInjection/1.1.3": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Azure.WebJobs": "3.0.0-beta5",
-          "Microsoft.Extensions.DependencyInjection": "2.0.0"
-        },
-        "compile": {
-          "lib/netstandard2.0/AzureFunctions.Extensions.DependencyInjection.dll": {}
-        },
-        "runtime": {
-          "lib/netstandard2.0/AzureFunctions.Extensions.DependencyInjection.dll": {}
-        }
-      },
       "Microsoft.AspNet.WebApi.Client/5.2.8": {
         "type": "package",
         "dependencies": {
@@ -1008,51 +995,46 @@
           }
         }
       },
-      "Microsoft.Extensions.Http/7.0.0": {
+      "Microsoft.Extensions.Http/6.0.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "7.0.0",
-          "Microsoft.Extensions.Logging": "7.0.0",
-          "Microsoft.Extensions.Logging.Abstractions": "7.0.0",
-          "Microsoft.Extensions.Options": "7.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0",
+          "Microsoft.Extensions.Logging": "6.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
+          "Microsoft.Extensions.Options": "6.0.0"
         },
         "compile": {
-          "lib/net6.0/Microsoft.Extensions.Http.dll": {
+          "lib/netstandard2.0/Microsoft.Extensions.Http.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net6.0/Microsoft.Extensions.Http.dll": {
+          "lib/netstandard2.0/Microsoft.Extensions.Http.dll": {
             "related": ".xml"
           }
-        },
-        "build": {
-          "buildTransitive/net6.0/_._": {}
         }
       },
-      "Microsoft.Extensions.Logging/7.0.0": {
+      "Microsoft.Extensions.Logging/6.0.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection": "7.0.0",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "7.0.0",
-          "Microsoft.Extensions.Logging.Abstractions": "7.0.0",
-          "Microsoft.Extensions.Options": "7.0.0"
+          "Microsoft.Extensions.DependencyInjection": "6.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
+          "Microsoft.Extensions.Options": "6.0.0",
+          "System.Diagnostics.DiagnosticSource": "6.0.0"
         },
         "compile": {
-          "lib/net6.0/Microsoft.Extensions.Logging.dll": {
+          "lib/netstandard2.1/Microsoft.Extensions.Logging.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net6.0/Microsoft.Extensions.Logging.dll": {
+          "lib/netstandard2.1/Microsoft.Extensions.Logging.dll": {
             "related": ".xml"
           }
-        },
-        "build": {
-          "buildTransitive/net6.0/_._": {}
         }
       },
-      "Microsoft.Extensions.Logging.Abstractions/7.0.0": {
+      "Microsoft.Extensions.Logging.Abstractions/6.0.0": {
         "type": "package",
         "compile": {
           "lib/net6.0/Microsoft.Extensions.Logging.Abstractions.dll": {
@@ -1065,7 +1047,7 @@
           }
         },
         "build": {
-          "buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets": {}
+          "buildTransitive/netcoreapp3.1/_._": {}
         }
       },
       "Microsoft.Extensions.Logging.Configuration/2.1.0": {
@@ -1098,24 +1080,21 @@
           }
         }
       },
-      "Microsoft.Extensions.Options/7.0.0": {
+      "Microsoft.Extensions.Options/6.0.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "7.0.0",
-          "Microsoft.Extensions.Primitives": "7.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0",
+          "Microsoft.Extensions.Primitives": "6.0.0"
         },
         "compile": {
-          "lib/net6.0/Microsoft.Extensions.Options.dll": {
+          "lib/netstandard2.1/Microsoft.Extensions.Options.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net6.0/Microsoft.Extensions.Options.dll": {
+          "lib/netstandard2.1/Microsoft.Extensions.Options.dll": {
             "related": ".xml"
           }
-        },
-        "build": {
-          "buildTransitive/net6.0/_._": {}
         }
       },
       "Microsoft.Extensions.Options.ConfigurationExtensions/2.1.0": {
@@ -1137,7 +1116,7 @@
           }
         }
       },
-      "Microsoft.Extensions.Primitives/7.0.0": {
+      "Microsoft.Extensions.Primitives/6.0.0": {
         "type": "package",
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
@@ -1153,7 +1132,7 @@
           }
         },
         "build": {
-          "buildTransitive/net6.0/_._": {}
+          "buildTransitive/netcoreapp3.1/_._": {}
         }
       },
       "Microsoft.Identity.Client/4.39.0": {
@@ -1655,17 +1634,23 @@
           }
         }
       },
-      "System.Diagnostics.DiagnosticSource/4.6.0": {
+      "System.Diagnostics.DiagnosticSource/6.0.0": {
         "type": "package",
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        },
         "compile": {
-          "lib/netstandard1.3/System.Diagnostics.DiagnosticSource.dll": {
+          "lib/net6.0/System.Diagnostics.DiagnosticSource.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/netstandard1.3/System.Diagnostics.DiagnosticSource.dll": {
+          "lib/net6.0/System.Diagnostics.DiagnosticSource.dll": {
             "related": ".xml"
           }
+        },
+        "build": {
+          "buildTransitive/netcoreapp3.1/_._": {}
         }
       },
       "System.Diagnostics.Tools/4.3.0": {
@@ -2787,6 +2772,16 @@
           }
         }
       },
+      "Opsi.Abstractions/1.0.0": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v2.0",
+        "compile": {
+          "bin/placeholder/Opsi.Abstractions.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Opsi.Abstractions.dll": {}
+        }
+      },
       "Opsi.AzureStorage/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v6.0",
@@ -2798,8 +2793,7 @@
           "Microsoft.Azure.Functions.Extensions": "1.1.0",
           "Microsoft.Extensions.DependencyInjection": "7.0.0",
           "Opsi.Common": "1.0.0",
-          "Opsi.Pocos": "1.0.0",
-          "SendGrid.Extensions.DependencyInjection": "1.0.1"
+          "Opsi.Pocos": "1.0.0"
         },
         "compile": {
           "bin/placeholder/Opsi.AzureStorage.dll": {}
@@ -2818,6 +2812,57 @@
           "bin/placeholder/Opsi.Common.dll": {}
         }
       },
+      "Opsi.Constants/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v6.0",
+        "compile": {
+          "bin/placeholder/Opsi.Constants.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Opsi.Constants.dll": {}
+        }
+      },
+      "Opsi.ErrorReporting.Services/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v6.0",
+        "dependencies": {
+          "Opsi.AzureStorage": "1.0.0",
+          "Opsi.Constants": "1.0.0",
+          "Opsi.Notifications.Abstractions": "1.0.0",
+          "Opsi.Pocos": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Opsi.ErrorReporting.Services.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Opsi.ErrorReporting.Services.dll": {}
+        }
+      },
+      "Opsi.Notifications.Abstractions/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v6.0",
+        "compile": {
+          "bin/placeholder/Opsi.Notifications.Abstractions.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Opsi.Notifications.Abstractions.dll": {}
+        }
+      },
+      "Opsi.Notifications.SendGrid/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v6.0",
+        "dependencies": {
+          "Microsoft.Azure.Functions.Extensions": "1.1.0",
+          "Opsi.Notifications.Abstractions": "1.0.0",
+          "SendGrid.Extensions.DependencyInjection": "1.0.1"
+        },
+        "compile": {
+          "bin/placeholder/Opsi.Notifications.SendGrid.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Opsi.Notifications.SendGrid.dll": {}
+        }
+      },
       "Opsi.Pocos/1.0.0": {
         "type": "project",
         "framework": ".NETStandard,Version=v2.0",
@@ -2828,22 +2873,23 @@
           "bin/placeholder/Opsi.Pocos.dll": {}
         }
       },
-      "Opsi.TradosStudio/1.0.0": {
+      "Opsi.Services/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v6.0",
         "dependencies": {
-          "AzureFunctions.Extensions.DependencyInjection": "1.1.3",
-          "Microsoft.Azure.Functions.Extensions": "1.1.0",
-          "Microsoft.Extensions.DependencyInjection": "7.0.0",
-          "Microsoft.Extensions.Http": "7.0.0",
+          "Microsoft.Extensions.Http": "6.0.0",
+          "Opsi.Abstractions": "1.0.0",
+          "Opsi.AzureStorage": "1.0.0",
           "Opsi.Common": "1.0.0",
-          "System.IO.Compression.ZipFile": "4.3.0"
+          "Opsi.Constants": "1.0.0",
+          "Opsi.Notifications.Abstractions": "1.0.0",
+          "Opsi.Pocos": "1.0.0"
         },
         "compile": {
-          "bin/placeholder/Opsi.TradosStudio.dll": {}
+          "bin/placeholder/Opsi.Services.dll": {}
         },
         "runtime": {
-          "bin/placeholder/Opsi.TradosStudio.dll": {}
+          "bin/placeholder/Opsi.Services.dll": {}
         }
       }
     }
@@ -2993,20 +3039,6 @@
         "lib/netstandard2.0/Azure.Storage.Queues.xml",
         "lib/netstandard2.1/Azure.Storage.Queues.dll",
         "lib/netstandard2.1/Azure.Storage.Queues.xml"
-      ]
-    },
-    "AzureFunctions.Extensions.DependencyInjection/1.1.3": {
-      "sha512": "0zI/WQ43kLZf1s5y3W0emPgoAkgkcPy5QDdeKb9DAZj8UAIufZaIgNt6HlXGdN+4PIkFLZriJaDqkZzCbt+YzQ==",
-      "type": "package",
-      "path": "azurefunctions.extensions.dependencyinjection/1.1.3",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "azurefunctions.extensions.dependencyinjection.1.1.3.nupkg.sha512",
-        "azurefunctions.extensions.dependencyinjection.nuspec",
-        "lib/net462/AzureFunctions.Extensions.DependencyInjection.dll",
-        "lib/net471/AzureFunctions.Extensions.DependencyInjection.dll",
-        "lib/netstandard2.0/AzureFunctions.Extensions.DependencyInjection.dll"
       ]
     },
     "Microsoft.AspNet.WebApi.Client/5.2.8": {
@@ -3842,66 +3874,50 @@
         "microsoft.extensions.hosting.abstractions.nuspec"
       ]
     },
-    "Microsoft.Extensions.Http/7.0.0": {
-      "sha512": "9Pq9f/CvOSz0t9yQa6g1uWpxa2sm13daLFm8EZwy9MaQUjKXWdNUXQwIxwhmba5N83UIqURiPHSNqGK1vfWF2w==",
+    "Microsoft.Extensions.Http/6.0.0": {
+      "sha512": "15+pa2G0bAMHbHewaQIdr/y6ag2H3yh4rd9hTXavtWDzQBkvpe2RMqFg8BxDpcQWssmjmBApGPcw93QRz6YcMg==",
       "type": "package",
-      "path": "microsoft.extensions.http/7.0.0",
+      "path": "microsoft.extensions.http/6.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
-        "buildTransitive/net461/Microsoft.Extensions.Http.targets",
-        "buildTransitive/net462/_._",
-        "buildTransitive/net6.0/_._",
-        "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Http.targets",
-        "lib/net462/Microsoft.Extensions.Http.dll",
-        "lib/net462/Microsoft.Extensions.Http.xml",
-        "lib/net6.0/Microsoft.Extensions.Http.dll",
-        "lib/net6.0/Microsoft.Extensions.Http.xml",
-        "lib/net7.0/Microsoft.Extensions.Http.dll",
-        "lib/net7.0/Microsoft.Extensions.Http.xml",
+        "lib/net461/Microsoft.Extensions.Http.dll",
+        "lib/net461/Microsoft.Extensions.Http.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Http.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Http.xml",
-        "microsoft.extensions.http.7.0.0.nupkg.sha512",
+        "microsoft.extensions.http.6.0.0.nupkg.sha512",
         "microsoft.extensions.http.nuspec",
         "useSharedDesignerContext.txt"
       ]
     },
-    "Microsoft.Extensions.Logging/7.0.0": {
-      "sha512": "Nw2muoNrOG5U5qa2ZekXwudUn2BJcD41e65zwmDHb1fQegTX66UokLWZkJRpqSSHXDOWZ5V0iqhbxOEky91atA==",
+    "Microsoft.Extensions.Logging/6.0.0": {
+      "sha512": "eIbyj40QDg1NDz0HBW0S5f3wrLVnKWnDJ/JtZ+yJDFnDj90VoPuoPmFkeaXrtu+0cKm5GRAwoDf+dBWXK0TUdg==",
       "type": "package",
-      "path": "microsoft.extensions.logging/7.0.0",
+      "path": "microsoft.extensions.logging/6.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
-        "buildTransitive/net461/Microsoft.Extensions.Logging.targets",
-        "buildTransitive/net462/_._",
-        "buildTransitive/net6.0/_._",
-        "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Logging.targets",
-        "lib/net462/Microsoft.Extensions.Logging.dll",
-        "lib/net462/Microsoft.Extensions.Logging.xml",
-        "lib/net6.0/Microsoft.Extensions.Logging.dll",
-        "lib/net6.0/Microsoft.Extensions.Logging.xml",
-        "lib/net7.0/Microsoft.Extensions.Logging.dll",
-        "lib/net7.0/Microsoft.Extensions.Logging.xml",
+        "lib/net461/Microsoft.Extensions.Logging.dll",
+        "lib/net461/Microsoft.Extensions.Logging.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Logging.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Logging.xml",
         "lib/netstandard2.1/Microsoft.Extensions.Logging.dll",
         "lib/netstandard2.1/Microsoft.Extensions.Logging.xml",
-        "microsoft.extensions.logging.7.0.0.nupkg.sha512",
+        "microsoft.extensions.logging.6.0.0.nupkg.sha512",
         "microsoft.extensions.logging.nuspec",
         "useSharedDesignerContext.txt"
       ]
     },
-    "Microsoft.Extensions.Logging.Abstractions/7.0.0": {
-      "sha512": "kmn78+LPVMOWeITUjIlfxUPDsI0R6G0RkeAMBmQxAJ7vBJn4q2dTva7pWi65ceN5vPGjJ9q/Uae2WKgvfktJAw==",
+    "Microsoft.Extensions.Logging.Abstractions/6.0.0": {
+      "sha512": "/HggWBbTwy8TgebGSX5DBZ24ndhzi93sHUBDvP1IxbZD7FDokYzdAr6+vbWGjw2XAfR2EJ1sfKUotpjHnFWPxA==",
       "type": "package",
-      "path": "microsoft.extensions.logging.abstractions/7.0.0",
+      "path": "microsoft.extensions.logging.abstractions/6.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3936,34 +3952,16 @@
         "analyzers/dotnet/roslyn4.0/cs/tr/Microsoft.Extensions.Logging.Generators.resources.dll",
         "analyzers/dotnet/roslyn4.0/cs/zh-Hans/Microsoft.Extensions.Logging.Generators.resources.dll",
         "analyzers/dotnet/roslyn4.0/cs/zh-Hant/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Logging.Generators.dll",
-        "analyzers/dotnet/roslyn4.4/cs/cs/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/de/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/es/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/fr/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/it/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/ja/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/ko/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/pl/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/pt-BR/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/ru/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/tr/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/zh-Hans/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "analyzers/dotnet/roslyn4.4/cs/zh-Hant/Microsoft.Extensions.Logging.Generators.resources.dll",
-        "buildTransitive/net461/Microsoft.Extensions.Logging.Abstractions.targets",
-        "buildTransitive/net462/Microsoft.Extensions.Logging.Abstractions.targets",
-        "buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets",
+        "build/Microsoft.Extensions.Logging.Abstractions.targets",
         "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Logging.Abstractions.targets",
-        "buildTransitive/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.targets",
-        "lib/net462/Microsoft.Extensions.Logging.Abstractions.dll",
-        "lib/net462/Microsoft.Extensions.Logging.Abstractions.xml",
+        "buildTransitive/netcoreapp3.1/_._",
+        "lib/net461/Microsoft.Extensions.Logging.Abstractions.dll",
+        "lib/net461/Microsoft.Extensions.Logging.Abstractions.xml",
         "lib/net6.0/Microsoft.Extensions.Logging.Abstractions.dll",
         "lib/net6.0/Microsoft.Extensions.Logging.Abstractions.xml",
-        "lib/net7.0/Microsoft.Extensions.Logging.Abstractions.dll",
-        "lib/net7.0/Microsoft.Extensions.Logging.Abstractions.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.xml",
-        "microsoft.extensions.logging.abstractions.7.0.0.nupkg.sha512",
+        "microsoft.extensions.logging.abstractions.6.0.0.nupkg.sha512",
         "microsoft.extensions.logging.abstractions.nuspec",
         "useSharedDesignerContext.txt"
       ]
@@ -3994,31 +3992,23 @@
         "microsoft.extensions.objectpool.nuspec"
       ]
     },
-    "Microsoft.Extensions.Options/7.0.0": {
-      "sha512": "lP1yBnTTU42cKpMozuafbvNtQ7QcBjr/CcK3bYOGEMH55Fjt+iecXjT6chR7vbgCMqy3PG3aNQSZgo/EuY/9qQ==",
+    "Microsoft.Extensions.Options/6.0.0": {
+      "sha512": "dzXN0+V1AyjOe2xcJ86Qbo233KHuLEY0njf/P2Kw8SfJU+d45HNS2ctJdnEnrWbM9Ye2eFgaC5Mj9otRMU6IsQ==",
       "type": "package",
-      "path": "microsoft.extensions.options/7.0.0",
+      "path": "microsoft.extensions.options/6.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
-        "buildTransitive/net461/Microsoft.Extensions.Options.targets",
-        "buildTransitive/net462/_._",
-        "buildTransitive/net6.0/_._",
-        "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Options.targets",
-        "lib/net462/Microsoft.Extensions.Options.dll",
-        "lib/net462/Microsoft.Extensions.Options.xml",
-        "lib/net6.0/Microsoft.Extensions.Options.dll",
-        "lib/net6.0/Microsoft.Extensions.Options.xml",
-        "lib/net7.0/Microsoft.Extensions.Options.dll",
-        "lib/net7.0/Microsoft.Extensions.Options.xml",
+        "lib/net461/Microsoft.Extensions.Options.dll",
+        "lib/net461/Microsoft.Extensions.Options.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Options.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Options.xml",
         "lib/netstandard2.1/Microsoft.Extensions.Options.dll",
         "lib/netstandard2.1/Microsoft.Extensions.Options.xml",
-        "microsoft.extensions.options.7.0.0.nupkg.sha512",
+        "microsoft.extensions.options.6.0.0.nupkg.sha512",
         "microsoft.extensions.options.nuspec",
         "useSharedDesignerContext.txt"
       ]
@@ -4036,29 +4026,27 @@
         "microsoft.extensions.options.configurationextensions.nuspec"
       ]
     },
-    "Microsoft.Extensions.Primitives/7.0.0": {
-      "sha512": "um1KU5kxcRp3CNuI8o/GrZtD4AIOXDk+RLsytjZ9QPok3ttLUelLKpilVPuaFT3TFjOhSibUAso0odbOaCDj3Q==",
+    "Microsoft.Extensions.Primitives/6.0.0": {
+      "sha512": "9+PnzmQFfEFNR9J2aDTfJGGupShHjOuGw4VUv+JB044biSHrnmCIMD+mJHmb2H7YryrfBEXDurxQ47gJZdCKNQ==",
       "type": "package",
-      "path": "microsoft.extensions.primitives/7.0.0",
+      "path": "microsoft.extensions.primitives/6.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
-        "buildTransitive/net461/Microsoft.Extensions.Primitives.targets",
-        "buildTransitive/net462/_._",
-        "buildTransitive/net6.0/_._",
         "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Primitives.targets",
-        "lib/net462/Microsoft.Extensions.Primitives.dll",
-        "lib/net462/Microsoft.Extensions.Primitives.xml",
+        "buildTransitive/netcoreapp3.1/_._",
+        "lib/net461/Microsoft.Extensions.Primitives.dll",
+        "lib/net461/Microsoft.Extensions.Primitives.xml",
         "lib/net6.0/Microsoft.Extensions.Primitives.dll",
         "lib/net6.0/Microsoft.Extensions.Primitives.xml",
-        "lib/net7.0/Microsoft.Extensions.Primitives.dll",
-        "lib/net7.0/Microsoft.Extensions.Primitives.xml",
+        "lib/netcoreapp3.1/Microsoft.Extensions.Primitives.dll",
+        "lib/netcoreapp3.1/Microsoft.Extensions.Primitives.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Primitives.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Primitives.xml",
-        "microsoft.extensions.primitives.7.0.0.nupkg.sha512",
+        "microsoft.extensions.primitives.6.0.0.nupkg.sha512",
         "microsoft.extensions.primitives.nuspec",
         "useSharedDesignerContext.txt"
       ]
@@ -4977,29 +4965,29 @@
         "system.diagnostics.debug.nuspec"
       ]
     },
-    "System.Diagnostics.DiagnosticSource/4.6.0": {
-      "sha512": "mbBgoR0rRfl2uimsZ2avZY8g7Xnh1Mza0rJZLPcxqiMWlkGukjmRkuMJ/er+AhQuiRIh80CR/Hpeztr80seV5g==",
+    "System.Diagnostics.DiagnosticSource/6.0.0": {
+      "sha512": "frQDfv0rl209cKm1lnwTgFPzNigy2EKk1BS3uAvHvlBVKe5cymGyHO+Sj+NLv5VF/AhHsqPIUUwya5oV4CHMUw==",
       "type": "package",
-      "path": "system.diagnostics.diagnosticsource/4.6.0",
+      "path": "system.diagnostics.diagnosticsource/6.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
+        "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
-        "lib/net45/System.Diagnostics.DiagnosticSource.dll",
-        "lib/net45/System.Diagnostics.DiagnosticSource.xml",
-        "lib/net46/System.Diagnostics.DiagnosticSource.dll",
-        "lib/net46/System.Diagnostics.DiagnosticSource.xml",
-        "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.dll",
-        "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.xml",
-        "lib/netstandard1.3/System.Diagnostics.DiagnosticSource.dll",
-        "lib/netstandard1.3/System.Diagnostics.DiagnosticSource.xml",
-        "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.dll",
-        "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.xml",
-        "system.diagnostics.diagnosticsource.4.6.0.nupkg.sha512",
+        "buildTransitive/netcoreapp2.0/System.Diagnostics.DiagnosticSource.targets",
+        "buildTransitive/netcoreapp3.1/_._",
+        "lib/net461/System.Diagnostics.DiagnosticSource.dll",
+        "lib/net461/System.Diagnostics.DiagnosticSource.xml",
+        "lib/net5.0/System.Diagnostics.DiagnosticSource.dll",
+        "lib/net5.0/System.Diagnostics.DiagnosticSource.xml",
+        "lib/net6.0/System.Diagnostics.DiagnosticSource.dll",
+        "lib/net6.0/System.Diagnostics.DiagnosticSource.xml",
+        "lib/netstandard2.0/System.Diagnostics.DiagnosticSource.dll",
+        "lib/netstandard2.0/System.Diagnostics.DiagnosticSource.xml",
+        "system.diagnostics.diagnosticsource.6.0.0.nupkg.sha512",
         "system.diagnostics.diagnosticsource.nuspec",
-        "useSharedDesignerContext.txt",
-        "version.txt"
+        "useSharedDesignerContext.txt"
       ]
     },
     "System.Diagnostics.Tools/4.3.0": {
@@ -8073,6 +8061,11 @@
         "windowsazure.storage.nuspec"
       ]
     },
+    "Opsi.Abstractions/1.0.0": {
+      "type": "project",
+      "path": "../Opsi.Abstractions/Opsi.Abstractions.csproj",
+      "msbuildProject": "../Opsi.Abstractions/Opsi.Abstractions.csproj"
+    },
     "Opsi.AzureStorage/1.0.0": {
       "type": "project",
       "path": "../Opsi.AzureStorage/Opsi.AzureStorage.csproj",
@@ -8083,15 +8076,35 @@
       "path": "../Opsi.Common/Opsi.Common.csproj",
       "msbuildProject": "../Opsi.Common/Opsi.Common.csproj"
     },
+    "Opsi.Constants/1.0.0": {
+      "type": "project",
+      "path": "../Opsi.Constants/Opsi.Constants.csproj",
+      "msbuildProject": "../Opsi.Constants/Opsi.Constants.csproj"
+    },
+    "Opsi.ErrorReporting.Services/1.0.0": {
+      "type": "project",
+      "path": "../Opsi.ErrorReporting.Services/Opsi.ErrorReporting.Services.csproj",
+      "msbuildProject": "../Opsi.ErrorReporting.Services/Opsi.ErrorReporting.Services.csproj"
+    },
+    "Opsi.Notifications.Abstractions/1.0.0": {
+      "type": "project",
+      "path": "../Opsi.Notifications.Abstractions/Opsi.Notifications.Abstractions.csproj",
+      "msbuildProject": "../Opsi.Notifications.Abstractions/Opsi.Notifications.Abstractions.csproj"
+    },
+    "Opsi.Notifications.SendGrid/1.0.0": {
+      "type": "project",
+      "path": "../Opsi.Notifications.SendGrid/Opsi.Notifications.SendGrid.csproj",
+      "msbuildProject": "../Opsi.Notifications.SendGrid/Opsi.Notifications.SendGrid.csproj"
+    },
     "Opsi.Pocos/1.0.0": {
       "type": "project",
       "path": "../Opsi.Pocos/Opsi.Pocos.csproj",
       "msbuildProject": "../Opsi.Pocos/Opsi.Pocos.csproj"
     },
-    "Opsi.TradosStudio/1.0.0": {
+    "Opsi.Services/1.0.0": {
       "type": "project",
-      "path": "../Opsi.TradosStudio/Opsi.TradosStudio.csproj",
-      "msbuildProject": "../Opsi.TradosStudio/Opsi.TradosStudio.csproj"
+      "path": "../Opsi.Services/Opsi.Services.csproj",
+      "msbuildProject": "../Opsi.Services/Opsi.Services.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -8103,8 +8116,11 @@
       "Microsoft.NET.Sdk.Functions >= 4.2.0",
       "Opsi.AzureStorage >= 1.0.0",
       "Opsi.Common >= 1.0.0",
+      "Opsi.ErrorReporting.Services >= 1.0.0",
+      "Opsi.Notifications.Abstractions >= 1.0.0",
+      "Opsi.Notifications.SendGrid >= 1.0.0",
       "Opsi.Pocos >= 1.0.0",
-      "Opsi.TradosStudio >= 1.0.0"
+      "Opsi.Services >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -8138,11 +8154,20 @@
             "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj": {
               "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj"
             },
+            "/Users/andrew/Projects/Opsi/Opsi.ErrorReporting.Services/Opsi.ErrorReporting.Services.csproj": {
+              "projectPath": "/Users/andrew/Projects/Opsi/Opsi.ErrorReporting.Services/Opsi.ErrorReporting.Services.csproj"
+            },
+            "/Users/andrew/Projects/Opsi/Opsi.Notifications.Abstractions/Opsi.Notifications.Abstractions.csproj": {
+              "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Notifications.Abstractions/Opsi.Notifications.Abstractions.csproj"
+            },
+            "/Users/andrew/Projects/Opsi/Opsi.Notifications.SendGrid/Opsi.Notifications.SendGrid.csproj": {
+              "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Notifications.SendGrid/Opsi.Notifications.SendGrid.csproj"
+            },
             "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj": {
               "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj"
             },
-            "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/Opsi.TradosStudio.csproj": {
-              "projectPath": "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/Opsi.TradosStudio.csproj"
+            "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.Services.csproj": {
+              "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Services/Opsi.Services.csproj"
             }
           }
         }

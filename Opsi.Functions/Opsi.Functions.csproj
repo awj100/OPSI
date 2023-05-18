@@ -11,10 +11,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="DiModules\" />
-    <None Remove="Constants\" />
-    <None Remove="Dependencies\" />
-    <None Remove="BaseFunctions\" />
     <None Remove="QueueHandlers\" />
   </ItemGroup>
   <ItemGroup>
@@ -30,21 +26,26 @@
     <ProjectReference Include="..\Opsi.Common\Opsi.Common.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
     </ProjectReference>
-    <ProjectReference Include="..\Opsi.TradosStudio\Opsi.TradosStudio.csproj">
-      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
-    </ProjectReference>
     <ProjectReference Include="..\Opsi.Pocos\Opsi.Pocos.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
     </ProjectReference>
     <ProjectReference Include="..\Opsi.AzureStorage\Opsi.AzureStorage.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
     </ProjectReference>
+    <ProjectReference Include="..\Opsi.Services\Opsi.Services.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
+    <ProjectReference Include="..\Opsi.Notifications.SendGrid\Opsi.Notifications.SendGrid.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
+    <ProjectReference Include="..\Opsi.Notifications.Abstractions\Opsi.Notifications.Abstractions.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
+    <ProjectReference Include="..\Opsi.ErrorReporting.Services\Opsi.ErrorReporting.Services.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="DiModules\" />
-    <Folder Include="Constants\" />
-    <Folder Include="Dependencies\" />
-    <Folder Include="BaseFunctions\" />
     <Folder Include="QueueHandlers\" />
   </ItemGroup>
 </Project>
