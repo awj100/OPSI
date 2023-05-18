@@ -7,25 +7,25 @@ using Opsi.Services.QueueHandlers;
 
 namespace Opsi.Functions2.QueueHandlers;
 
-public class ZippedQueueHandler
+public class ZippedHandler : FunctionBase
 {
     private readonly IErrorQueueService _errorQueueService;
     private readonly ILogger _logger;
     private readonly IZippedQueueHandler _zippedQueueHandler;
 
-    public ZippedQueueHandler(IZippedQueueHandler zippedQueueHandler,
-                              IErrorQueueService errorQueueService,
-                              ILoggerFactory loggerFactory)
+    public ZippedHandler(IZippedQueueHandler zippedQueueHandler,
+                         IErrorQueueService errorQueueService,
+                         ILoggerFactory loggerFactory)
     {
         _errorQueueService = errorQueueService;
-        _logger = loggerFactory.CreateLogger<ZippedQueueHandler>();
+        _logger = loggerFactory.CreateLogger<ZippedHandler>();
         _zippedQueueHandler = zippedQueueHandler;
     }
 
-    [Function(nameof(ZippedQueueHandler))]
-    public async Task Run([QueueTrigger($"manifests-{QueueHandlerNames.Zipped}", Connection = "AzureWebJobsStorage")] Manifest manifest)
+    [Function(nameof(ZippedHandler))]
+    public async Task Run([QueueTrigger($"manifests-{QueueHandlerNames.Zipped}", Connection = ConfigNameConnectionString)] Manifest manifest)
     {
-        _logger.LogInformation($"{nameof(ZippedQueueHandler)} triggered for \"{manifest.PackageName}\".");
+        _logger.LogInformation($"{nameof(ZippedHandler)} triggered for \"{manifest.PackageName}\".");
 
         try
         {

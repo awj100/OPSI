@@ -6,7 +6,7 @@ using Opsi.Pocos;
 
 namespace Opsi.Functions2;
 
-public class ErrorQueueHandler
+public class ErrorQueueHandler : FunctionBase
 {
     private readonly IErrorService _errorService;
     private readonly ILogger<ErrorQueueHandler> _logger;
@@ -18,7 +18,7 @@ public class ErrorQueueHandler
     }
 
     [Function(nameof(ErrorQueueHandler))]
-    public async Task Run([QueueTrigger(QueueNames.Error, Connection = "AzureWebJobsStorage")] Error error)
+    public async Task Run([QueueTrigger(QueueNames.Error, Connection = ConfigNameConnectionString)] Error error)
     {
         _logger.LogInformation($"{nameof(ErrorQueueHandler)} triggered by an exception in {error.Origin}.");
 

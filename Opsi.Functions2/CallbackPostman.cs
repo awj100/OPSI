@@ -5,7 +5,7 @@ using Opsi.Pocos;
 
 namespace Opsi.Functions2;
 
-public class CallbackPostman
+public class CallbackPostman : FunctionBase
 {
     private readonly ILogger _logger;
 
@@ -15,7 +15,7 @@ public class CallbackPostman
     }
 
     [Function(nameof(CallbackPostman))]
-    public void Run([QueueTrigger(QueueNames.Callback, Connection = "AzureWebJobsStorage")] CallbackMessage callbackMessage)
+    public void Run([QueueTrigger(QueueNames.Callback, Connection = ConfigNameConnectionString)] CallbackMessage callbackMessage)
     {
         _logger.LogInformation($"C# Queue trigger function processed: {callbackMessage.ProjectId} | \"{callbackMessage.Status}\".");
     }
