@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Headers;
+using Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage.TableEntities;
@@ -72,20 +73,18 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         }
     }
 
-    private async Task NotifyOfResourceStoragResponseAsync(Guid projectId, string filePath, HttpResponseMessage response)
+    private async Task NotifyOfResourceStorageResponseAsync(Guid projectId, string filePath, HttpResponseMessage response)
     {
         var callbackMessage = GetResourceStorageCallbackMessage(projectId, filePath, response);
 
         await _callbackQueueService.AddMessageAsync(callbackMessage);
     }
 
-    private async Task SendResourceForStoringAsync(string hostUrl, string filePath, IUnzipService unzipService, Guid projectId)
+    private async Task<HttpResponseMessage> SendResourceForStoringAsync(string hostUrl, string filePath, IUnzipService unzipService, Guid projectId)
     {
         const string mediaTypeHeaderValue = "application/octet-stream";
 
         var fileName = Path.GetFileName(filePath);
-
-        HttpResponseMessage response;
 
         using (var fileContentsStream = await unzipService.GetContentsAsync(filePath))
         {
@@ -103,14 +102,10 @@ internal class ZippedQueueHandler : IZippedQueueHandler
                     content.Add(streamContent, fileName);
 
                     var url = $"{hostUrl}/projects/{projectId}/resource/{filePath}";
-                    response = await httpClient.PostAsync(url, content);
-
-                    // Send callback.
+                    return await httpClient.PostAsync(url, content);
                 }
             }
         }
-
-        await NotifyOfResourceStoragResponseAsync(projectId, filePath, response);
     }
 
     private async Task SendResourcesForStoringAsync(IReadOnlyCollection<string> filePaths, IUnzipService unzipService, Guid projectId)
@@ -120,7 +115,9 @@ internal class ZippedQueueHandler : IZippedQueueHandler
 
         foreach (var filePath in filePaths)
         {
-            await SendResourceForStoringAsync(hostUrl, filePath, unzipService, projectId);
+            var response = await SendResourceForStoringAsync(hostUrl, filePath, unzipService, projectId);
+
+            await NotifyOfResourceStorageResponseAsync(projectId, filePath, response);
         }
     }
 
