@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Opsi.Common
+﻿namespace Opsi.Common
 {
     public static class Validate
     {

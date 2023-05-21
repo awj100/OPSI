@@ -4,10 +4,13 @@ using Opsi.Pocos;
 
 namespace Opsi.ErrorReporting.Services;
 
-public class ErrorEmailService : IErrorEmailService
+internal class ErrorEmailService : IErrorEmailService
 {
     private readonly IEmailNotificationService _emailNotificationService;
     private readonly ISettingsProvider _settingsProvider;
+
+    public static readonly string ConfigNameSubject = "email.error.subject";
+    public static readonly string ConfigNameToAddress = "email.error.toAddress";
 
     public ErrorEmailService(IEmailNotificationService emailNotificationService, ISettingsProvider settingsProvider)
     {
@@ -17,12 +20,14 @@ public class ErrorEmailService : IErrorEmailService
 
     public async Task SendAsync(Error error)
     {
-        const string configSubject = "email.error.subject";
-        const string configToAddress = "email.error.toAddress";
-
         var message = ConvertErrorToEmailMessage(error);
-        var subject = _settingsProvider.GetValue(configSubject);
-        var toAddress = _settingsProvider.GetValue(configToAddress);
+        if (String.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        var subject = _settingsProvider.GetValue(ConfigNameSubject);
+        var toAddress = _settingsProvider.GetValue(ConfigNameToAddress);
 
         await _emailNotificationService.SendAsync(subject, message, toAddress);
     }
@@ -49,14 +54,14 @@ public class ErrorEmailService : IErrorEmailService
 
     private static string? ConditionallyRenderMessage(Error error)
     {
-        return !String.IsNullOrWhiteSpace(error.StackTrace)
+        return !String.IsNullOrWhiteSpace(error.Message)
             ? $@"{Environment.NewLine}{Environment.NewLine}Message:{Environment.NewLine}{error.Message}"
             : null;
     }
 
     private static string? ConditionallyRenderOrigin(Error error)
     {
-        return !String.IsNullOrWhiteSpace(error.StackTrace)
+        return !String.IsNullOrWhiteSpace(error.Origin)
             ? $@"An error occurred in {error.Origin}"
             : null;
     }

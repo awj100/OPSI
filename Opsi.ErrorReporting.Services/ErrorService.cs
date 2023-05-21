@@ -6,7 +6,7 @@ namespace Opsi.ErrorReporting.Services;
 public class ErrorService : IErrorService
 {
     private readonly IErrorEmailService _emailService;
-    private readonly ILogger _log;
+    private readonly ILogger<ErrorService> _log;
     private readonly IErrorStorageService _storageService;
 
     public ErrorService(IErrorEmailService emailService,

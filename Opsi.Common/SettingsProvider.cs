@@ -22,10 +22,9 @@ public class SettingsProvider : ISettingsProvider
                          bool canBeNullOrEmpty = false,
                          [System.Runtime.CompilerServices.CallerMemberName] string callerName = "")
     {
-
         var val = Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
 
-        if (!canBeNullOrEmpty && string.IsNullOrWhiteSpace(val))
+        if (!canBeNullOrEmpty && String.IsNullOrWhiteSpace(val))
         {
             throw new Exception($"{callerName}: Missing configuration property (\"{name}\").");
         }
