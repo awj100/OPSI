@@ -12,11 +12,13 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.0.13" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage" Version="5.0.1" />
     <PackageReference Include="HttpMultipartParser" Version="8.1.0" />
+    <PackageReference Include="Functions.Worker.ContextAccessor" Version="2.0.0" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="QueueHandlers\" />
     <None Remove="FormHelpers\" />
     <None Remove="DiModules\" />
+    <None Remove="Middleware\" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
@@ -60,5 +62,6 @@
     <Folder Include="QueueHandlers\" />
     <Folder Include="FormHelpers\" />
     <Folder Include="DiModules\" />
+    <Folder Include="Middleware\" />
   </ItemGroup>
 </Project>

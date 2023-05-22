@@ -24,6 +24,7 @@ public static class ServicesDiModule
             .AddSingleton<IResourceService, ResourceService>()
             .AddSingleton<Func<Stream, IUnzipService>>(serviceProvider => stream => new UnzipService(stream))
             .AddSingleton<IUnzipServiceFactory, UnzipServiceFactory>()
+            .AddTransient<IUserProvider, UserProvider>()
             .AddSingleton<QueueHandlers.IZippedQueueHandler, QueueHandlers.ZippedQueueHandler>();
     }
 }
