@@ -9,8 +9,8 @@ internal class ErrorEmailService : IErrorEmailService
     private readonly IEmailNotificationService _emailNotificationService;
     private readonly ISettingsProvider _settingsProvider;
 
-    public static readonly string ConfigNameSubject = "email.error.subject";
-    public static readonly string ConfigNameToAddress = "email.error.toAddress";
+    public static readonly string ConfigNameSubject = "emailNotifications.error.subject";
+    public static readonly string ConfigNameToAddress = "emailNotifications.error.recipientEmail";
 
     public ErrorEmailService(IEmailNotificationService emailNotificationService, ISettingsProvider settingsProvider)
     {

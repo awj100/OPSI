@@ -19,6 +19,7 @@
     <None Remove="FormHelpers\" />
     <None Remove="DiModules\" />
     <None Remove="Middleware\" />
+    <None Remove="Extensions\" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
@@ -63,5 +64,6 @@
     <Folder Include="FormHelpers\" />
     <Folder Include="DiModules\" />
     <Folder Include="Middleware\" />
+    <Folder Include="Extensions\" />
   </ItemGroup>
 </Project>
