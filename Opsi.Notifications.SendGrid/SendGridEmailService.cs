@@ -10,7 +10,7 @@ internal class SendGridEmailService : IEmailNotificationService
 {
     private readonly string _fromEmail;
     private readonly string _fromName;
-    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger<SendGridEmailService> _log;
     private readonly ISendGridClient _sendGridClient;
 
     public SendGridEmailService(ISendGridClient sendGridClient,
@@ -22,7 +22,7 @@ internal class SendGridEmailService : IEmailNotificationService
 
         _fromEmail = configuration[configFromEmail];
         _fromName = configuration[configFromName];
-        _loggerFactory = loggerFactory;
+        _log = loggerFactory.CreateLogger<SendGridEmailService>();
         _sendGridClient = sendGridClient;
     }
 
@@ -39,10 +39,10 @@ internal class SendGridEmailService : IEmailNotificationService
 
         if (response.IsSuccessStatusCode)
         {
+            _log.LogInformation($"Error email notification sent to {toAddress} via SendGrid. The response was \"{response.StatusCode}\".");
             return;
         }
 
-        var log = _loggerFactory.CreateLogger<SendGridEmailService>();
-        log.LogCritical($"Unable to send email notification via SendGrid. The response was {response.StatusCode}.");
+        _log.LogCritical($"Unable to send email notification via SendGrid. The response was {response.StatusCode}.");
     }
 }

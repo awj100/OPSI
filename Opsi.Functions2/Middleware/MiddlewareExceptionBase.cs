@@ -18,6 +18,16 @@ internal abstract class MiddlewareExceptionHandlingBase
     {
         try
         {
+            if (exception is AggregateException aggregateException)
+            {
+                foreach(var aggregatedException in aggregateException.InnerExceptions)
+                {
+                    await _errorQueueService.ReportAsync(aggregatedException);
+                }
+
+                return;
+            }
+
             await _errorQueueService.ReportAsync(exception);
         }
         catch (Exception errorQueueException)

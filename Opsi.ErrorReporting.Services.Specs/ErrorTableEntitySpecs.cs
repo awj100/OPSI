@@ -36,6 +36,37 @@ public class ErrorTableEntitySpecs
         Guid.TryParse(errorEntity.RowKey, out var _).Should().BeTrue();
     }
 
+    [TestMethod]
+    public void ctor_WhenSettingRowKeyWithNonGuidFormattedString_ThrowsArgumentException()
+    {
+        var error = GetPopulatedError();
+
+        var errorEntity = new ErrorTableEntity(error);
+
+        try
+        {
+            errorEntity.RowKey = "a plain string";
+        }
+        catch(ArgumentException)
+        {
+            return;
+        }
+
+        Assert.Fail("RowKey accepted a string which wasn't formatted as a GUID.");
+    }
+
+    [TestMethod]
+    public void ctor_WhenSettingRowKeyWithGuidFormattedString_ThrowsNoException()
+    {
+        var newRowKey = Guid.NewGuid().ToString();
+
+        var error = GetPopulatedError();
+
+        var errorEntity = new ErrorTableEntity(error) { RowKey = newRowKey };
+
+        errorEntity.RowKey.Should().Be(newRowKey);
+    }
+
     private static Error GetPopulatedError()
     {
         var error = new Error();

@@ -17,5 +17,18 @@ public class ErrorStorageService : TableServiceBase, IErrorStorageService
         var errorTableEntity = new ErrorTableEntity(error);
 
         await StoreTableEntityAsync(errorTableEntity);
+
+        string? parentRowKey = errorTableEntity.RowKey;
+        Error innerError = error.InnerError;
+
+        while (innerError != null)
+        {
+            var innerErrorTableEntity = new ErrorTableEntity(innerError) { ParentRowKey = parentRowKey };
+
+            await StoreTableEntityAsync(innerErrorTableEntity);
+
+            innerError = innerError.InnerError;
+            parentRowKey = innerErrorTableEntity.RowKey;
+        }
     }
 }
