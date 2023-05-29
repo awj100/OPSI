@@ -6,20 +6,18 @@ internal class UserProvider : IUserProvider
 {
     private const string ItemNameUsername = "Username";
 
-    private readonly IErrorQueueService _errorQueueService;
     private readonly IFunctionContextAccessor _functionContextAccessor;
 
-    public UserProvider(IFunctionContextAccessor accessor, IErrorQueueService errorQueueService)
+    public UserProvider(IFunctionContextAccessor accessor)
     {
         _functionContextAccessor = accessor;
-        _errorQueueService = errorQueueService;
     }
 
-    public async Task<string?> GetUsernameAsync()
+    public string? GetUsername()
     {
         if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameUsername))
         {
-            await _errorQueueService.ReportAsync(new Exception($"\"{ItemNameUsername}\" has not been configured by the middleware."));
+            return null;
         }
 
         return _functionContextAccessor.FunctionContext.Items[ItemNameUsername]?.ToString();

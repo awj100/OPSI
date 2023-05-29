@@ -2,5 +2,5 @@
 
 public interface IUserProvider
 {
-    Task<string?> GetUsernameAsync();
+    string? GetUsername();
 }

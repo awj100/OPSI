@@ -1,6 +1,9 @@
-﻿using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+﻿using System.Runtime.CompilerServices;
+using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Opsi.Services.QueueHandlers.Dependencies;
+
+[assembly: InternalsVisibleTo("Opsi.Services.Specs")]
 
 namespace Opsi.Services.DiModules;
 
