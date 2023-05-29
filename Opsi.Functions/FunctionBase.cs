@@ -1,4 +1,4 @@
-﻿namespace Opsi.Functions2;
+﻿namespace Opsi.Functions;
 
 public abstract class FunctionBase
 {

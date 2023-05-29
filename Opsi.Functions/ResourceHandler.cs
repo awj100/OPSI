@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage.Types;
 using Opsi.Services;
 
-namespace Opsi.Functions2;
+namespace Opsi.Functions;
 
 public class ResourceHandler
 {

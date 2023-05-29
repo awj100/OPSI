@@ -1,6 +1,6 @@
 ﻿using Opsi.Abstractions;
 
-namespace Opsi.Functions2.FormHelpers;
+namespace Opsi.Functions.FormHelpers;
 
 public interface IMultipartFormDataParser
 {

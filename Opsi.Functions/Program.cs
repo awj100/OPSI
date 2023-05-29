@@ -2,9 +2,9 @@
 using Microsoft.Extensions.Hosting;
 using Opsi.AzureStorage.DiModules;
 using Opsi.ErrorReporting.Services.DiModules;
-using Opsi.Functions2.DiModules;
-using Opsi.Functions2.Extensions;
-using Opsi.Functions2.Middleware;
+using Opsi.Functions.DiModules;
+using Opsi.Functions.Extensions;
+using Opsi.Functions.Middleware;
 using Opsi.Notifications.SendGrid.DiModules;
 using Opsi.Services.DiModules;
 

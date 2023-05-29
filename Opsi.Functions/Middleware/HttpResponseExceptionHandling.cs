@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Opsi.Services;
 
-namespace Opsi.Functions2.Middleware;
+namespace Opsi.Functions.Middleware;
 
 internal sealed class HttpResponseExceptionHandling : MiddlewareExceptionHandlingBase, IFunctionsWorkerMiddleware
 {

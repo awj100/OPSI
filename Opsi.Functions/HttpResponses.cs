@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using Microsoft.Azure.Functions.Worker.Http;
 
-namespace Opsi.Functions2;
+namespace Opsi.Functions;
 
 public static class HttpResponses
 {

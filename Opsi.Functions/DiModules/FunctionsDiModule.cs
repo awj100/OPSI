@@ -1,8 +1,8 @@
 ﻿using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
-using Opsi.Functions2.FormHelpers;
+using Opsi.Functions.FormHelpers;
 
-namespace Opsi.Functions2.DiModules;
+namespace Opsi.Functions.DiModules;
 
 public static class FunctionsDiModule
 {

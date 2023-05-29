@@ -4,7 +4,7 @@ using Opsi.Constants;
 using Opsi.ErrorReporting.Services;
 using Opsi.Pocos;
 
-namespace Opsi.Functions2;
+namespace Opsi.Functions;
 
 public class ErrorQueueHandler : FunctionBase
 {

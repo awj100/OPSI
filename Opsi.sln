@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.Constants", "Opsi.Cons
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.ErrorReporting.Services", "Opsi.ErrorReporting.Services\Opsi.ErrorReporting.Services.csproj", "{069741BB-EBC8-4FEF-843C-D8F065A5D65C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.Functions2", "Opsi.Functions2\Opsi.Functions2.csproj", "{E35E1257-8F67-4583-ADB8-45E60AE1E80F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.Functions", "Opsi.Functions\Opsi.Functions.csproj", "{E35E1257-8F67-4583-ADB8-45E60AE1E80F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.Abstractions", "Opsi.Abstractions\Opsi.Abstractions.csproj", "{00C1884C-7DB0-43A3-B1AE-2A9022B6B896}"
 EndProject

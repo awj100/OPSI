@@ -2,7 +2,7 @@
 using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Opsi.Functions2.Extensions;
+namespace Opsi.Functions.Extensions;
 
 public static class FunctionContextExtensions
 {

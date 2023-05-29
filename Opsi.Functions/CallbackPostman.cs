@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Opsi.Constants;
 using Opsi.Pocos;
 
-namespace Opsi.Functions2;
+namespace Opsi.Functions;
 
 public class CallbackPostman : FunctionBase
 {

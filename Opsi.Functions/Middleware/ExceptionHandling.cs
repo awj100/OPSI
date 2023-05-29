@@ -3,7 +3,7 @@ using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.Logging;
 using Opsi.Services;
 
-namespace Opsi.Functions2.Middleware;
+namespace Opsi.Functions.Middleware;
 
 internal class ExceptionHandling : MiddlewareExceptionHandlingBase, IFunctionsWorkerMiddleware
 {

@@ -2,10 +2,10 @@
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Opsi.Common.Exceptions;
-using Opsi.Functions2.FormHelpers;
+using Opsi.Functions.FormHelpers;
 using Opsi.Services;
 
-namespace Opsi.Functions2;
+namespace Opsi.Functions;
 
 public class ProjectUploadHandler
 {
