@@ -15,11 +15,11 @@ internal class ResourceService : IResourceService
     public ResourceService(AzureStorage.IResourcesService resourcesService,
                            AzureStorage.IBlobService blobService,
                            ICallbackQueueService callbackQueueService,
-                           ILogger<ResourceService> log)
+                           ILoggerFactory loggerFactory)
     {
         _blobService = blobService;
         _callbackQueueService = callbackQueueService;
-        _log = log;
+        _log = loggerFactory.CreateLogger<ResourceService>();
         _resourcesService = resourcesService;
     }
 
@@ -86,9 +86,9 @@ internal class ResourceService : IResourceService
             {
             }
 
-            const string errorPackage = "An error was encountered while recording the resource.";
-            _log.LogError(errorPackage, ex);
-            throw new Exception(errorPackage);
+            const string errorMessage = "An error was encountered while recording the resource.";
+            _log.LogError(errorMessage, ex);
+            throw new Exception(errorMessage);
         }
     }
 

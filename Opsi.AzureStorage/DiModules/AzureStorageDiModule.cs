@@ -1,5 +1,8 @@
-﻿using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+﻿using System.Runtime.CompilerServices;
+using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
+
+[assembly: InternalsVisibleTo("Opsi.Services.Specs")]
 
 namespace Opsi.AzureStorage.DiModules;
 
