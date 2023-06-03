@@ -6,13 +6,15 @@ using Opsi.Common.Exceptions;
 
 namespace Opsi.AzureStorage;
 
-internal class ResourcesService : TableServiceBase, IResourcesService
+internal class ResourcesService : IResourcesService
 {
     private const int StringComparisonMatch = 0;
     private const string TableName = "resources";
+    private readonly ITableService _tableService;
 
-    public ResourcesService(ISettingsProvider settingsProvider) : base(settingsProvider, TableName)
+    public ResourcesService(ISettingsProvider settingsProvider, ITableServiceFactory tableServiceFactory)
     {
+        _tableService = tableServiceFactory.Create(TableName);
     }
 
     public async Task DeleteResourceAsync(ResourceStorageInfo resourceStorageInfo)
@@ -27,14 +29,14 @@ internal class ResourcesService : TableServiceBase, IResourcesService
 
     public async Task DeleteResourceAsync(Guid projectId, string fullName)
     {
-        await DeleteTableEntityAsync(projectId.ToString(), fullName);
+        await _tableService.DeleteTableEntityAsync(projectId.ToString(), fullName);
     }
 
     public async Task<VersionInfo> GetCurrentVersionInfo(Guid projectId, string fullName)
     {
         var key = projectId.ToString();
         var resources = new List<Resource>();
-        var tableClient = GetTableClient();
+        var tableClient = _tableService.GetTableClient();
 
         var pageableResources = tableClient.QueryAsync<Resource>(resource => resource.PartitionKey == projectId.ToString()
                                                                              && String.Compare(resource.FullName, fullName, StringComparison.OrdinalIgnoreCase) == StringComparisonMatch);
@@ -53,7 +55,7 @@ internal class ResourcesService : TableServiceBase, IResourcesService
 
     public async Task LockResourceToUser(Guid projectId, string fullName, string username)
     {
-        var tableClient = GetTableClient();
+        var tableClient = _tableService.GetTableClient();
 
         var latestResource = await GetResourceForLockOrUnlockAsync(tableClient, projectId, fullName);
 
@@ -77,7 +79,7 @@ internal class ResourcesService : TableServiceBase, IResourcesService
         var key = projectId.ToString();
         var resources = new List<Resource>();
 
-        var tableClient = GetTableClient();
+        var tableClient = _tableService.GetTableClient();
         var pageableResources = tableClient.QueryAsync<Resource>(x => x.PartitionKey == projectId.ToString());
 
         await foreach (var resource in pageableResources)
@@ -100,12 +102,12 @@ internal class ResourcesService : TableServiceBase, IResourcesService
             VersionIndex = resourceStorageInfo.VersionInfo.Index
         };
 
-        await StoreTableEntityAsync(resource);
+        await _tableService.StoreTableEntityAsync(resource);
     }
 
     public async Task UnlockResource(Guid projectId, string fullName)
     {
-        var tableClient = GetTableClient();
+        var tableClient = _tableService.GetTableClient();
 
         var latestResource = await GetResourceForLockOrUnlockAsync(tableClient, projectId, fullName);
 
@@ -126,7 +128,7 @@ internal class ResourcesService : TableServiceBase, IResourcesService
 
     public async Task UnlockResourceFromUser(Guid projectId, string fullName, string username)
     {
-        var tableClient = GetTableClient();
+        var tableClient = _tableService.GetTableClient();
 
         var latestResource = await GetResourceForLockOrUnlockAsync(tableClient, projectId, fullName);
 

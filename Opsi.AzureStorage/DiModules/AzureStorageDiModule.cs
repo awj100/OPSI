@@ -16,14 +16,21 @@ public static class AzureStorageDiModule
     public static void Configure(IServiceCollection services)
     {
         services
+            .AddSingleton<IBlobService, BlobService>()
             .AddSingleton<Common.ISettingsProvider, Common.SettingsProvider>()
             .AddSingleton<Func<string, IQueueService>>(provider => queueName =>
             {
                 var settingsProvider = provider.GetRequiredService<Common.ISettingsProvider>();
                 return new QueueService(settingsProvider, queueName);
             })
+            .AddSingleton<Func<string, ITableService>>(provider => tableName =>
+            {
+                var settingsProvider = provider.GetRequiredService<Common.ISettingsProvider>();
+                return new TableService(settingsProvider, tableName);
+            })
             .AddSingleton<IQueueServiceFactory, QueueServiceFactory>()
             .AddSingleton<IResourcesService, ResourcesService>()
-            .AddSingleton<IBlobService, BlobService>();
+            .AddSingleton<ITableService, TableService>()
+            .AddSingleton<ITableServiceFactory, TableServiceFactory>();
     }
 }

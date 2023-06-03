@@ -1,22 +1,23 @@
 ﻿using Opsi.AzureStorage;
-using Opsi.Common;
 using Opsi.Pocos;
 
 namespace Opsi.ErrorReporting.Services;
 
-public class ErrorStorageService : TableServiceBase, IErrorStorageService
+public class ErrorStorageService : IErrorStorageService
 {
     private const string TableName = "errors";
+    private ITableService _tableService;
 
-    public ErrorStorageService(ISettingsProvider settingsProvider) : base(settingsProvider, TableName)
+    public ErrorStorageService(ITableServiceFactory tableServiceFactory)
     {
+        _tableService = tableServiceFactory.Create(TableName);
     }
 
     public async Task StoreAsync(Error error)
     {
         var errorTableEntity = new ErrorTableEntity(error);
 
-        await StoreTableEntityAsync(errorTableEntity);
+        await _tableService.StoreTableEntityAsync(errorTableEntity);
 
         string? parentRowKey = errorTableEntity.RowKey;
         Error innerError = error.InnerError;
@@ -25,7 +26,7 @@ public class ErrorStorageService : TableServiceBase, IErrorStorageService
         {
             var innerErrorTableEntity = new ErrorTableEntity(innerError) { ParentRowKey = parentRowKey };
 
-            await StoreTableEntityAsync(innerErrorTableEntity);
+            await _tableService.StoreTableEntityAsync(innerErrorTableEntity);
 
             innerError = innerError.InnerError;
             parentRowKey = innerErrorTableEntity.RowKey;

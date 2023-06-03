@@ -3,16 +3,16 @@ using Opsi.Common;
 
 namespace Opsi.AzureStorage;
 
-public abstract class TableServiceBase : StorageServiceBase
+internal class TableService : StorageServiceBase, ITableService
 {
-    private readonly string _tableName;
+    public string TableName { get; }
 
-    public TableServiceBase(ISettingsProvider settingsProvider, string tableName) : base(settingsProvider)
+    public TableService(ISettingsProvider settingsProvider, string tableName) : base(settingsProvider)
     {
-        _tableName = tableName;
+        TableName = tableName;
     }
 
-    protected virtual async Task DeleteTableEntityAsync(string partitionKey, string rowKey)
+    public async Task DeleteTableEntityAsync(string partitionKey, string rowKey)
     {
         var tableClient = GetTableClient();
 
@@ -21,13 +21,13 @@ public abstract class TableServiceBase : StorageServiceBase
         await tableClient.DeleteEntityAsync(partitionKey, rowKey);
     }
 
-    protected virtual TableClient GetTableClient()
+    public TableClient GetTableClient()
     {
         var tableServiceClient = new TableServiceClient(StorageConnectionString.Value);
-        return tableServiceClient.GetTableClient(_tableName);
+        return tableServiceClient.GetTableClient(TableName);
     }
 
-    protected virtual async Task StoreTableEntityAsync(ITableEntity tableEntity)
+    public async Task StoreTableEntityAsync(ITableEntity tableEntity)
     {
         var tableClient = GetTableClient();
 

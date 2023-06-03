@@ -22,7 +22,6 @@ public class ResourceServiceSpecs
 
     private IBlobService _blobService;
     private ICallbackQueueService _callbackQueueService;
-    private ILogger<ResourceService> _logger;
     private ILoggerFactory _loggerFactory;
     private IResourcesService _resourcesService;
     private ResourceStorageInfo _resourceStorageInfo;

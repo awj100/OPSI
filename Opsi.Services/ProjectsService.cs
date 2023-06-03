@@ -1,23 +1,24 @@
 ﻿using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
-using Opsi.Common;
 using Opsi.Pocos;
 
 namespace Opsi.Services;
 
-public class ProjectsService : TableServiceBase, IProjectsService
+public class ProjectsService : IProjectsService
 {
     private const string TableName = "projects";
     private readonly ICallbackQueueService _callbackQueueService;
+    private readonly ITableService _tableService;
 
-    public ProjectsService(ISettingsProvider settingsProvider, ICallbackQueueService callbackQueueService) : base(settingsProvider, TableName)
+    public ProjectsService(ITableServiceFactory tableServiceFactory, ICallbackQueueService callbackQueueService)
     {
         _callbackQueueService = callbackQueueService;
+        _tableService = tableServiceFactory.Create(TableName);
     }
 
     public async Task<string?> GetCallbackUriAsync(Guid projectId)
     {
-        var tableClient = GetTableClient();
+        var tableClient = _tableService.GetTableClient();
 
         var results = tableClient.QueryAsync<Project>(project => project.Id == projectId);
 
@@ -31,7 +32,7 @@ public class ProjectsService : TableServiceBase, IProjectsService
 
     public async Task<bool> IsNewProjectAsync(Guid projectId)
     {
-        var tableClient = GetTableClient();
+        var tableClient = _tableService.GetTableClient();
 
         var results = tableClient.QueryAsync<Project>(project => project.Id == projectId);
 
@@ -45,7 +46,7 @@ public class ProjectsService : TableServiceBase, IProjectsService
 
     public async Task StoreProjectAsync(Project project)
     {
-        await StoreTableEntityAsync(project);
+        await _tableService.StoreTableEntityAsync(project);
 
         await QueueCallbackMessageAsync(project.Id);
     }
