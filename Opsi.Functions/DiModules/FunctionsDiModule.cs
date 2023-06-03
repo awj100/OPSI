@@ -1,6 +1,9 @@
-﻿using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+﻿using System.Runtime.CompilerServices;
+using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Opsi.Functions.FormHelpers;
+
+[assembly: InternalsVisibleTo("Opsi.Services.Specs")]
 
 namespace Opsi.Functions.DiModules;
 

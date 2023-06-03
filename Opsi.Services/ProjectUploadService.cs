@@ -14,6 +14,8 @@ internal class ProjectUploadService : IProjectUploadService
     private readonly IManifestService _manifestService;
     private readonly IQueueServiceFactory _queueServiceFactory;
 
+    public int RequiredNumberOfUploadedObjects => 2;
+
     public ProjectUploadService(IManifestService manifestService,
                                 ICallbackQueueService callbackQueueService,
                                 IQueueServiceFactory queueServiceFactory,
@@ -78,6 +80,11 @@ internal class ProjectUploadService : IProjectUploadService
         }
     }
 
+    private bool IsCorrectNumberOfUploads(IFormFileCollection formFiles)
+    {
+        return formFiles.Count == RequiredNumberOfUploadedObjects;
+    }
+
     private async Task QueueCallbackMessageAsync(Manifest manifest)
     {
         try
@@ -135,12 +142,5 @@ internal class ProjectUploadService : IProjectUploadService
         }
 
         throw new BadRequestException("No package was uploaded.");
-    }
-
-    private static bool IsCorrectNumberOfUploads(IFormFileCollection formFiles)
-    {
-        const int expectedNumberOfUploads = 2;
-
-        return formFiles.Count == expectedNumberOfUploads;
     }
 }

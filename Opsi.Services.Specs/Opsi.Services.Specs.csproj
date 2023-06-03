@@ -19,5 +19,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Opsi.Services\Opsi.Services.csproj" />
+    <ProjectReference Include="..\Opsi.Abstractions\Opsi.Abstractions.csproj" />
+    <ProjectReference Include="..\Opsi.Common\Opsi.Common.csproj" />
+    <ProjectReference Include="..\Opsi.Pocos\Opsi.Pocos.csproj" />
+    <ProjectReference Include="..\Opsi.Functions\Opsi.Functions.csproj" />
   </ItemGroup>
 </Project>
