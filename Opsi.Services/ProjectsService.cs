@@ -15,7 +15,7 @@ public class ProjectsService : TableServiceBase, IProjectsService
         _callbackQueueService = callbackQueueService;
     }
 
-    public async Task<string?> GetCallbackUri(Guid projectId)
+    public async Task<string?> GetCallbackUriAsync(Guid projectId)
     {
         var tableClient = GetTableClient();
 

@@ -4,7 +4,7 @@ namespace Opsi.Services;
 
 public interface IProjectsService
 {
-    Task<string?> GetCallbackUri(Guid projectId);
+    Task<string?> GetCallbackUriAsync(Guid projectId);
 
     Task<bool> IsNewProjectAsync(Guid projectId);
 
