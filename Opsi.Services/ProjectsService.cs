@@ -6,47 +6,32 @@ namespace Opsi.Services;
 
 public class ProjectsService : IProjectsService
 {
-    private const string TableName = "projects";
     private readonly ICallbackQueueService _callbackQueueService;
-    private readonly ITableService _tableService;
+    private readonly IProjectsTableService _projectsTableService;
 
-    public ProjectsService(ITableServiceFactory tableServiceFactory, ICallbackQueueService callbackQueueService)
+    public ProjectsService(IProjectsTableService projectsTableService, ICallbackQueueService callbackQueueService)
     {
         _callbackQueueService = callbackQueueService;
-        _tableService = tableServiceFactory.Create(TableName);
+        _projectsTableService = projectsTableService;
     }
 
     public async Task<string?> GetCallbackUriAsync(Guid projectId)
     {
-        var tableClient = _tableService.GetTableClient();
+        var project = await _projectsTableService.GetProjectByIdAsync(projectId);
 
-        var results = tableClient.QueryAsync<Project>(project => project.Id == projectId);
-
-        await foreach (var result in results)
-        {
-            return result.CallbackUri;
-        }
-
-        return null;
+        return project?.CallbackUri;
     }
 
     public async Task<bool> IsNewProjectAsync(Guid projectId)
     {
-        var tableClient = _tableService.GetTableClient();
+        var project = await _projectsTableService.GetProjectByIdAsync(projectId);
 
-        var results = tableClient.QueryAsync<Project>(project => project.Id == projectId);
-
-        await foreach (var result in results)
-        {
-            return false;
-        }
-
-        return true;
+        return project != null;
     }
 
     public async Task StoreProjectAsync(Project project)
     {
-        await _tableService.StoreTableEntityAsync(project);
+        await _projectsTableService.StoreProjectAsync(project);
 
         await QueueCallbackMessageAsync(project.Id);
     }

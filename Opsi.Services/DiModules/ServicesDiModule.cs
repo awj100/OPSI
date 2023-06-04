@@ -23,6 +23,7 @@ public static class ServicesDiModule
             .AddSingleton<IErrorQueueService, ErrorQueueService>()
             .AddSingleton<IManifestService, ManifestService>()
             .AddSingleton<IProjectsService, ProjectsService>()
+            .AddSingleton<IProjectsTableService, ProjectsTableService>()
             .AddSingleton<IProjectUploadService, ProjectUploadService>()
             .AddSingleton<IResourceService, ResourceService>()
             .AddSingleton<Func<Stream, IUnzipService>>(serviceProvider => stream => new UnzipService(stream))
