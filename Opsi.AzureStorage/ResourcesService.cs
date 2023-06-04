@@ -12,7 +12,7 @@ internal class ResourcesService : IResourcesService
     private const string TableName = "resources";
     private readonly ITableService _tableService;
 
-    public ResourcesService(ISettingsProvider settingsProvider, ITableServiceFactory tableServiceFactory)
+    public ResourcesService(ITableServiceFactory tableServiceFactory)
     {
         _tableService = tableServiceFactory.Create(TableName);
     }
