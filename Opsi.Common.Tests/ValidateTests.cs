@@ -10,7 +10,9 @@ namespace Opsi.Common.Tests
         {
             string? value = null;
 
+#pragma warning disable CS8604 // Possible null reference argument.
             Action validationAction = () => Validate.NotNullOrWhitespace(value);
+#pragma warning restore CS8604 // Possible null reference argument.
 
             validationAction.Should().Throw<ArgumentException>();
         }

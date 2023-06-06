@@ -49,8 +49,9 @@ public class ProjectsTableServiceSpecs
 
         var result = await _testee.GetProjectByIdAsync(_project.Id);
 
-        result.Should().NotBeNull();
-        result.Id.ToString().Should().BeEquivalentTo(_project.Id.ToString());
+        result.Should()
+            .NotBeNull()
+            .And.Match<Project>(m => m.Id.ToString().Equals(_project.Id.ToString()));
     }
 
     [TestMethod]

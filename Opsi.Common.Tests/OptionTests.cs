@@ -24,7 +24,9 @@ namespace Opsi.Common.Tests
         [TestMethod]
         public void IsSome_OptionWithSomeNull_ExceptionWillBeThrown()
         {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             this.Invoking(x => Option<string>.Some(null)).Should().Throw<ArgumentNullException>();
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
         [TestMethod]

@@ -21,8 +21,8 @@ internal class UnzipService : IUnzipService
 
         return archive.Entries
             .Where(entry => !entry.FullName.StartsWith(macOsPrefix)
-            && !entry.FullName.EndsWith(macOsSuffix)
-            && !entry.FullName.EndsWith("/"))
+                            && !entry.FullName.EndsWith(macOsSuffix)
+                            && !entry.FullName.EndsWith("/"))
             .Select(entry => entry.FullName).ToList();
     }
 
@@ -32,7 +32,7 @@ internal class UnzipService : IUnzipService
 
         var entryStream = new MemoryStream();
 
-        ZipArchiveEntry entry = archive.GetEntry(fullName);
+        ZipArchiveEntry? entry = archive.GetEntry(fullName);
         if (entry == null)
         {
             return null;
