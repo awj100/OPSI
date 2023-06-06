@@ -15,9 +15,15 @@ internal class ProjectsTableService : IProjectsTableService
 
     public async Task<Project?> GetProjectByIdAsync(Guid projectId)
     {
+        const int maxResultsPerPage = 1;
+        IEnumerable<string>? selectProps = null;
+
         var tableClient = _projectsTableService.GetTableClient();
 
-        var results = tableClient.QueryAsync<Project>(project => project.Id == projectId);
+        var results = tableClient.QueryAsync<Project>($"{nameof(Project.Id)} eq guid'{projectId}'",
+                                                      maxResultsPerPage,
+                                                      selectProps,
+                                                      CancellationToken.None);
 
         await foreach (var result in results)
         {
