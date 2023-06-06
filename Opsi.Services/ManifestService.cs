@@ -16,7 +16,7 @@ internal class ManifestService : IManifestService
 
     public async Task<Manifest> GetManifestAsync(IFormFileCollection formFiles)
     {
-        var jsonString = string.Empty;
+        var jsonString = String.Empty;
 
         if (!formFiles.TryGetValue(ManifestName, out var fileStream))
         {
