@@ -7,7 +7,7 @@ namespace Opsi.Services;
 
 internal class ErrorQueueService : IErrorQueueService
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<ErrorQueueService> _logger;
     private readonly IQueueService _queueService;
 
     public ErrorQueueService(ILoggerFactory loggerFactory, IQueueServiceFactory queueServiceFactory)
