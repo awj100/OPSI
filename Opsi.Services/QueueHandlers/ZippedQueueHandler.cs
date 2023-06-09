@@ -11,7 +11,7 @@ namespace Opsi.Services.QueueHandlers;
 internal class ZippedQueueHandler : IZippedQueueHandler
 {
     private readonly AzureStorage.IBlobService _blobService;
-    private readonly AzureStorage.IQueueService _callbackQueueService;
+    private readonly ICallbackQueueService _callbackQueueService;
     private readonly IConfiguration _configuration;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger _log;
@@ -20,14 +20,14 @@ internal class ZippedQueueHandler : IZippedQueueHandler
 
     public ZippedQueueHandler(IConfiguration configuration,
                               IProjectsService projectsService,
-                              AzureStorage.IQueueServiceFactory queueServiceFactory,
+                              ICallbackQueueService callbackQueueService,
                               AzureStorage.IBlobService blobService,
                               IUnzipServiceFactory unzipServiceFactory,
                               IHttpClientFactory httpClientFactory,
                               ILoggerFactory loggerFactory)
     {
         _blobService = blobService;
-        _callbackQueueService = queueServiceFactory.Create(Constants.QueueNames.Callback);
+        _callbackQueueService = callbackQueueService;
         _configuration = configuration;
         _httpClientFactory = httpClientFactory;
         _log = loggerFactory.CreateLogger<ZippedQueueHandler>();
@@ -43,7 +43,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         if (!isNewProject)
         {
             var callbackMessage = GetProjectConflictCallbackMessage(manifest);
-            await _callbackQueueService.AddMessageAsync(callbackMessage);
+            await _callbackQueueService.QueueCallbackAsync(callbackMessage);
             _log.LogWarning(callbackMessage.Status);
             return;
         }
@@ -77,7 +77,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
     {
         var callbackMessage = GetResourceStorageCallbackMessage(projectId, filePath, response);
 
-        await _callbackQueueService.AddMessageAsync(callbackMessage);
+        await _callbackQueueService.QueueCallbackAsync(callbackMessage);
     }
 
     private async Task<HttpResponseMessage> SendResourceForStoringAsync(string hostUrl, string filePath, IUnzipService unzipService, Guid projectId)
