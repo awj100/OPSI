@@ -1,6 +1,6 @@
 ﻿namespace Opsi.Services.QueueHandlers.Dependencies;
 
-internal interface IUnzipService : IDisposable
+public interface IUnzipService : IDisposable
 {
     IReadOnlyCollection<string> GetFilePathsFromPackage();
 

@@ -25,6 +25,7 @@ public static class ServicesDiModule
             .AddSingleton<IProjectsService, ProjectsService>()
             .AddSingleton<IProjectsTableService, ProjectsTableService>()
             .AddSingleton<IProjectUploadService, ProjectUploadService>()
+            .AddSingleton<IResourceDispatcher, ResourceDispatcher>()
             .AddSingleton<IResourceService, ResourceService>()
             .AddSingleton<Func<Stream, IUnzipService>>(serviceProvider => stream => new UnzipService(stream))
             .AddSingleton<IUnzipServiceFactory, UnzipServiceFactory>()

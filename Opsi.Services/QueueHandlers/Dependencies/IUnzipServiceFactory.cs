@@ -1,6 +1,6 @@
 ﻿namespace Opsi.Services.QueueHandlers.Dependencies;
 
-internal interface IUnzipServiceFactory
+public interface IUnzipServiceFactory
 {
     IUnzipService Create(Stream stream);
 }

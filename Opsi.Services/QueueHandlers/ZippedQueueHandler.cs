@@ -1,8 +1,8 @@
-﻿using System.Net.Http.Headers;
-using Azure;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
+using Opsi.Common;
 using Opsi.Pocos;
 using Opsi.Services.QueueHandlers.Dependencies;
 
@@ -10,28 +10,28 @@ namespace Opsi.Services.QueueHandlers;
 
 internal class ZippedQueueHandler : IZippedQueueHandler
 {
-    private readonly AzureStorage.IBlobService _blobService;
+    private readonly IBlobService _blobService;
     private readonly ICallbackQueueService _callbackQueueService;
-    private readonly IConfiguration _configuration;
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger _log;
     private readonly IProjectsService _projectsService;
+    private readonly IResourceDispatcher _resourceDispatcher;
+    private readonly ISettingsProvider _settingsProvider;
     private readonly IUnzipServiceFactory _unzipServiceFactory;
 
-    public ZippedQueueHandler(IConfiguration configuration,
+    public ZippedQueueHandler(ISettingsProvider settingsProvider,
                               IProjectsService projectsService,
                               ICallbackQueueService callbackQueueService,
-                              AzureStorage.IBlobService blobService,
+                              IBlobService blobService,
                               IUnzipServiceFactory unzipServiceFactory,
-                              IHttpClientFactory httpClientFactory,
+                              IResourceDispatcher resourceDispatcher,
                               ILoggerFactory loggerFactory)
     {
         _blobService = blobService;
         _callbackQueueService = callbackQueueService;
-        _configuration = configuration;
-        _httpClientFactory = httpClientFactory;
         _log = loggerFactory.CreateLogger<ZippedQueueHandler>();
         _projectsService = projectsService;
+        _resourceDispatcher = resourceDispatcher;
+        _settingsProvider = settingsProvider;
         _unzipServiceFactory = unzipServiceFactory;
     }
 
@@ -55,7 +55,9 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         using (var zipStream = await _blobService.RetrieveAsync(manifest.GetPackagePathForStore()))
         using (var unzipService = _unzipServiceFactory.Create(zipStream))
         {
-            var filePaths = unzipService.GetFilePathsFromPackage();
+            var filePaths = unzipService.GetFilePathsFromPackage()
+                                        .Except(manifest.ResourceExclusionPaths)
+                                        .ToList();
 
             await SendResourcesForStoringAsync(filePaths, unzipService, manifest.ProjectId);
         }
@@ -82,10 +84,6 @@ internal class ZippedQueueHandler : IZippedQueueHandler
 
     private async Task<HttpResponseMessage> SendResourceForStoringAsync(string hostUrl, string filePath, IUnzipService unzipService, Guid projectId)
     {
-        const string mediaTypeHeaderValue = "application/octet-stream";
-
-        var fileName = Path.GetFileName(filePath);
-
         using (var fileContentsStream = await unzipService.GetContentsAsync(filePath))
         {
             if (fileContentsStream == null)
@@ -93,25 +91,14 @@ internal class ZippedQueueHandler : IZippedQueueHandler
                 throw new Exception($"Stream was null for {filePath}.");
             }
 
-            using (var httpClient = _httpClientFactory.CreateClient())
-            using (var content = new MultipartFormDataContent())
-            {
-                content.Headers.ContentType = MediaTypeHeaderValue.Parse(mediaTypeHeaderValue);
-                using (StreamContent streamContent = new StreamContent(fileContentsStream))
-                {
-                    content.Add(streamContent, fileName);
-
-                    var url = $"{hostUrl}/projects/{projectId}/resource/{filePath}";
-                    return await httpClient.PostAsync(url, content);
-                }
-            }
+            return await _resourceDispatcher.DispatchAsync(hostUrl, projectId, filePath, fileContentsStream);
         }
     }
 
     private async Task SendResourcesForStoringAsync(IReadOnlyCollection<string> filePaths, IUnzipService unzipService, Guid projectId)
     {
         const string configKeyHostUrl = "hostUrl";
-        var hostUrl = _configuration[configKeyHostUrl];
+        var hostUrl = _settingsProvider.GetValue(configKeyHostUrl);
 
         foreach (var filePath in filePaths)
         {

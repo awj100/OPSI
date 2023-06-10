@@ -18,6 +18,7 @@
     <PackageReference Include="FakeItEasy" Version="7.4.0" />
     <PackageReference Include="FluentAssertions" Version="6.11.0" />
     <PackageReference Include="Azure.Data.Tables" Version="12.8.0" />
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,5 +28,11 @@
     <ProjectReference Include="..\Opsi.Pocos\Opsi.Pocos.csproj" />
     <ProjectReference Include="..\Opsi.Functions\Opsi.Functions.csproj" />
     <ProjectReference Include="..\Opsi.AzureStorage\Opsi.AzureStorage.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="QueueHandlers\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="QueueHandlers\" />
   </ItemGroup>
 </Project>
