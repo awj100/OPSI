@@ -5,6 +5,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
+using Opsi.Common.Exceptions;
 using Opsi.Services;
 
 namespace Opsi.Functions.Middleware;
@@ -20,6 +21,10 @@ internal sealed class HttpResponseExceptionHandling : MiddlewareExceptionHandlin
         try
         {
             await next(context);
+        }
+        catch (UnauthenticatedException)
+        {
+            await SendUnauthenticatedResponseAsync(context);
         }
         catch (Exception exception)
         {
@@ -48,6 +53,28 @@ internal sealed class HttpResponseExceptionHandling : MiddlewareExceptionHandlin
             var newHttpResponse = httpReqData.CreateResponse(HttpStatusCode.InternalServerError);
             await newHttpResponse.WriteStringAsync(httpResponseErrorOccurred);
             newHttpResponse.Headers.Add(HeaderNames.ContentType, MediaTypeNames.Text.Plain);
+
+            var invocationResult = context.GetInvocationResult();
+
+            var httpOutputBindingFromMultipleOutputBindings = GetHttpOutputBindingFromMultipleOutputBinding(context);
+            if (httpOutputBindingFromMultipleOutputBindings is not null)
+            {
+                httpOutputBindingFromMultipleOutputBindings.Value = newHttpResponse;
+            }
+            else
+            {
+                invocationResult.Value = newHttpResponse;
+            }
+        }
+    }
+
+    private static async Task SendUnauthenticatedResponseAsync(FunctionContext context)
+    {
+        var httpReqData = await context.GetHttpRequestDataAsync();
+
+        if (httpReqData != null)
+        {
+            var newHttpResponse = httpReqData.CreateResponse(HttpStatusCode.Unauthorized);
 
             var invocationResult = context.GetInvocationResult();
 
