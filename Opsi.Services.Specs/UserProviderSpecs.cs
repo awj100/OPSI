@@ -2,12 +2,14 @@
 using FluentAssertions;
 using Functions.Worker.ContextAccessor;
 using Microsoft.Azure.Functions.Worker;
+using Opsi.Common.Exceptions;
 
 namespace Opsi.Services.Specs;
 
 [TestClass]
 public class UserProviderSpecs
 {
+    private const string ItemNameClaims = "Claims";
     private const string ItemNameUsername = "Username";
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -32,22 +34,43 @@ public class UserProviderSpecs
     }
 
     [TestMethod]
-    public void GetUsernameAsync_WhenNoUserSetInFunctionContext_ReturnsNull()
+    public void Claims_WhenNoClaimsSetInFunctionContext_ReturnsEmpty()
     {
-        _testee.GetUsername()
+        _testee.Claims.Value
                .Should()
-               .BeNull();
+               .BeEmpty();
     }
 
     [TestMethod]
-    public void GetUsernameAsync_WhenUserSetInFunctionContext_ReturnsUsername()
+    public void Claims_WhenSetInFunctionContext_ReturnsClaims()
+    {
+        var claims = new List<string> { "item 1", "item 2" };
+
+        _items = new Dictionary<object, object> { { ItemNameClaims, claims } };
+        A.CallTo(() => _functionContext.Items).Returns(_items);
+
+        _testee.Claims.Value
+               .Should()
+               .Contain(claims);
+    }
+
+    [TestMethod]
+    public void Username_WhenNoUserSetInFunctionContext_ThrowsUnauthenticatedException()
+    {
+        _testee.Invoking(t => t.Username.Value)
+            .Should()
+            .Throw<UnauthenticatedException>();
+    }
+
+    [TestMethod]
+    public void Username_WhenUserSetInFunctionContext_ReturnsUsername()
     {
         const string username = "test username";
 
         _items = new Dictionary<object, object> { {ItemNameUsername, username } };
         A.CallTo(() => _functionContext.Items).Returns(_items);
 
-        _testee.GetUsername()
+        _testee.Username.Value
                .Should()
                .Be(username);
     }

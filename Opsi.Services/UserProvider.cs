@@ -17,7 +17,7 @@ internal class UserProvider : IUserProvider
 
     public Lazy<IReadOnlyCollection<string>> Claims => new(() =>
     {
-        if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameUsername))
+        if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameClaims))
         {
             return new List<string>(0);
         }

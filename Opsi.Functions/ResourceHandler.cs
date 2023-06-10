@@ -13,23 +13,24 @@ public class ResourceHandler
     private readonly IErrorQueueService _errorQueueService;
     private readonly ILogger<ResourceHandler> _logger;
     private readonly IResourceService _resourceService;
+    private readonly IUserProvider _userProvider;
 
     public ResourceHandler(IResourceService resourceService,
                            IErrorQueueService errorQueueService,
+                           IUserProvider userProvider,
                            ILoggerFactory loggerFactory)
     {
         _errorQueueService = errorQueueService;
         _logger = loggerFactory.CreateLogger<ResourceHandler>();
         _resourceService = resourceService;
+        _userProvider = userProvider;
     }
 
     [Function(nameof(ResourceHandler))]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = route)] HttpRequestData req,
-                                         Guid projectId,
-                                         string restOfPath)
+                                            Guid projectId,
+                                            string restOfPath)
     {
-        const string username = "user@test.com";
-
         _logger.LogInformation(nameof(ResourceHandler));
 
         if (!DoesBodyContainFile(req))
@@ -41,7 +42,7 @@ public class ResourceHandler
         var resourceStorageInfo = new ResourceStorageInfo(projectId,
                                                           restOfPath,
                                                           req.Body,
-                                                          username);
+                                                          _userProvider.Username.Value);
 
         try
         {
