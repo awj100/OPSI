@@ -31,8 +31,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="QueueHandlers\" />
+    <None Remove="QueueHandlers\Dependencies\" />
+    <None Remove="Http\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="QueueHandlers\" />
+    <Folder Include="QueueHandlers\Dependencies\" />
+    <Folder Include="Http\" />
   </ItemGroup>
 </Project>

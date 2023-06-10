@@ -25,7 +25,7 @@ internal class ResourceDispatcher : IResourceDispatcher
             {
                 content.Add(streamContent, fileName);
 
-                var url = $"{hostUrl}/projects/{projectId}/resource/{filePath}";
+                var url = new Uri($"{hostUrl}/projects/{projectId}/resource/{filePath}");
                 return await httpClient.PostAsync(url, content);
             }
         }
