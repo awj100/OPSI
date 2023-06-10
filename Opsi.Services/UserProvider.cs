@@ -1,4 +1,5 @@
 ﻿using Functions.Worker.ContextAccessor;
+using Opsi.Common.Exceptions;
 
 namespace Opsi.Services;
 
@@ -14,7 +15,7 @@ internal class UserProvider : IUserProvider
         _functionContextAccessor = accessor;
     }
 
-    public IReadOnlyCollection<string>? GetClaims()
+    public Lazy<IReadOnlyCollection<string>> Claims => new(() =>
     {
         if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameUsername))
         {
@@ -22,15 +23,15 @@ internal class UserProvider : IUserProvider
         }
 
         return (List<string>)_functionContextAccessor.FunctionContext.Items[ItemNameClaims];
-    }
+    });
 
-    public string? GetUsername()
+    public Lazy<string> Username => new(() =>
     {
         if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameUsername))
         {
-            return null;
+            throw new UnauthenticatedException();
         }
 
         return (string)_functionContextAccessor.FunctionContext.Items[ItemNameUsername];
-    }
+    });
 }

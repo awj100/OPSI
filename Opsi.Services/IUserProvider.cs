@@ -2,7 +2,7 @@
 
 public interface IUserProvider
 {
-    IReadOnlyCollection<string>? GetClaims();
+    Lazy<IReadOnlyCollection<string>> Claims { get; }
 
-    string? GetUsername();
+    Lazy<string> Username { get; }
 }
