@@ -10,7 +10,6 @@ namespace Opsi.Services.Specs;
 public class ErrorQueueServiceSpecs
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    private ILogger<ErrorQueueService> _logger;
     private ILoggerFactory _loggerFactory;
     private IQueueService _queueService;
     private IQueueServiceFactory _queueServiceFactory;
