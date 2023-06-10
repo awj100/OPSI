@@ -5,11 +5,11 @@ namespace Opsi.Services.QueueHandlers.Dependencies;
 internal class UnzipService : IUnzipService
 {
     private ZipArchive? _archive;
-    private readonly Stream _packageStream;
+    private readonly Stream _archiveStream;
 
-    public UnzipService(Stream packageStream)
+    public UnzipService(Stream archiveStream)
     {
-        _packageStream = packageStream;
+        _archiveStream = archiveStream;
     }
 
     public IReadOnlyCollection<string> GetFilePathsFromPackage()
@@ -50,7 +50,7 @@ internal class UnzipService : IUnzipService
 
     public void Dispose()
     {
-        _packageStream?.Dispose();
+        _archiveStream?.Dispose();
         _archive?.Dispose();
     }
 
@@ -63,7 +63,7 @@ internal class UnzipService : IUnzipService
 
         try
         {
-            _archive = new ZipArchive(_packageStream, ZipArchiveMode.Read);
+            _archive = new ZipArchive(_archiveStream, ZipArchiveMode.Read);
         }
         catch (Exception exception)
         {
