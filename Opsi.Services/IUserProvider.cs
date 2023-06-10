@@ -2,5 +2,7 @@
 
 public interface IUserProvider
 {
+    IReadOnlyCollection<string>? GetClaims();
+
     string? GetUsername();
 }
