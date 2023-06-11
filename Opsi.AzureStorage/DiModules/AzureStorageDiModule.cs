@@ -30,7 +30,6 @@ public static class AzureStorageDiModule
             })
             .AddSingleton<IQueueServiceFactory, QueueServiceFactory>()
             .AddSingleton<IResourcesService, ResourcesService>()
-            .AddSingleton<ITableService, TableService>()
             .AddSingleton<ITableServiceFactory, TableServiceFactory>();
     }
 }
