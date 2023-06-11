@@ -20,11 +20,11 @@ var host = new HostBuilder()
     {
         services.AddFunctionContextAccessor();
 
-        FunctionsDiModule.Configure(services);
         AzureStorageDiModule.Configure(services);
         ErrorServicesDiModule.Configure(services);
         SendGridDiModule.Configure(services);
         ServicesDiModule.Configure(services);
+        FunctionsDiModule.Configure(services);
     })
     .UseDefaultServiceProvider((_, options) =>
     {

@@ -1,10 +1,12 @@
-﻿using Functions.Worker.ContextAccessor;
+﻿using System.Net.Http.Headers;
+using Functions.Worker.ContextAccessor;
 using Opsi.Common.Exceptions;
 
 namespace Opsi.Services;
 
 internal class UserProvider : IUserProvider
 {
+    private const string ItemNameAuthHeaderValue = "AuthHeaderValue";
     private const string ItemNameClaims = "Claims";
     private const string ItemNameUsername = "Username";
 
@@ -14,6 +16,16 @@ internal class UserProvider : IUserProvider
     {
         _functionContextAccessor = accessor;
     }
+
+    public Lazy<AuthenticationHeaderValue> AuthHeader => new(() =>
+    {
+        if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameAuthHeaderValue))
+        {
+            throw new UnauthenticatedException();
+        }
+
+        return (AuthenticationHeaderValue)_functionContextAccessor.FunctionContext.Items[ItemNameAuthHeaderValue];
+    });
 
     public Lazy<IReadOnlyCollection<string>> Claims => new(() =>
     {

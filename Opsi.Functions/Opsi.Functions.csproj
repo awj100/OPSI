@@ -61,6 +61,9 @@
     <ProjectReference Include="..\Opsi.Abstractions\Opsi.Abstractions.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
     </ProjectReference>
+    <ProjectReference Include="..\Opsi.Constants\Opsi.Constants.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="QueueHandlers\" />
