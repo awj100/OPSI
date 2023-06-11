@@ -22,7 +22,7 @@ internal class UserProvider : IUserProvider
             return new List<string>(0);
         }
 
-        return (List<string>)_functionContextAccessor.FunctionContext.Items[ItemNameClaims];
+        return (IReadOnlyCollection<string>)_functionContextAccessor.FunctionContext.Items[ItemNameClaims];
     });
 
     public Lazy<string> Username => new(() =>
