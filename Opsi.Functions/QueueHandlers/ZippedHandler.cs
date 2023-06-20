@@ -23,13 +23,13 @@ public class ZippedHandler : FunctionBase
     }
 
     [Function(nameof(ZippedHandler))]
-    public async Task Run([QueueTrigger($"manifests-{QueueHandlerNames.Zipped}", Connection = ConfigNameConnectionString)] Manifest manifest)
+    public async Task Run([QueueTrigger($"manifests-{QueueHandlerNames.Zipped}", Connection = ConfigNameConnectionString)] InternalManifest internalManifest)
     {
-        _logger.LogInformation($"{nameof(ZippedHandler)} triggered for \"{manifest.PackageName}\".");
+        _logger.LogInformation($"{nameof(ZippedHandler)} triggered for \"{internalManifest.PackageName}\".");
 
         try
         {
-            await _zippedQueueHandler.RetrieveAndHandleUploadAsync(manifest);
+            await _zippedQueueHandler.RetrieveAndHandleUploadAsync(internalManifest);
         }
         catch (Exception exception)
         {

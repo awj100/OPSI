@@ -4,5 +4,5 @@ namespace Opsi.Services.QueueHandlers;
 
 public interface IZippedQueueHandler
 {
-    Task RetrieveAndHandleUploadAsync(Manifest manifest);
+    Task RetrieveAndHandleUploadAsync(InternalManifest internalManifest);
 }

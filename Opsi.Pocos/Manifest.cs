@@ -26,6 +26,6 @@ namespace Opsi.Pocos
         public string GetPackagePathForStore()
 		{
 			return $"{ProjectId}/{PackageName}";
-		}
-	}
+        }
+    }
 }

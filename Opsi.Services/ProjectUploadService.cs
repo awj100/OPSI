@@ -13,6 +13,7 @@ internal class ProjectUploadService : IProjectUploadService
     private readonly ILogger<ProjectUploadService> _log;
     private readonly IManifestService _manifestService;
     private readonly IQueueServiceFactory _queueServiceFactory;
+    private readonly IUserProvider _userProvider;
 
     public int RequiredNumberOfUploadedObjects => 2;
 
@@ -20,12 +21,14 @@ internal class ProjectUploadService : IProjectUploadService
                                 ICallbackQueueService callbackQueueService,
                                 IQueueServiceFactory queueServiceFactory,
                                 IBlobService blobService,
+                                IUserProvider userProvider,
                                 ILoggerFactory loggerFactory)
     {
         _callbackQueueService = callbackQueueService;
         _manifestService = manifestService;
         _queueServiceFactory = queueServiceFactory;
         _blobService = blobService;
+        _userProvider = userProvider;
         _log = loggerFactory.CreateLogger<ProjectUploadService>();
     }
 
@@ -49,10 +52,11 @@ internal class ProjectUploadService : IProjectUploadService
     private async Task QueueManifestAsync(Manifest manifest)
     {
         var queueService = GetQueueServiceForManifest(manifest);
+        var internalManifest = new InternalManifest(manifest, _userProvider.Username.Value);
 
         try
         {
-            await queueService.AddMessageAsync(manifest);
+            await queueService.AddMessageAsync(internalManifest);
         }
         catch (Exception ex)
         {

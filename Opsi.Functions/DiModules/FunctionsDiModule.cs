@@ -21,17 +21,26 @@ public static class FunctionsDiModule
         services.AddLogging()
                 .AddSingleton<Common.ISettingsProvider, Common.SettingsProvider>()
                 .AddSingleton<IMultipartFormDataParser, MultipartFormDataParser>()
-                .AddHttpClient()
-                .AddHttpClient(HttpClientNames.Self, (provider, httpClient) =>
+                .AddHttpClient();
+
+        services.AddHttpClient(HttpClientNames.SelfWithContextAuth, (provider, httpClient) =>
                 {
                     var settingsProvider = provider.GetRequiredService<Common.ISettingsProvider>();
-                    var hostUrl = settingsProvider.GetValue("hostUrl");
+                    var hostUrl = settingsProvider.GetValue(ConfigKeys.HostUrl);
 
                     var userProvider = provider.GetRequiredService<IUserProvider>();
                     var authHeader = userProvider.AuthHeader;
 
                     httpClient.BaseAddress = new Uri(hostUrl);
                     httpClient.DefaultRequestHeaders.Authorization = authHeader.Value;
+                });
+
+        services.AddHttpClient(HttpClientNames.SelfWithoutAuth, (provider, httpClient) =>
+                {
+                    var settingsProvider = provider.GetRequiredService<Common.ISettingsProvider>();
+                    var hostUrl = settingsProvider.GetValue(ConfigKeys.HostUrl);
+
+                    httpClient.BaseAddress = new Uri(hostUrl);
                 });
     }
 }

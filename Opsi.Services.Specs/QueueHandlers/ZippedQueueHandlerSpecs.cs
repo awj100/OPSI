@@ -1,12 +1,9 @@
 ﻿using System.IO.Compression;
 using FakeItEasy;
-using HttpMultipartParser;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
-using Opsi.Functions.FormHelpers;
 using Opsi.Pocos;
 using Opsi.Services.QueueHandlers;
 using Opsi.Services.QueueHandlers.Dependencies;
@@ -17,7 +14,7 @@ namespace Opsi.Services.Specs.QueueHandlers;
 public class ZippedQueueHandlerSpecs
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    private Manifest _manifest;
+    private InternalManifest _manifest;
     private IReadOnlyCollection<string> _nonManifestContentFilePaths;
     private Stream _nonManifestStream;
     private IBlobService _blobService;
@@ -33,7 +30,7 @@ public class ZippedQueueHandlerSpecs
     [TestInitialize]
     public void TestInit()
     {
-        _manifest = new Manifest
+        _manifest = new InternalManifest
         {
             ResourceExclusionPaths = new List<string> { GetTestFilePath(1) },
             ProjectId = Guid.NewGuid()
@@ -97,7 +94,8 @@ public class ZippedQueueHandlerSpecs
         A.CallTo(() => _resourceDispatcher.DispatchAsync(A<string>._,
                                                          A<Guid>._,
                                                          A<string>._,
-                                                         A<Stream>._)).MustNotHaveHappened();
+                                                         A<Stream>._,
+                                                         A<string>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
@@ -164,7 +162,8 @@ public class ZippedQueueHandlerSpecs
             A.CallTo(() => _resourceDispatcher.DispatchAsync(A<string>._,
                                                              A<Guid>._,
                                                              nonExcludedFilePath,
-                                                             A<Stream>._)).MustHaveHappenedOnceExactly();
+                                                             A<Stream>._,
+                                                             A<string>._)).MustHaveHappenedOnceExactly();
         }
     }
 
@@ -182,7 +181,8 @@ public class ZippedQueueHandlerSpecs
             A.CallTo(() => _resourceDispatcher.DispatchAsync(A<string>._,
                                                              A<Guid>._,
                                                              excludedFilePath,
-                                                             A<Stream>._)).MustNotHaveHappened();
+                                                             A<Stream>._,
+                                                             A<string>._)).MustNotHaveHappened();
         }
     }
 
@@ -216,7 +216,8 @@ public class ZippedQueueHandlerSpecs
                 A.CallTo(() => _resourceDispatcher.DispatchAsync(A<string>._,
                                                                  A<Guid>._,
                                                                  A<string>._,
-                                                                 fileSpecificStream)).MustHaveHappenedOnceExactly();
+                                                                 fileSpecificStream,
+                                                                 A<string>._)).MustHaveHappenedOnceExactly();
             }
         }
         finally
@@ -257,7 +258,8 @@ public class ZippedQueueHandlerSpecs
         A.CallTo(() => _resourceDispatcher.DispatchAsync(A<string>._,
                                                          _manifest.ProjectId,
                                                          A<string>._,
-                                                         A<Stream>._)).MustHaveHappened();
+                                                         A<Stream>._,
+                                                         A<string>._)).MustHaveHappened();
     }
 
     [TestMethod]
@@ -277,7 +279,8 @@ public class ZippedQueueHandlerSpecs
         A.CallTo(() => _resourceDispatcher.DispatchAsync(configuredHostUrl,
                                                          A<Guid>._,
                                                          A<string>._,
-                                                         A<Stream>._)).MustHaveHappened();
+                                                         A<Stream>._,
+                                                         A<string>._)).MustHaveHappened();
     }
 
     [TestMethod]
@@ -336,7 +339,8 @@ public class ZippedQueueHandlerSpecs
         A.CallTo(() => _resourceDispatcher.DispatchAsync(A<string>._,
                                                          A<Guid>._,
                                                          A<string>._,
-                                                         A<Stream>._)).Returns(nonSuccessResponse);
+                                                         A<Stream>._,
+                                                         A<string>._)).Returns(nonSuccessResponse);
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 

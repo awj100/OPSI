@@ -11,7 +11,6 @@ namespace Opsi.Services.Specs;
 public class ProjectsTableServiceSpecs
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    private const string TableName = "test-table";
     private Project _project;
     private TableClient _tableClient;
     private ITableService _tableService;

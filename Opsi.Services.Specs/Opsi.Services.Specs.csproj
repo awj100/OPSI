@@ -33,10 +33,16 @@
     <None Remove="QueueHandlers\" />
     <None Remove="QueueHandlers\Dependencies\" />
     <None Remove="Http\" />
+    <None Remove="TableServices\" />
+    <None Remove="Auth\" />
+    <None Remove="Auth\OneTimeAuth\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="QueueHandlers\" />
     <Folder Include="QueueHandlers\Dependencies\" />
     <Folder Include="Http\" />
+    <Folder Include="TableServices\" />
+    <Folder Include="Auth\" />
+    <Folder Include="Auth\OneTimeAuth\" />
   </ItemGroup>
 </Project>

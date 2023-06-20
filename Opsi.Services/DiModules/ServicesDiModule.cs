@@ -1,7 +1,9 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
+using Opsi.Services.Auth.OneTimeAuth;
 using Opsi.Services.QueueHandlers.Dependencies;
+using Opsi.Services.TableServices;
 
 [assembly: InternalsVisibleTo("Opsi.Services.Specs")]
 
@@ -19,9 +21,16 @@ public static class ServicesDiModule
         services
             .AddHttpClient()
             .AddLogging()
+            .AddSingleton<Func<Type, Auth.IAuthHandler?>>(serviceProvider => (Type type) => serviceProvider.GetRequiredService(type) as Auth.IAuthHandler)
+            .AddSingleton<Auth.IAuthHandlerProvider, Auth.AuthHandlerProvider>()
+            .AddSingleton<Auth.IAuthService, Auth.AuthService>()
             .AddSingleton<ICallbackQueueService, CallbackQueueService>()
             .AddSingleton<IErrorQueueService, ErrorQueueService>()
             .AddSingleton<IManifestService, ManifestService>()
+            .AddSingleton<IOneTimeAuthService, OneTimeAuthService>()
+            .AddSingleton<IOneTimeAuthKeyProvider, OneTimeAuthKeyProvider>()
+            .AddSingleton<IOneTimeAuthKeysTableService, OneTimeAuthKeysTableService>()
+            .AddSingleton<IOneTimeAuthService, OneTimeAuthService>()
             .AddSingleton<IProjectsService, ProjectsService>()
             .AddSingleton<IProjectsTableService, ProjectsTableService>()
             .AddSingleton<IProjectUploadService, ProjectUploadService>()

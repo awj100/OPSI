@@ -35,31 +35,29 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         _unzipServiceFactory = unzipServiceFactory;
     }
 
-    public async Task RetrieveAndHandleUploadAsync(Manifest manifest)
+    public async Task RetrieveAndHandleUploadAsync(InternalManifest internalManifest)
     {
-        const string username = "user@test.com";
-
-        var isNewProject = await IsNewProjectAsync(manifest.ProjectId);
+        var isNewProject = await IsNewProjectAsync(internalManifest.ProjectId);
         if (!isNewProject)
         {
-            var callbackMessage = GetProjectConflictCallbackMessage(manifest);
+            var callbackMessage = GetProjectConflictCallbackMessage(internalManifest);
             await _callbackQueueService.QueueCallbackAsync(callbackMessage);
             _log.LogWarning(callbackMessage.Status);
             return;
         }
 
-        var project = GetProject(manifest, username);
+        var project = GetProject(internalManifest);
 
         await _projectsService.StoreProjectAsync(project);
 
-        using (var zipStream = await _blobService.RetrieveAsync(manifest.GetPackagePathForStore()))
+        using (var zipStream = await _blobService.RetrieveAsync(internalManifest.GetPackagePathForStore()))
         using (var unzipService = _unzipServiceFactory.Create(zipStream))
         {
             var filePaths = unzipService.GetFilePathsFromPackage()
-                                        .Except(manifest.ResourceExclusionPaths)
+                                        .Except(internalManifest.ResourceExclusionPaths)
                                         .ToList();
 
-            await SendResourcesForStoringAsync(filePaths, unzipService, manifest.ProjectId);
+            await SendResourcesForStoringAsync(filePaths, unzipService, internalManifest);
         }
     }
 
@@ -82,7 +80,10 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         await _callbackQueueService.QueueCallbackAsync(callbackMessage);
     }
 
-    private async Task<HttpResponseMessage> SendResourceForStoringAsync(string hostUrl, string filePath, IUnzipService unzipService, Guid projectId)
+    private async Task<HttpResponseMessage> SendResourceForStoringAsync(string hostUrl,
+                                                                        string filePath,
+                                                                        IUnzipService unzipService,
+                                                                        InternalManifest internalManifest)
     {
         using (var fileContentsStream = await unzipService.GetContentsAsync(filePath))
         {
@@ -91,26 +92,30 @@ internal class ZippedQueueHandler : IZippedQueueHandler
                 throw new Exception($"Stream was null for {filePath}.");
             }
 
-            return await _resourceDispatcher.DispatchAsync(hostUrl, projectId, filePath, fileContentsStream);
+            return await _resourceDispatcher.DispatchAsync(hostUrl,
+                                                           internalManifest.ProjectId,
+                                                           filePath,
+                                                           fileContentsStream,
+                                                           internalManifest.Username);
         }
     }
 
-    private async Task SendResourcesForStoringAsync(IReadOnlyCollection<string> filePaths, IUnzipService unzipService, Guid projectId)
+    private async Task SendResourcesForStoringAsync(IReadOnlyCollection<string> filePaths, IUnzipService unzipService, InternalManifest internalManifest)
     {
         const string configKeyHostUrl = "hostUrl";
         var hostUrl = _settingsProvider.GetValue(configKeyHostUrl);
 
         foreach (var filePath in filePaths)
         {
-            var response = await SendResourceForStoringAsync(hostUrl, filePath, unzipService, projectId);
+            var response = await SendResourceForStoringAsync(hostUrl, filePath, unzipService, internalManifest);
 
-            await NotifyOfResourceStorageResponseAsync(projectId, filePath, response);
+            await NotifyOfResourceStorageResponseAsync(internalManifest.ProjectId, filePath, response);
         }
     }
 
-    private static Project GetProject(Manifest manifest, string username)
+    private static Project GetProject(InternalManifest internalManifest)
     {
-        return new Project(manifest, username);
+        return new Project(internalManifest);
     }
 
     private static CallbackMessage GetProjectConflictCallbackMessage(Manifest manifest)

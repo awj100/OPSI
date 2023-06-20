@@ -10,12 +10,13 @@ public record Project : ITableEntity
     {
     }
 
-    public Project(Manifest manifest, string username)
+    public Project(InternalManifest internalManifest)
     {
-        CallbackUri = manifest.CallbackUri;
-        Id = manifest.ProjectId;
-        Name = manifest.PackageName;
-        Username = username;
+        CallbackUri = internalManifest.CallbackUri;
+        Id = internalManifest.ProjectId;
+        Name = internalManifest.PackageName;
+        Username = internalManifest.Username;
+        InternalManifest = internalManifest;
     }
 
     public string CallbackUri { get; set; } = default!;
@@ -37,6 +38,9 @@ public record Project : ITableEntity
     public DateTimeOffset? Timestamp { get; set; } = default!;
 
     public string Username { get; set; } = default!;
+
+    // TODO: Is this needed?
+    public InternalManifest InternalManifest { get; }
 
     public override string ToString()
     {
