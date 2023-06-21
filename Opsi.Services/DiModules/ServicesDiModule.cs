@@ -24,6 +24,8 @@ public static class ServicesDiModule
             .AddSingleton<Func<Type, Auth.IAuthHandler?>>(serviceProvider => (Type type) => serviceProvider.GetRequiredService(type) as Auth.IAuthHandler)
             .AddSingleton<Auth.IAuthHandlerProvider, Auth.AuthHandlerProvider>()
             .AddSingleton<Auth.IAuthService, Auth.AuthService>()
+            .AddSingleton(typeof(Auth.OneTimeKeyAuthHandler))
+            .AddSingleton(typeof(Auth.ReferenceAuthHandler))
             .AddSingleton<ICallbackQueueService, CallbackQueueService>()
             .AddSingleton<IErrorQueueService, ErrorQueueService>()
             .AddSingleton<IManifestService, ManifestService>()

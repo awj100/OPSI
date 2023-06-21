@@ -78,8 +78,11 @@ internal class OneTimeAuthService : IOneTimeAuthService
     {
         const char keyPartsSeparator = '_';
 
+        var safeKeyParts = String.Join(keyPartsSeparator, keyParts)
+                                 .Replace('/', '_');
+
         var newUniqueKey = _oneTimeAuthKeyProvider.GenerateUniqueKey();
-        return $"{newUniqueKey}{keyPartsSeparator}{String.Join(keyPartsSeparator, keyParts)}";
+        return $"{newUniqueKey}{keyPartsSeparator}{safeKeyParts}";
     }
 
     private async Task DeleteKeyAsync(string username, string key)

@@ -1,7 +1,6 @@
 ﻿using Azure.Data.Tables;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.AzureStorage.Types;
-using Opsi.Common;
 using Opsi.Common.Exceptions;
 
 namespace Opsi.AzureStorage;

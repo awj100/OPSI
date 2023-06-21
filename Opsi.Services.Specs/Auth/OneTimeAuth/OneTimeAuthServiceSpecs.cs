@@ -8,9 +8,8 @@ namespace Opsi.Services.Specs.Auth.OneTimeAuth;
 [TestClass]
 public class OneTimeAuthServiceSpecs
 {
-    private const string AuthScheme = "OneTime";
     private const string Username = "user@test.com";
-    private const string FilePath = "file/path";
+    private const string FilePath = "filepath";
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private string _key;

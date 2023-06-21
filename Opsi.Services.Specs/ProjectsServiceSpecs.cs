@@ -58,7 +58,7 @@ public class ProjectsServiceSpecs
 
         var result = await _testee.IsNewProjectAsync(_project.Id);
 
-        result.Should().BeTrue();
+        result.Should().BeFalse();
     }
 
     [TestMethod]
@@ -69,7 +69,7 @@ public class ProjectsServiceSpecs
 
         var result = await _testee.IsNewProjectAsync(_project.Id);
 
-        result.Should().BeFalse();
+        result.Should().BeTrue();
     }
 
     [TestMethod]

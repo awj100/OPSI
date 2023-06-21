@@ -25,7 +25,7 @@ public class ProjectsService : IProjectsService
     {
         var project = await _projectsTableService.GetProjectByIdAsync(projectId);
 
-        return project != null;
+        return project == null;
     }
 
     public async Task StoreProjectAsync(Project project)
