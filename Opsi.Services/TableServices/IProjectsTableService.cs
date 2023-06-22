@@ -1,6 +1,6 @@
 ﻿using Opsi.AzureStorage.TableEntities;
 
-namespace Opsi.Services;
+namespace Opsi.Services.TableServices;
 
 public interface IProjectsTableService
 {

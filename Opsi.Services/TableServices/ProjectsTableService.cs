@@ -1,7 +1,7 @@
 ﻿using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
 
-namespace Opsi.Services;
+namespace Opsi.Services.TableServices;
 
 internal class ProjectsTableService : IProjectsTableService
 {

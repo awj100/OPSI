@@ -4,6 +4,7 @@ using FakeItEasy;
 using FluentAssertions;
 using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
+using Opsi.Services.TableServices;
 
 namespace Opsi.Services.Specs;
 

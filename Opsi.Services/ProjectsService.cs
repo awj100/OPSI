@@ -1,5 +1,6 @@
 ﻿using Opsi.AzureStorage.TableEntities;
 using Opsi.Pocos;
+using Opsi.Services.TableServices;
 
 namespace Opsi.Services;
 
