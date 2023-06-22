@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage;
 using Opsi.Pocos;
+using Opsi.Services.QueueServices;
 
 namespace Opsi.Services.Specs;
 

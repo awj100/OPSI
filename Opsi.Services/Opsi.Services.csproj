@@ -21,6 +21,7 @@
     <None Remove="TableServices\" />
     <None Remove="Auth\" />
     <None Remove="Auth\OneTimeAuth\" />
+    <None Remove="QueueServices\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DiModules\" />
@@ -29,6 +30,7 @@
     <Folder Include="TableServices\" />
     <Folder Include="Auth\" />
     <Folder Include="Auth\OneTimeAuth\" />
+    <Folder Include="QueueServices\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage;
 using Opsi.Pocos;
 
-namespace Opsi.Services;
+namespace Opsi.Services.QueueServices;
 
 internal class ErrorQueueService : IErrorQueueService
 {

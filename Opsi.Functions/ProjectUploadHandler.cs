@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Opsi.Common.Exceptions;
 using Opsi.Functions.FormHelpers;
 using Opsi.Services;
+using Opsi.Services.QueueServices;
 
 namespace Opsi.Functions;
 

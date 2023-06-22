@@ -3,6 +3,7 @@ using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Opsi.Services.Auth.OneTimeAuth;
 using Opsi.Services.QueueHandlers.Dependencies;
+using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
 
 [assembly: InternalsVisibleTo("Opsi.Services.Specs")]

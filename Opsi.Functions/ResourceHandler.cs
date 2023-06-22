@@ -3,6 +3,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage.Types;
 using Opsi.Services;
+using Opsi.Services.QueueServices;
 
 namespace Opsi.Functions;
 

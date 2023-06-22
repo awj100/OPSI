@@ -2,6 +2,7 @@
 using FluentAssertions;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Pocos;
+using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
 
 namespace Opsi.Services.Specs;

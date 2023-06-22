@@ -5,6 +5,7 @@ using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Pocos;
 using Opsi.Services.QueueHandlers.Dependencies;
+using Opsi.Services.QueueServices;
 
 namespace Opsi.Services.QueueHandlers;
 

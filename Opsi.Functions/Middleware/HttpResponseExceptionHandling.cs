@@ -6,7 +6,7 @@ using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Opsi.Common.Exceptions;
-using Opsi.Services;
+using Opsi.Services.QueueServices;
 
 namespace Opsi.Functions.Middleware;
 

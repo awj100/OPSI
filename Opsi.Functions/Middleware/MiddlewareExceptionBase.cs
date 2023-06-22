@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Opsi.Services;
+using Opsi.Services.QueueServices;
 
 namespace Opsi.Functions.Middleware;
 

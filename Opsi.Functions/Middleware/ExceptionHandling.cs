@@ -1,7 +1,7 @@
 ﻿using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.Logging;
-using Opsi.Services;
+using Opsi.Services.QueueServices;
 
 namespace Opsi.Functions.Middleware;
 

@@ -7,6 +7,7 @@ using Opsi.AzureStorage.Types;
 using Opsi.Common;
 using Opsi.Common.Exceptions;
 using Opsi.Pocos;
+using Opsi.Services.QueueServices;
 
 namespace Opsi.Services.Specs;
 

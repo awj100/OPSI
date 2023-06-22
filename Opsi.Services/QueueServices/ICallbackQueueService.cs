@@ -1,6 +1,6 @@
 ﻿using Opsi.Pocos;
 
-namespace Opsi.Services;
+namespace Opsi.Services.QueueServices;
 
 public interface ICallbackQueueService
 {
