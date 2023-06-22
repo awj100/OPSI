@@ -6,7 +6,7 @@ using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Services.TableServices;
 
-namespace Opsi.Services.Specs;
+namespace Opsi.Services.Specs.TableServices;
 
 [TestClass]
 public class ProjectsTableServiceSpecs
