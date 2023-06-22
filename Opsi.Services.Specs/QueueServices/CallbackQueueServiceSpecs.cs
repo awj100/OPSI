@@ -4,7 +4,7 @@ using Opsi.AzureStorage;
 using Opsi.Pocos;
 using Opsi.Services.QueueServices;
 
-namespace Opsi.Services.Specs;
+namespace Opsi.Services.Specs.QueueServices;
 
 [TestClass]
 public class CallbackQueueServiceSpecs

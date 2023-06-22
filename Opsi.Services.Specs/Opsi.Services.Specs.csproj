@@ -36,6 +36,7 @@
     <None Remove="TableServices\" />
     <None Remove="Auth\" />
     <None Remove="Auth\OneTimeAuth\" />
+    <None Remove="QueueServices\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="QueueHandlers\" />
@@ -44,5 +45,6 @@
     <Folder Include="TableServices\" />
     <Folder Include="Auth\" />
     <Folder Include="Auth\OneTimeAuth\" />
+    <Folder Include="QueueServices\" />
   </ItemGroup>
 </Project>
