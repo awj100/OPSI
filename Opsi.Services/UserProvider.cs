@@ -8,6 +8,7 @@ internal class UserProvider : IUserProvider
 {
     private const string ItemNameAuthHeaderValue = "AuthHeaderValue";
     private const string ItemNameClaims = "Claims";
+    private const string ItemNameIsAdministrator = "IsAdministrator";
     private const string ItemNameUsername = "Username";
 
     private readonly IFunctionContextAccessor _functionContextAccessor;
@@ -35,6 +36,21 @@ internal class UserProvider : IUserProvider
         }
 
         return (IReadOnlyCollection<string>)_functionContextAccessor.FunctionContext.Items[ItemNameClaims];
+    });
+
+    public Lazy<bool> IsAdministrator => new(() => {
+        if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameIsAdministrator))
+        {
+            return false;
+        }
+
+        var isAdministrator = _functionContextAccessor.FunctionContext.Items[ItemNameIsAdministrator];
+        if (isAdministrator is not bool)
+        {
+            throw new Exception($"The FunctionContext's items collection has been populated with an invalid (non-boolean) value for \"{ItemNameIsAdministrator}\".");
+        }
+
+        return (bool)isAdministrator;
     });
 
     public Lazy<string> Username => new(() =>

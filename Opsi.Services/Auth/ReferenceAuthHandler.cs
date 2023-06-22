@@ -10,6 +10,7 @@
 internal class ReferenceAuthHandler : AuthHandlerBase, IAuthHandler
 {
     private const string AuthScheme = "Basic";
+    private const string ClaimAdministrator = "Administrator";
     private const char HeaderValueSeparator = ':';
 
     public Task<bool> AuthenticateAsync(string authHeader, IDictionary<object, object> contextItems)
@@ -35,9 +36,12 @@ internal class ReferenceAuthHandler : AuthHandlerBase, IAuthHandler
             return Task.FromResult(false);
         }
 
+        var isAdministrator = GetIsAdministrator(claims);
+
         // In a full implementation the user's credentials would be validated here.
 
         contextItems.Add(ItemNameClaims, claims);
+        contextItems.Add(ItemNameIsAdministrator, isAdministrator);
         contextItems.Add(ItemNameUsername, username);
 
         return Task.FromResult(true);
@@ -71,6 +75,11 @@ internal class ReferenceAuthHandler : AuthHandlerBase, IAuthHandler
         }
 
         return parts.ElementAt(1).Split(claimsSeparator);
+    }
+
+    private static bool GetIsAdministrator(IReadOnlyCollection<string> claims)
+    {
+        return claims.Contains(ClaimAdministrator);
     }
 
     private static string? GetUsernameFromDecodedAuthHeader(string? decodedAuthHeader)

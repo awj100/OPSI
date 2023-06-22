@@ -10,6 +10,7 @@ namespace Opsi.Services.Specs;
 public class UserProviderSpecs
 {
     private const string ItemNameClaims = "Claims";
+    private const string ItemNameIsAdministrator = "IsAdministrator";
     private const string ItemNameUsername = "Username";
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -55,11 +56,37 @@ public class UserProviderSpecs
     }
 
     [TestMethod]
+    public void IsAdministrator_WhenIsAdministratorNotSetInFunctionContext_ReturnsFalse()
+    {
+        _testee.IsAdministrator.Value
+               .Should()
+               .BeFalse();
+    }
+
+    [TestMethod]
+    public void IsAdministrator_WhenIsAdministratorSetInFunctionContext_ReturnsIsAdministrator()
+    {
+        _items = new Dictionary<object, object> { { ItemNameIsAdministrator, true } };
+        A.CallTo(() => _functionContext.Items).Returns(_items);
+
+        _testee.IsAdministrator.Value
+               .Should()
+               .BeTrue();
+
+        _items = new Dictionary<object, object> { { ItemNameIsAdministrator, false } };
+        A.CallTo(() => _functionContext.Items).Returns(_items);
+
+        _testee.IsAdministrator.Value
+               .Should()
+               .BeFalse();
+    }
+
+    [TestMethod]
     public void Username_WhenNoUserSetInFunctionContext_ThrowsUnauthenticatedException()
     {
         _testee.Invoking(t => t.Username.Value)
-            .Should()
-            .Throw<UnauthenticatedException>();
+               .Should()
+               .Throw<UnauthenticatedException>();
     }
 
     [TestMethod]

@@ -8,7 +8,7 @@ public class ReferenceAuthHandlerSpecs
 {
     private const string AuthScheme = "Basic";
     private const string Username = "user@test.com";
-    private readonly IReadOnlyCollection<string> Claims = new List<string> { "Claim1", "Claim2" };
+    private readonly IReadOnlyCollection<string> Claims = new List<string> { "Claim1", "Administrator" };
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private AuthHandlerBase _authHandler;
     private IDictionary<object, object> _contextItems;
@@ -37,6 +37,15 @@ public class ReferenceAuthHandlerSpecs
         var resultClaims = _contextItems[_authHandler.ItemNameClaims] as IReadOnlyCollection<string>;
         resultClaims.Should().NotBeNullOrEmpty();
         resultClaims.Should().Contain(Claims);
+    }
+
+    [TestMethod]
+    public async Task AuthenticateAsync_WhenDetailsObtained_PopulatesContextItemsWithIsAdministrator()
+    {
+        await _testee.AuthenticateAsync(_encodedAuthParameter, _contextItems);
+
+        _contextItems.Should().Contain(kvp => (string)kvp.Key == _authHandler.ItemNameIsAdministrator);
+        _contextItems[_authHandler.ItemNameIsAdministrator].Should().Be(true);
     }
 
     [TestMethod]
@@ -74,6 +83,26 @@ public class ReferenceAuthHandlerSpecs
         await _testee.AuthenticateAsync(_encodedAuthParameter, _contextItems);
 
         _contextItems.Should().NotContain(kvp => (string)kvp.Key == _authHandler.ItemNameClaims);
+    }
+
+    [TestMethod]
+    public async Task AuthenticateAsync_WhenNoClaimsObtained_DoesNotPopulatesContextItemsWithIsAdministrator()
+    {
+        _unencodedAuthParameter = Username;
+        _encodedAuthParameter = EncodeBase64String(_unencodedAuthParameter);
+
+        await _testee.AuthenticateAsync(_encodedAuthParameter, _contextItems);
+
+        _contextItems.Should().NotContain(kvp => (string)kvp.Key == _authHandler.ItemNameIsAdministrator);
+
+        // ---
+
+        _unencodedAuthParameter = $"{Username}:";
+        _encodedAuthParameter = EncodeBase64String(_unencodedAuthParameter);
+
+        await _testee.AuthenticateAsync(_encodedAuthParameter, _contextItems);
+
+        _contextItems.Should().NotContain(kvp => (string)kvp.Key == _authHandler.ItemNameIsAdministrator);
     }
 
     [TestMethod]

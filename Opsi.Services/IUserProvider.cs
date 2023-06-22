@@ -8,5 +8,7 @@ public interface IUserProvider
 
     Lazy<IReadOnlyCollection<string>> Claims { get; }
 
+    Lazy<bool> IsAdministrator { get; }
+
     Lazy<string> Username { get; }
 }
