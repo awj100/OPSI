@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage.Types;
 using Opsi.Common.Exceptions;
-using Opsi.Pocos;
 using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 
