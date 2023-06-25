@@ -1,5 +1,6 @@
 ﻿using Opsi.AzureStorage.TableEntities;
 using Opsi.Pocos;
+using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
 
@@ -34,14 +35,15 @@ public class ProjectsService : IProjectsService
     {
         await _projectsTableService.StoreProjectAsync(project);
 
-        await QueueCallbackMessageAsync(project.Id);
+        await QueueCallbackMessageAsync(project.Id, project.CallbackUri);
     }
 
-    private async Task QueueCallbackMessageAsync(Guid projectId)
+    private async Task QueueCallbackMessageAsync(Guid projectId, string callbackUri)
     {
-        await _callbackQueueService.QueueCallbackAsync(new CallbackMessage
+        await _callbackQueueService.QueueCallbackAsync(new InternalCallbackMessage
         {
             ProjectId = projectId,
+            RemoteUri = callbackUri,
             Status = "Project created"
         });
     }

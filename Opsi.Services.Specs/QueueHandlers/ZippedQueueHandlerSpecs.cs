@@ -5,6 +5,7 @@ using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Pocos;
+using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueHandlers;
 using Opsi.Services.QueueHandlers.Dependencies;
 using Opsi.Services.QueueServices;
@@ -107,8 +108,8 @@ public class ZippedQueueHandlerSpecs
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<CallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
-                                                                                                      && cm.Status.Contains("Resource stored"))))
+        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
+                                                                                                              && cm.Status.Contains("Resource stored"))))
             .MustNotHaveHappened();
     }
 
@@ -120,8 +121,8 @@ public class ZippedQueueHandlerSpecs
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<CallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
-                                                                                                      && cm.Status.Equals($"A project with ID \"{_manifest.ProjectId}\" already exists."))))
+        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
+                                                                                                              && cm.Status.Equals($"A project with ID \"{_manifest.ProjectId}\" already exists."))))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -297,7 +298,7 @@ public class ZippedQueueHandlerSpecs
 
         foreach (var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<CallbackMessage>.That.Matches(cm => cm.Status.Equals($"Resource stored: {nonExcludedFilePath}")))).MustHaveHappenedOnceExactly();
+            A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.Status.Equals($"Resource stored: {nonExcludedFilePath}")))).MustHaveHappenedOnceExactly();
         }
     }
 
@@ -312,7 +313,7 @@ public class ZippedQueueHandlerSpecs
 
         var nonExcludedFilePaths = _nonManifestContentFilePaths.Except(_manifest.ResourceExclusionPaths).ToList();
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<CallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)))).MustHaveHappenedANumberOfTimesMatching(times => times == nonExcludedFilePaths.Count);
+        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)))).MustHaveHappenedANumberOfTimesMatching(times => times == nonExcludedFilePaths.Count);
     }
 
     [TestMethod]
@@ -326,7 +327,7 @@ public class ZippedQueueHandlerSpecs
 
         foreach (var excludedFilePath in _manifest.ResourceExclusionPaths)
         {
-            A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<CallbackMessage>.That.Matches(cm => cm.Status.Contains(excludedFilePath)))).MustNotHaveHappened();
+            A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.Status.Contains(excludedFilePath)))).MustNotHaveHappened();
         }
     }
 
@@ -349,7 +350,7 @@ public class ZippedQueueHandlerSpecs
 
         foreach(var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<CallbackMessage>.That.Matches(cm => cm.Status.StartsWith($"Resource could not be stored (\"{nonExcludedFilePath}\")")))).MustHaveHappenedOnceExactly();
+            A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.Status.StartsWith($"Resource could not be stored (\"{nonExcludedFilePath}\")")))).MustHaveHappenedOnceExactly();
         }
     }
 

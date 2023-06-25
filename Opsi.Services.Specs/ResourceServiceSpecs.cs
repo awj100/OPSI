@@ -7,6 +7,7 @@ using Opsi.AzureStorage.Types;
 using Opsi.Common;
 using Opsi.Common.Exceptions;
 using Opsi.Pocos;
+using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 
 namespace Opsi.Services.Specs;
@@ -16,6 +17,7 @@ public class ResourceServiceSpecs
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private readonly Guid _projectId = Guid.NewGuid();
+    private const string RemoteUriAsString = "https://a.url.com";
     private const string RestOfPath = "rest/of/path";
     private const string Username = "test@username";
     private const int VersionIndex = 123;
@@ -24,6 +26,7 @@ public class ResourceServiceSpecs
     private IBlobService _blobService;
     private ICallbackQueueService _callbackQueueService;
     private ILoggerFactory _loggerFactory;
+    private IProjectsService _projectsService;
     private IResourcesService _resourcesService;
     private ResourceStorageInfo _resourceStorageInfo;
     private ResourceService _testee;
@@ -35,11 +38,14 @@ public class ResourceServiceSpecs
         _blobService = A.Fake<IBlobService>();
         _callbackQueueService = A.Fake<ICallbackQueueService>();
         _loggerFactory = new NullLoggerFactory();
+        _projectsService = A.Fake<IProjectsService>();
         _resourcesService = A.Fake<IResourcesService>();
 
         A.CallTo(() => _resourcesService.GetCurrentVersionInfo(A<Guid>.That.Matches(g => g.Equals(_resourceStorageInfo.ProjectId)),
                                                                A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.FullPath.Value))))
             .Returns(_versionInfo);
+
+        A.CallTo(() => _projectsService.GetCallbackUriAsync(_projectId)).Returns(RemoteUriAsString);
 
         _resourceStorageInfo = new ResourceStorageInfo(_projectId,
                                                        RestOfPath,
@@ -49,6 +55,7 @@ public class ResourceServiceSpecs
         _testee = new ResourceService(_resourcesService,
                                       _blobService,
                                       _callbackQueueService,
+                                      _projectsService,
                                       _loggerFactory);
     }
 
@@ -123,11 +130,27 @@ public class ResourceServiceSpecs
     }
 
     [TestMethod]
-    public async Task StoreResourceAsync_WhenResourceIsStored_CallbackMessageIsQueued()
+    public async Task StoreResourceAsync_WhenResourceIsStored_WebhookUriIsRetrievedByProjectId()
     {
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<CallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_projectId)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _projectsService.GetCallbackUriAsync(_projectId)).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task StoreResourceAsync_WhenResourceIsStored_CallbackMessageIsQueuedWithCorrectProjectId()
+    {
+        await _testee.StoreResourceAsync(_resourceStorageInfo);
+
+        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_projectId)))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task StoreResourceAsync_WhenResourceIsStored_CallbackMessageIsQueuedWithCorrectRemoteUri()
+    {
+        await _testee.StoreResourceAsync(_resourceStorageInfo);
+
+        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.RemoteUri != null && cm.RemoteUri.Equals(RemoteUriAsString)))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]

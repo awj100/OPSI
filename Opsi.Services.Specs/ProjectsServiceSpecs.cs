@@ -2,6 +2,7 @@
 using FluentAssertions;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Pocos;
+using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
 
@@ -83,10 +84,18 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
-    public async Task StoreProjectAsync_InvokesCallback()
+    public async Task StoreProjectAsync_InvokesCallbackWithCorrectProjectId()
     {
         await _testee.StoreProjectAsync(_project);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<CallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_InvokesCallbackWithCorrectRemoteUri()
+    {
+        await _testee.StoreProjectAsync(_project);
+
+        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.RemoteUri != null && cm.RemoteUri.Equals(_project.CallbackUri)))).MustHaveHappenedOnceExactly();
     }
 }

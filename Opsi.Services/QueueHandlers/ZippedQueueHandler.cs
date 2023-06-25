@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Pocos;
+using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueHandlers.Dependencies;
 using Opsi.Services.QueueServices;
 
@@ -74,9 +74,9 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         }
     }
 
-    private async Task NotifyOfResourceStorageResponseAsync(Guid projectId, string filePath, HttpResponseMessage response)
+    private async Task NotifyOfResourceStorageResponseAsync(Guid projectId, string filePath, HttpResponseMessage response, string callbackuri)
     {
-        var callbackMessage = GetResourceStorageCallbackMessage(projectId, filePath, response);
+        var callbackMessage = GetResourceStorageCallbackMessage(projectId, filePath, response, callbackuri);
 
         await _callbackQueueService.QueueCallbackAsync(callbackMessage);
     }
@@ -110,7 +110,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         {
             var response = await SendResourceForStoringAsync(hostUrl, filePath, unzipService, internalManifest);
 
-            await NotifyOfResourceStorageResponseAsync(internalManifest.ProjectId, filePath, response);
+            await NotifyOfResourceStorageResponseAsync(internalManifest.ProjectId, filePath, response, internalManifest.CallbackUri);
         }
     }
 
@@ -119,20 +119,22 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         return new Project(internalManifest);
     }
 
-    private static CallbackMessage GetProjectConflictCallbackMessage(Manifest manifest)
+    private static InternalCallbackMessage GetProjectConflictCallbackMessage(Manifest manifest)
     {
-        return new CallbackMessage
+        return new InternalCallbackMessage
         {
             ProjectId = manifest.ProjectId,
+            RemoteUri = manifest.CallbackUri,
             Status = $"A project with ID \"{manifest.ProjectId}\" already exists."
         };
     }
 
-    private static CallbackMessage GetResourceStorageCallbackMessage(Guid projectId, string filePath, HttpResponseMessage response)
+    private static InternalCallbackMessage GetResourceStorageCallbackMessage(Guid projectId, string filePath, HttpResponseMessage response, string callbackuri)
     {
-        return new CallbackMessage
+        return new InternalCallbackMessage
         {
             ProjectId = projectId,
+            RemoteUri = callbackuri,
             Status = response.IsSuccessStatusCode
                 ? $"Resource stored: {filePath}"
                 : $"Resource could not be stored (\"{filePath}\"): {response.ReasonPhrase}"

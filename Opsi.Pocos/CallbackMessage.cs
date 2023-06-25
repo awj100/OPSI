@@ -6,13 +6,13 @@ namespace Opsi.Pocos
 	{
 		public CallbackMessage()
 		{
-			Timestamp = DateTime.Now;
+			TimeStamp = DateTime.Now;
 		}
 
 		public Guid ProjectId { get; set; }
 
 		public string Status { get; set; }
 
-		public DateTime Timestamp { get; set; }
+		public DateTime TimeStamp { get; set; }
 	}
 }

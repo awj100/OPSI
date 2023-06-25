@@ -3,6 +3,7 @@ using Opsi.Abstractions;
 using Opsi.AzureStorage;
 using Opsi.Common.Exceptions;
 using Opsi.Pocos;
+using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 
 namespace Opsi.Services;
@@ -94,9 +95,10 @@ internal class ProjectUploadService : IProjectUploadService
     {
         try
         {
-            await _callbackQueueService.QueueCallbackAsync(new CallbackMessage
+            await _callbackQueueService.QueueCallbackAsync(new InternalCallbackMessage
             {
                 ProjectId = manifest.ProjectId,
+                RemoteUri = manifest.CallbackUri,
                 Status = "Upload received"
             });
         }

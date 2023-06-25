@@ -10,6 +10,7 @@ using Opsi.AzureStorage;
 using Opsi.Common.Exceptions;
 using Opsi.Functions.FormHelpers;
 using Opsi.Pocos;
+using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 
 namespace Opsi.Services.Specs;
@@ -175,6 +176,6 @@ public class ProjectUploadServiceSpecs
     {
         await _testee.StoreInitialProjectUploadAsync(_formFileCollection);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<CallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)))).MustHaveHappenedOnceExactly();
     }
 }

@@ -2,6 +2,7 @@
 using Opsi.AzureStorage.Types;
 using Opsi.Common.Exceptions;
 using Opsi.Pocos;
+using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 
 namespace Opsi.Services;
@@ -11,15 +12,18 @@ internal class ResourceService : IResourceService
     private readonly AzureStorage.IBlobService _blobService;
     private readonly ICallbackQueueService _callbackQueueService;
     private readonly ILogger<ResourceService> _log;
+    private readonly IProjectsService _projectsService;
     private readonly AzureStorage.IResourcesService _resourcesService;
 
     public ResourceService(AzureStorage.IResourcesService resourcesService,
                            AzureStorage.IBlobService blobService,
                            ICallbackQueueService callbackQueueService,
+                           IProjectsService projectsService,
                            ILoggerFactory loggerFactory)
     {
         _blobService = blobService;
         _callbackQueueService = callbackQueueService;
+        _projectsService = projectsService;
         _log = loggerFactory.CreateLogger<ResourceService>();
         _resourcesService = resourcesService;
     }
@@ -37,12 +41,17 @@ internal class ResourceService : IResourceService
 
         await StoreFileDataAndVersionAsync(resourceStorageInfo);
 
-        await QueueCallbackMessageAsync(resourceStorageInfo.ProjectId);
+        await QueueCallbackMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo);
 
         if (currentVersionInfo.LockedTo.IsSome)
         {
             await UnlockFileAsync(resourceStorageInfo);
         }
+    }
+
+    private async Task<string?> GetWebhookRemoteUriAsync(Guid projectId)
+    {
+        return await _projectsService.GetCallbackUriAsync(projectId);
     }
 
     private async Task<VersionInfo> GetVersionInfoAsync(ResourceStorageInfo resourceStorageInfo)
@@ -93,6 +102,22 @@ internal class ResourceService : IResourceService
         }
     }
 
+    private async Task QueueCallbackMessageAsync(Guid projectId, ResourceStorageInfo resourceStorageInfo)
+    {
+        var remoteUri = await GetWebhookRemoteUriAsync(projectId);
+        if (remoteUri == null)
+        {
+            return;
+        }
+
+        await _callbackQueueService.QueueCallbackAsync(new InternalCallbackMessage
+        {
+            ProjectId = projectId,
+            RemoteUri = remoteUri,
+            Status = $"Resource stored: {resourceStorageInfo.FileName}"
+        });
+    }
+
     private async Task UnlockFileAsync(ResourceStorageInfo resourceStorageInfo)
     {
         await _resourcesService.UnlockResourceFromUser(resourceStorageInfo.ProjectId, resourceStorageInfo.FullPath.Value, resourceStorageInfo.Username);
@@ -101,14 +126,5 @@ internal class ResourceService : IResourceService
     private static bool CanUserStoreFile(VersionInfo versionInfo, string username)
     {
         return versionInfo.LockedTo.IsNone || versionInfo.LockedTo.Value == username;
-    }
-
-    private async Task QueueCallbackMessageAsync(Guid projectId)
-    {
-        await _callbackQueueService.QueueCallbackAsync(new CallbackMessage
-        {
-            ProjectId = projectId,
-            Status = "Resource stored"
-        });
     }
 }
