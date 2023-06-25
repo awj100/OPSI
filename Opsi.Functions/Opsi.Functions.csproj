@@ -10,9 +10,10 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.14.1" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.10.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.0.13" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage" Version="5.1.2" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage" Version="4.0.4" />
     <PackageReference Include="HttpMultipartParser" Version="8.1.0" />
     <PackageReference Include="Functions.Worker.ContextAccessor" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.0.1" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="QueueHandlers\" />
@@ -20,6 +21,7 @@
     <None Remove="DiModules\" />
     <None Remove="Middleware\" />
     <None Remove="Extensions\" />
+    <None Remove="Webhooks\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.editorconfig" />
@@ -71,5 +73,6 @@
     <Folder Include="DiModules\" />
     <Folder Include="Middleware\" />
     <Folder Include="Extensions\" />
+    <Folder Include="Webhooks\" />
   </ItemGroup>
 </Project>

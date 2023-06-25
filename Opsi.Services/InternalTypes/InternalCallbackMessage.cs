@@ -51,6 +51,11 @@ public class InternalCallbackMessage : CallbackMessage, ITableEntity
 
     public DateTimeOffset? Timestamp { get; set; } = default!;
 
+    public void IncrementFailureCount()
+    {
+        FailureCount = FailureCount + 1;
+    }
+
     public CallbackMessage ToCallbackMessage()
     {
         var callbackMessage = new CallbackMessage();

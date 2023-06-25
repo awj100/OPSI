@@ -2,6 +2,6 @@
 
 public static class QueueNames
 {
-    public const string Callback = "callback-messages";
+    public const string Callback = "webhook-messages";
     public const string Error = "error-messages";
 }

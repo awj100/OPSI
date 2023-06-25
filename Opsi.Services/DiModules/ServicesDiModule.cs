@@ -3,8 +3,6 @@ using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Opsi.Services.Auth.OneTimeAuth;
 using Opsi.Services.QueueHandlers.Dependencies;
-using Opsi.Services.QueueServices;
-using Opsi.Services.TableServices;
 
 [assembly: InternalsVisibleTo("Opsi.Services.Specs")]
 
@@ -27,21 +25,24 @@ public static class ServicesDiModule
             .AddSingleton<Auth.IAuthService, Auth.AuthService>()
             .AddSingleton(typeof(Auth.OneTimeKeyAuthHandler))
             .AddSingleton(typeof(Auth.ReferenceAuthHandler))
-            .AddSingleton<ICallbackQueueService, CallbackQueueService>()
-            .AddSingleton<IErrorQueueService, ErrorQueueService>()
             .AddSingleton<IManifestService, ManifestService>()
             .AddSingleton<IOneTimeAuthService, OneTimeAuthService>()
             .AddSingleton<IOneTimeAuthKeyProvider, OneTimeAuthKeyProvider>()
-            .AddSingleton<IOneTimeAuthKeysTableService, OneTimeAuthKeysTableService>()
             .AddSingleton<IOneTimeAuthService, OneTimeAuthService>()
             .AddSingleton<IProjectsService, ProjectsService>()
-            .AddSingleton<IProjectsTableService, ProjectsTableService>()
             .AddSingleton<IProjectUploadService, ProjectUploadService>()
             .AddSingleton<IResourceDispatcher, ResourceDispatcher>()
             .AddSingleton<IResourceService, ResourceService>()
             .AddSingleton<Func<Stream, IUnzipService>>(serviceProvider => stream => new UnzipService(stream))
             .AddSingleton<IUnzipServiceFactory, UnzipServiceFactory>()
             .AddTransient<IUserProvider, UserProvider>()
-            .AddSingleton<QueueHandlers.IZippedQueueHandler, QueueHandlers.ZippedQueueHandler>();
+            .AddSingleton<QueueHandlers.IZippedQueueHandler, QueueHandlers.ZippedQueueHandler>()
+            .AddSingleton<QueueServices.ICallbackQueueService, QueueServices.CallbackQueueService>()
+            .AddSingleton<QueueServices.IErrorQueueService, QueueServices.ErrorQueueService>()
+            .AddSingleton<TableServices.IOneTimeAuthKeysTableService, TableServices.OneTimeAuthKeysTableService>()
+            .AddSingleton<TableServices.IProjectsTableService, TableServices.ProjectsTableService>()
+            .AddSingleton<TableServices.IWebhookTableService, TableServices.WebhookTableService>()
+            .AddSingleton<Webhooks.IWebhookDispatcher, Webhooks.WebhookDispatcher>()
+            .AddSingleton<Webhooks.IWebhookService, Webhooks.WebhookService>();
     }
 }
