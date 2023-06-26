@@ -3,6 +3,7 @@ using System.Net.Mime;
 using System.Text.Json;
 using Opsi.Constants;
 using Opsi.Pocos;
+using Opsi.Services.InternalTypes;
 
 namespace Opsi.Services.Webhooks;
 
@@ -17,6 +18,11 @@ internal class WebhookDispatcher : IWebhookDispatcher
 
     public async Task<bool> AttemptDeliveryAsync(CallbackMessage callbackMessage, Uri remoteUri)
     {
+        if (callbackMessage is InternalCallbackMessage message)
+        {
+            callbackMessage = message.ToCallbackMessage();
+        }
+
         var serialisedContent = JsonSerializer.Serialize(callbackMessage);
 
         using (var httpClient = _httpClientFactory.CreateClient(HttpClientNames.SelfWithoutAuth))
