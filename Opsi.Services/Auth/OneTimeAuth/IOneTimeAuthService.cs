@@ -4,7 +4,7 @@ namespace Opsi.Services.Auth.OneTimeAuth;
 
 public interface IOneTimeAuthService
 {
-    Task<AuthenticationHeaderValue> GetAuthenticationHeaderAsync(string username, Guid projectId, string filePath);
+    Task<AuthenticationHeaderValue> GetAuthenticationHeaderAsync(string username);
 
     Task<string?> GetUsernameAsync(string authenticationHeader);
 }

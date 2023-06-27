@@ -17,9 +17,9 @@ internal class OneTimeAuthService : IOneTimeAuthService
         _oneTimeAuthKeysTableService = oneTimeAuthKeysTableService;
     }
 
-    public async Task<AuthenticationHeaderValue> GetAuthenticationHeaderAsync(string username, Guid projectId, string filePath)
+    public async Task<AuthenticationHeaderValue> GetAuthenticationHeaderAsync(string username)
     {
-        var key = CreateKey(projectId, filePath);
+        var key = _oneTimeAuthKeyProvider.GenerateUniqueKey();
 
         await StoreKeyAsync(username, key);
 
@@ -72,17 +72,6 @@ internal class OneTimeAuthService : IOneTimeAuthService
         }
 
         return null;
-    }
-
-    private string CreateKey(params object[] keyParts)
-    {
-        const char keyPartsSeparator = '_';
-
-        var safeKeyParts = String.Join(keyPartsSeparator, keyParts)
-                                 .Replace('/', '_');
-
-        var newUniqueKey = _oneTimeAuthKeyProvider.GenerateUniqueKey();
-        return $"{newUniqueKey}{keyPartsSeparator}{safeKeyParts}";
     }
 
     private async Task DeleteKeyAsync(string username, string key)

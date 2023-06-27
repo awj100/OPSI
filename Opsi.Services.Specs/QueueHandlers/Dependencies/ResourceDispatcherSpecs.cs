@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using FakeItEasy;
 using FluentAssertions;
+using Opsi.Constants;
 using Opsi.Services.Auth.OneTimeAuth;
 using Opsi.Services.QueueHandlers.Dependencies;
 using Opsi.Services.Specs.Http;
@@ -12,14 +13,12 @@ namespace Opsi.Services.Specs.QueueHandlers.Dependencies;
 public class ResourceDispatcherSpecs
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    private const string AuthHeaderScheme = "TestScheme";
-    private const string AuthHeaderParameter = "Test Parameter";
     private const string FilePath = "file/path";
     private const string HostUrl = "https://request.not.sent";
     private IHttpClientFactory _httpClientFactory;
-    private IOneTimeAuthService _oneTimeAuthService;
     private readonly Guid _projectId = Guid.NewGuid();
     private Stream _testStream;
+    private string _testContent;
     private Uri _testUri;
     private const string Username = "user@test.com";
     private ResourceDispatcher _testee;
@@ -28,15 +27,15 @@ public class ResourceDispatcherSpecs
     [TestInitialize]
     public void TestInit()
     {
+        _testContent = Guid.NewGuid().ToString();
+
+        var testContentBytes = System.Text.Encoding.UTF8.GetBytes(_testContent);
+        _testStream = new MemoryStream(testContentBytes);
+
         _httpClientFactory = A.Fake<IHttpClientFactory>();
-        _oneTimeAuthService = A.Fake<IOneTimeAuthService>();
-        _testStream = new MemoryStream();
         _testUri = new Uri($"{HostUrl}/projects/{_projectId}/resource/{FilePath}");
 
-        A.CallTo(() => _oneTimeAuthService.GetAuthenticationHeaderAsync(Username, _projectId, FilePath))
-         .Returns(Task.FromResult(new AuthenticationHeaderValue(AuthHeaderScheme, AuthHeaderParameter)));
-
-        _testee = new ResourceDispatcher(_httpClientFactory, _oneTimeAuthService);
+        _testee = new ResourceDispatcher(_httpClientFactory);
     }
 
     [TestCleanup]
@@ -65,7 +64,44 @@ public class ResourceDispatcherSpecs
     }
 
     [TestMethod]
-    public async Task DispatchAsync_GetsOneTimeAuthKeyFromService()
+    public async Task DispatchAsync_SendsSpecifiedStream()
+    {
+        const HttpStatusCode httpStatusCode = HttpStatusCode.BadRequest;
+
+        var responseMessage = new HttpResponseMessage(httpStatusCode);
+        var uriAndResponse = new ContentConditionalUriAndResponse(_testUri,
+                                                                  responseMessage,
+                                                                  async content => {
+                                                                      if (content is MultipartFormDataContent multipartFormDataContent)
+                                                                      {
+                                                                          multipartFormDataContent.Count().Should().Be(1);
+
+                                                                          if (multipartFormDataContent.Single() is StreamContent streamContent)
+                                                                          {
+                                                                              var s = await streamContent.ReadAsStringAsync();
+
+                                                                              s.Should().Be(_testContent);
+                                                                          }
+
+                                                                          return true;
+                                                                      }
+
+                                                                      return false;
+                                                                  });
+
+        ConfigureHttpResponse(uriAndResponse);
+
+        var response = await _testee.DispatchAsync(HostUrl,
+                                                   _projectId,
+                                                   FilePath,
+                                                   _testStream,
+                                                   Username);
+
+        response.StatusCode.Should().Be(httpStatusCode);
+    }
+
+    [TestMethod]
+    public async Task DispatchAsync_UsesOneTimeAuthClient()
     {
         var response = await _testee.DispatchAsync(HostUrl,
                                                    _projectId,
@@ -73,8 +109,7 @@ public class ResourceDispatcherSpecs
                                                    _testStream,
                                                    Username);
 
-        A.CallTo(() => _oneTimeAuthService.GetAuthenticationHeaderAsync(Username, _projectId, FilePath))
-         .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _httpClientFactory.CreateClient(HttpClientNames.OneTimeAuth)).MustHaveHappenedOnceExactly();
     }
 
     private void ConfigureHttpResponse(UriAndResponse uriAndResponse)
