@@ -39,7 +39,7 @@ public static class ServicesDiModule
             .AddSingleton<IUnzipServiceFactory, UnzipServiceFactory>()
             .AddTransient<IUserProvider, UserProvider>()
             .AddSingleton<QueueHandlers.IZippedQueueHandler, QueueHandlers.ZippedQueueHandler>()
-            .AddSingleton<QueueServices.ICallbackQueueService, QueueServices.CallbackQueueService>()
+            .AddSingleton<QueueServices.IWebhookQueueService, QueueServices.WebhookQueueService>()
             .AddSingleton<QueueServices.IErrorQueueService, QueueServices.ErrorQueueService>()
             .AddSingleton<TableServices.IOneTimeAuthKeysTableService, TableServices.OneTimeAuthKeysTableService>()
             .AddSingleton<TableServices.IProjectsTableService, TableServices.ProjectsTableService>()

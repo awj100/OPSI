@@ -1,5 +1,4 @@
 ﻿using Opsi.AzureStorage.TableEntities;
-using Opsi.Pocos;
 using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
@@ -8,20 +7,20 @@ namespace Opsi.Services;
 
 public class ProjectsService : IProjectsService
 {
-    private readonly ICallbackQueueService _callbackQueueService;
     private readonly IProjectsTableService _projectsTableService;
+    private readonly IWebhookQueueService _webhookQueueService;
 
-    public ProjectsService(IProjectsTableService projectsTableService, ICallbackQueueService callbackQueueService)
+    public ProjectsService(IProjectsTableService projectsTableService, IWebhookQueueService QueueService)
     {
-        _callbackQueueService = callbackQueueService;
         _projectsTableService = projectsTableService;
+        _webhookQueueService = QueueService;
     }
 
-    public async Task<string?> GetCallbackUriAsync(Guid projectId)
+    public async Task<string?> GetWebhookUriAsync(Guid projectId)
     {
         var project = await _projectsTableService.GetProjectByIdAsync(projectId);
 
-        return project?.CallbackUri;
+        return project?.WebhookUri;
     }
 
     public async Task<bool> IsNewProjectAsync(Guid projectId)
@@ -35,15 +34,15 @@ public class ProjectsService : IProjectsService
     {
         await _projectsTableService.StoreProjectAsync(project);
 
-        await QueueCallbackMessageAsync(project.Id, project.CallbackUri);
+        await QueueWebhookMessageAsync(project.Id, project.WebhookUri);
     }
 
-    private async Task QueueCallbackMessageAsync(Guid projectId, string callbackUri)
+    private async Task QueueWebhookMessageAsync(Guid projectId, string Uri)
     {
-        await _callbackQueueService.QueueCallbackAsync(new InternalCallbackMessage
+        await _webhookQueueService.QueueWebhookMessageAsync(new InternalWebhookMessage
         {
             ProjectId = projectId,
-            RemoteUri = callbackUri,
+            RemoteUri = Uri,
             Status = "Project created"
         });
     }

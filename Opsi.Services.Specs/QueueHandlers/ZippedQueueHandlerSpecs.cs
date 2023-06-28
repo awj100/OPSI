@@ -20,12 +20,12 @@ public class ZippedQueueHandlerSpecs
     private IReadOnlyCollection<string> _nonManifestContentFilePaths;
     private Stream _nonManifestStream;
     private IBlobService _blobService;
-    private ICallbackQueueService _callbackQueueService;
     private IProjectsService _projectsService;
     private IResourceDispatcher _resourceDispatcher;
     private ISettingsProvider _settingsProvider;
     private IUnzipService _unzipService;
     private IUnzipServiceFactory _unzipServiceFactory;
+    private IWebhookQueueService _webhookQueueService;
     private ZippedQueueHandler _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -46,12 +46,12 @@ public class ZippedQueueHandlerSpecs
         _nonManifestStream = GetNonManifestArchiveStream(_nonManifestContentFilePaths);
 
         _blobService = A.Fake<IBlobService>();
-        _callbackQueueService = A.Fake<ICallbackQueueService>();
         _projectsService = A.Fake<IProjectsService>();
         _resourceDispatcher = A.Fake<IResourceDispatcher>();
         _settingsProvider = A.Fake<ISettingsProvider>();
         _unzipService = A.Fake<IUnzipService>();
         _unzipServiceFactory = A.Fake<IUnzipServiceFactory>();
+        _webhookQueueService = A.Fake<IWebhookQueueService>();
 
         A.CallTo(() => _blobService.RetrieveAsync(A<string>.That.Matches(s => s.Contains(_manifest.ProjectId.ToString())))).Returns(_nonManifestStream);
         A.CallTo(() => _unzipServiceFactory.Create(_nonManifestStream)).Returns(_unzipService);
@@ -61,7 +61,7 @@ public class ZippedQueueHandlerSpecs
 
         _testee = new ZippedQueueHandler(_settingsProvider,
                                          _projectsService,
-                                         _callbackQueueService,
+                                         _webhookQueueService,
                                          _blobService,
                                          _unzipServiceFactory,
                                          _resourceDispatcher,
@@ -101,27 +101,27 @@ public class ZippedQueueHandlerSpecs
     }
 
     [TestMethod]
-    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdAlreadyRecorded_DoesNotSendAnyResourceStoredCallbacks()
+    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdAlreadyRecorded_DoesNotSendAnyResourceStoredWebhooks()
     {
         const bool isNewProject = false;
         A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
                                                                                                               && cm.Status.Contains("Resource stored"))))
             .MustNotHaveHappened();
     }
 
     [TestMethod]
-    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdAlreadyRecorded_QueuesCallbackWithConflictMessage()
+    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdAlreadyRecorded_QueuesWebhookWithConflictMessage()
     {
         const bool isNewProject = false;
         A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
                                                                                                               && cm.Status.Equals($"A project with ID \"{_manifest.ProjectId}\" already exists."))))
             .MustHaveHappenedOnceExactly();
     }
@@ -286,7 +286,7 @@ public class ZippedQueueHandlerSpecs
     }
 
     [TestMethod]
-    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_SendsCallbackForAllNonExcludedResources()
+    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_SendsWebhookForAllNonExcludedResources()
     {
         const bool isNewProject = true;
         A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
@@ -298,12 +298,12 @@ public class ZippedQueueHandlerSpecs
 
         foreach (var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.Status.Equals($"Resource stored: {nonExcludedFilePath}")))).MustHaveHappenedOnceExactly();
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.Status.Equals($"Resource stored: {nonExcludedFilePath}")))).MustHaveHappenedOnceExactly();
         }
     }
 
     [TestMethod]
-    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_SendsCallbackForAllNonExcludedResourcesWithCorrectProjectId()
+    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_SendsWebhookForAllNonExcludedResourcesWithCorrectProjectId()
     {
         const bool isNewProject = true;
         A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
@@ -313,11 +313,11 @@ public class ZippedQueueHandlerSpecs
 
         var nonExcludedFilePaths = _nonManifestContentFilePaths.Except(_manifest.ResourceExclusionPaths).ToList();
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)))).MustHaveHappenedANumberOfTimesMatching(times => times == nonExcludedFilePaths.Count);
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)))).MustHaveHappenedANumberOfTimesMatching(times => times == nonExcludedFilePaths.Count);
     }
 
     [TestMethod]
-    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_DoesNotSendCallbackForExcludedResources()
+    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_DoesNotSendWebhookForExcludedResources()
     {
         const bool isNewProject = true;
         A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
@@ -327,12 +327,12 @@ public class ZippedQueueHandlerSpecs
 
         foreach (var excludedFilePath in _manifest.ResourceExclusionPaths)
         {
-            A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.Status.Contains(excludedFilePath)))).MustNotHaveHappened();
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.Status.Contains(excludedFilePath)))).MustNotHaveHappened();
         }
     }
 
     [TestMethod]
-    public async Task RetrieveAndHandleUploadAsync_WhenResourceDispatcherReportsNotStored_SendsCallbackForAllNonExcludedResourcesWithCorrectProjectId()
+    public async Task RetrieveAndHandleUploadAsync_WhenResourceDispatcherReportsNotStored_SendsWebhookForAllNonExcludedResourcesWithCorrectProjectId()
     {
         const bool isNewProject = true;
         var nonSuccessResponse = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest);
@@ -350,7 +350,7 @@ public class ZippedQueueHandlerSpecs
 
         foreach(var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.Status.StartsWith($"Resource could not be stored (\"{nonExcludedFilePath}\")")))).MustHaveHappenedOnceExactly();
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.Status.StartsWith($"Resource could not be stored (\"{nonExcludedFilePath}\")")))).MustHaveHappenedOnceExactly();
         }
     }
 

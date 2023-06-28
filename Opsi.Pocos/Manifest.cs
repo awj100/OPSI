@@ -7,13 +7,11 @@ namespace Opsi.Pocos
 	{
 		public Manifest()
 		{
-			CallbackUri = String.Empty;
 			PackageName = String.Empty;
 			ProjectId = Guid.Empty;
             ResourceExclusionPaths = new List<string>();
+            WebhookUri = String.Empty;
         }
-
-		public string CallbackUri { get; set; }
 
 		public string HandlerQueue { get; set; }
 
@@ -22,6 +20,8 @@ namespace Opsi.Pocos
 		public Guid ProjectId { get; set; }
 
         public List<string> ResourceExclusionPaths { get; set; }
+
+        public string WebhookUri { get; set; }
 
         public string GetPackagePathForStore()
 		{

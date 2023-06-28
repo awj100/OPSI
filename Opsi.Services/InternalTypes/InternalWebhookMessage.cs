@@ -4,18 +4,18 @@ using Opsi.Pocos;
 
 namespace Opsi.Services.InternalTypes;
 
-public class InternalCallbackMessage : CallbackMessage, ITableEntity
+public class InternalWebhookMessage : WebhookMessage, ITableEntity
 {
     // Default constructor, required for JSON deserialisation.
-    public InternalCallbackMessage()
+    public InternalWebhookMessage()
     {
     }
 
-    public InternalCallbackMessage(CallbackMessage callbackMessage, string remoteUri)
+    public InternalWebhookMessage(WebhookMessage webhookMessage, string remoteUri)
     {
-        foreach (var propInfo in callbackMessage.GetType().GetProperties(System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.Public))
+        foreach (var propInfo in webhookMessage.GetType().GetProperties(System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.Public))
         {
-            propInfo.SetValue(this, propInfo.GetValue(callbackMessage));
+            propInfo.SetValue(this, propInfo.GetValue(webhookMessage));
         }
 
         RemoteUri = remoteUri;
@@ -32,7 +32,7 @@ public class InternalCallbackMessage : CallbackMessage, ITableEntity
         {
             if (!Guid.TryParse(value, out var projectId))
             {
-                throw new ArgumentException($"Invalid value for {nameof(InternalCallbackMessage)}.{nameof(PartitionKey)}: {value}.");
+                throw new ArgumentException($"Invalid value for {nameof(InternalWebhookMessage)}.{nameof(PartitionKey)}: {value}.");
             }
 
             ProjectId = projectId;
@@ -56,15 +56,15 @@ public class InternalCallbackMessage : CallbackMessage, ITableEntity
         FailureCount = FailureCount + 1;
     }
 
-    public CallbackMessage ToCallbackMessage()
+    public WebhookMessage ToWebhookMessage()
     {
-        var callbackMessage = new CallbackMessage();
+        var webhookMessage = new WebhookMessage();
 
-        foreach (var propInfo in callbackMessage.GetType().GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+        foreach (var propInfo in webhookMessage.GetType().GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
         {
-            propInfo.SetValue(callbackMessage, propInfo.GetValue(this));
+            propInfo.SetValue(webhookMessage, propInfo.GetValue(this));
         }
 
-        return callbackMessage;
+        return webhookMessage;
     }
 }

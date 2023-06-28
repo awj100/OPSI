@@ -14,7 +14,7 @@ public class WebhookDispatcherSpecs
 {
     private const string _remoteUriAsString = "https://test.url.com";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    private CallbackMessage _callbackMessage;
+    private WebhookMessage _webhookMessage;
     private IHttpClientFactory _httpClientFactory;
     private Uri _remoteUri;
     private WebhookDispatcher _testee;
@@ -23,7 +23,7 @@ public class WebhookDispatcherSpecs
     [TestInitialize]
     public void TestInit()
     {
-        _callbackMessage = new CallbackMessage
+        _webhookMessage = new WebhookMessage
         {
             ProjectId = Guid.NewGuid(),
             Status = Guid.NewGuid().ToString()
@@ -45,7 +45,7 @@ public class WebhookDispatcherSpecs
 
         ConfigureHttpResponse(uriAndResponse);
 
-        var result = await _testee.AttemptDeliveryAsync(_callbackMessage, _remoteUri);
+        var result = await _testee.AttemptDeliveryAsync(_webhookMessage, _remoteUri);
 
         result.Should().BeTrue();
     }
@@ -60,40 +60,40 @@ public class WebhookDispatcherSpecs
 
         ConfigureHttpResponse(uriAndResponse);
 
-        var result = await _testee.AttemptDeliveryAsync(_callbackMessage, _remoteUri);
+        var result = await _testee.AttemptDeliveryAsync(_webhookMessage, _remoteUri);
 
         result.Should().BeFalse();
     }
     
     [TestMethod]
-    public async Task AttemptDeliveryAsync_DeliversSpecifiedCallbackMessage()
+    public async Task AttemptDeliveryAsync_DeliversSpecifiedWebhookMessage()
     {
         const HttpStatusCode httpStatusCode = HttpStatusCode.OK;
 
-        var internalCallbackMessage = new InternalCallbackMessage(_callbackMessage, _remoteUriAsString);
+        var internalWebhookMessage = new InternalWebhookMessage(_webhookMessage, _remoteUriAsString);
 
         var responseMessage = new HttpResponseMessage(httpStatusCode);
-        var uriAndResponse = new ContentConditionalUriAndResponse<CallbackMessage>(_remoteUri,
-                                                                  responseMessage,
-                                                                  cm => cm.ProjectId.Equals(_callbackMessage.ProjectId)
-                                                                        && cm.Status.Equals(_callbackMessage.Status),
-                                                                  json => System.Text.Json.JsonSerializer.Deserialize<CallbackMessage>(json)!);
+        var uriAndResponse = new ContentConditionalUriAndResponse<WebhookMessage>(_remoteUri,
+                                                                                  responseMessage,
+                                                                                  cm => cm.ProjectId.Equals(_webhookMessage.ProjectId)
+                                                                                        && cm.Status.Equals(_webhookMessage.Status),
+                                                                                  json => System.Text.Json.JsonSerializer.Deserialize<WebhookMessage>(json)!);
         
         ConfigureHttpResponse(uriAndResponse);
 
-        var result = await _testee.AttemptDeliveryAsync(_callbackMessage, _remoteUri);
+        var result = await _testee.AttemptDeliveryAsync(_webhookMessage, _remoteUri);
 
         result.Should().BeTrue();
     }
 
     [TestMethod]
-    public async Task AttemptDeliveryAsync_WhenPassedInternalCallbackMessage_DeliversCallbackMessage()
+    public async Task AttemptDeliveryAsync_WhenPassedInternalWebhookMessage_DeliversWebhookMessage()
     {
         const HttpStatusCode httpStatusCode = HttpStatusCode.OK;
 
-        var internalCallbackMessage = new InternalCallbackMessage(_callbackMessage, _remoteUriAsString);
+        var internalWebhookMessage = new InternalWebhookMessage(_webhookMessage, _remoteUriAsString);
 
-        // Verify that the serialised content does not contain a property declared on InternalCallbackMessage.
+        // Verify that the serialised content does not contain a property declared on InternalWebhookMessage.
         var responseMessage = new HttpResponseMessage(httpStatusCode);
         var uriAndResponse = new RequestConditionalUriAndResponse(_remoteUri,
                                                                   responseMessage,
@@ -103,12 +103,12 @@ public class WebhookDispatcherSpecs
                                                                           return false;
                                                                       }
                                                                       var serialisedContent = await stringContent.ReadAsStringAsync();
-                                                                      return !serialisedContent.Contains(nameof(InternalCallbackMessage.FailureCount));
+                                                                      return !serialisedContent.Contains(nameof(InternalWebhookMessage.FailureCount));
                                                                   });
 
         ConfigureHttpResponse(uriAndResponse);
 
-        var result = await _testee.AttemptDeliveryAsync(internalCallbackMessage, _remoteUri);
+        var result = await _testee.AttemptDeliveryAsync(internalWebhookMessage, _remoteUri);
 
         result.Should().BeTrue();
     }

@@ -21,7 +21,7 @@ public class ProjectUploadServiceSpecs
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private const string AuthHeaderScheme = "TestScheme";
     private const string AuthHeaderValue = "Test auth header value";
-    private const string CallbackUri = "Test callback URI";
+    private const string WebhookUri = "Test  URI";
     private const string HandlerQueueName = "Test handler queue";
     private const string PackageName = "Test package name";
     private const string Username = "user@test.com";
@@ -32,7 +32,7 @@ public class ProjectUploadServiceSpecs
     private Stream _nonManifestStream;
 
     private IBlobService _blobService;
-    private ICallbackQueueService _callbackQueueService;
+    private IWebhookQueueService _QueueService;
     private ILoggerFactory _loggerFactory;
     private IManifestService _manifestService;
     private IQueueService _queueService;
@@ -46,7 +46,7 @@ public class ProjectUploadServiceSpecs
     {
         _manifest = new Manifest
         {
-            CallbackUri = CallbackUri,
+            WebhookUri = WebhookUri,
             HandlerQueue = HandlerQueueName,
             PackageName = PackageName,
             ProjectId = Guid.NewGuid()
@@ -61,7 +61,7 @@ public class ProjectUploadServiceSpecs
         };
 
         _blobService = A.Fake<IBlobService>();
-        _callbackQueueService = A.Fake<ICallbackQueueService>();
+        _QueueService = A.Fake<IWebhookQueueService>();
         _loggerFactory = new NullLoggerFactory();
         _manifestService = A.Fake<IManifestService>();
         _queueServiceFactory = A.Fake<IQueueServiceFactory>();
@@ -74,7 +74,7 @@ public class ProjectUploadServiceSpecs
         A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => Username));
 
         _testee = new ProjectUploadService(_manifestService,
-                                           _callbackQueueService,
+                                           _QueueService,
                                            _queueServiceFactory,
                                            _blobService,
                                            _userProvider,
@@ -127,11 +127,11 @@ public class ProjectUploadServiceSpecs
     }
 
     [TestMethod]
-    public async Task StoreInitialProjectUploadAsync_QueuesInternalManifestWithCorrectCallbackUri()
+    public async Task StoreInitialProjectUploadAsync_QueuesInternalManifestWithCorrectWebhookUri()
     {
         await _testee.StoreInitialProjectUploadAsync(_formFileCollection);
 
-        A.CallTo(() => _queueService.AddMessageAsync(A<InternalManifest>.That.Matches(m => m.CallbackUri.Equals(_manifest.CallbackUri))))
+        A.CallTo(() => _queueService.AddMessageAsync(A<InternalManifest>.That.Matches(m => m.WebhookUri.Equals(_manifest.WebhookUri))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -172,10 +172,10 @@ public class ProjectUploadServiceSpecs
     }
 
     [TestMethod]
-    public async Task StoreInitialProjectUploadAsync_QueuesCallbackWithCorrectProjectId()
+    public async Task StoreInitialProjectUploadAsync_QueuesWebhookWithCorrectProjectId()
     {
         await _testee.StoreInitialProjectUploadAsync(_formFileCollection);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)))).MustHaveHappenedOnceExactly();
     }
 }

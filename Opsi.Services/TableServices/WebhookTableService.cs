@@ -15,29 +15,29 @@ public class WebhookTableService : IWebhookTableService
         _tableService = tableServiceFactory.Create(TableName);
     }
 
-    public async Task<IReadOnlyCollection<InternalCallbackMessage>> GetUndeliveredAsync()
+    public async Task<IReadOnlyCollection<InternalWebhookMessage>> GetUndeliveredAsync()
     {
         const int maxResultsPerPage = 1;
         IEnumerable<string>? selectProps = null;
-        var callbackResults = new List<InternalCallbackMessage>();
+        var Results = new List<InternalWebhookMessage>();
 
         var tableClient = _tableService.GetTableClient();
 
-        var queryResults = tableClient.QueryAsync<InternalCallbackMessage>($"{nameof(InternalCallbackMessage.IsDelivered)} eq false and {nameof(InternalCallbackMessage.FailureCount)} lt {MaxFailureCount}",
+        var queryResults = tableClient.QueryAsync<InternalWebhookMessage>($"{nameof(InternalWebhookMessage.IsDelivered)} eq false and {nameof(InternalWebhookMessage.FailureCount)} lt {MaxFailureCount}",
                                                                            maxResultsPerPage,
                                                                            selectProps,
                                                                            CancellationToken.None);
 
         await foreach (var queryResult in queryResults)
         {
-            callbackResults.Add(queryResult);
+            Results.Add(queryResult);
         }
 
-        return callbackResults;
+        return Results;
     }
 
-    public async Task StoreAsync(InternalCallbackMessage internalCallbackMessage)
+    public async Task StoreAsync(InternalWebhookMessage internalWebhookMessage)
     {
-        await _tableService.StoreTableEntityAsync(internalCallbackMessage);
+        await _tableService.StoreTableEntityAsync(internalWebhookMessage);
     }
 }

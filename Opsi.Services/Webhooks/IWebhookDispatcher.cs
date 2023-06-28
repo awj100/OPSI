@@ -4,5 +4,5 @@ namespace Opsi.Services.Webhooks;
 
 public interface IWebhookDispatcher
 {
-    Task<bool> AttemptDeliveryAsync(CallbackMessage callbackMessage, Uri remoteUri);
+    Task<bool> AttemptDeliveryAsync(WebhookMessage webhookMessage, Uri remoteUri);
 }

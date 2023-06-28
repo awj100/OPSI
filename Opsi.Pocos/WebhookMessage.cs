@@ -2,9 +2,9 @@
 
 namespace Opsi.Pocos
 {
-	public class CallbackMessage
+	public class WebhookMessage
 	{
-		public CallbackMessage()
+		public WebhookMessage()
 		{
 			TimeStamp = DateTime.Now;
 		}

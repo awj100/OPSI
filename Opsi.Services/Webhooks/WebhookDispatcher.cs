@@ -16,14 +16,14 @@ internal class WebhookDispatcher : IWebhookDispatcher
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<bool> AttemptDeliveryAsync(CallbackMessage callbackMessage, Uri remoteUri)
+    public async Task<bool> AttemptDeliveryAsync(WebhookMessage webhookMessage, Uri remoteUri)
     {
-        if (callbackMessage is InternalCallbackMessage message)
+        if (webhookMessage is InternalWebhookMessage message)
         {
-            callbackMessage = message.ToCallbackMessage();
+            webhookMessage = message.ToWebhookMessage();
         }
 
-        var serialisedContent = JsonSerializer.Serialize(callbackMessage);
+        var serialisedContent = JsonSerializer.Serialize(webhookMessage);
 
         using (var httpClient = _httpClientFactory.CreateClient(HttpClientNames.SelfWithoutAuth))
         using (var content = new MultipartFormDataContent())

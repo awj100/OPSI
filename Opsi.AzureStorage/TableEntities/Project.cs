@@ -12,13 +12,11 @@ public record Project : ITableEntity
 
     public Project(InternalManifest internalManifest)
     {
-        CallbackUri = internalManifest.CallbackUri;
         Id = internalManifest.ProjectId;
         Name = internalManifest.PackageName;
         Username = internalManifest.Username;
+        WebhookUri = internalManifest.WebhookUri;
     }
-
-    public string CallbackUri { get; set; } = default!;
 
     public ETag ETag { get; set; } = default!;
 
@@ -37,6 +35,8 @@ public record Project : ITableEntity
     public DateTimeOffset? Timestamp { get; set; } = default!;
 
     public string Username { get; set; } = default!;
+
+    public string WebhookUri { get; set; } = default!;
 
     public override string ToString()
     {

@@ -27,7 +27,7 @@ namespace Opsi.Functions.Webhooks
 
     public class MyInfo
     {
-        public MyScheduleStatus ScheduleStatus { get; set; }
+        public MyScheduleStatus ScheduleStatus { get; set; } = default!;
 
         public bool IsPastDue { get; set; }
     }

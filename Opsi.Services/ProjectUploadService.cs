@@ -11,27 +11,27 @@ namespace Opsi.Services;
 internal class ProjectUploadService : IProjectUploadService
 {
     private readonly IBlobService _blobService;
-    private readonly ICallbackQueueService _callbackQueueService;
     private readonly ILogger<ProjectUploadService> _log;
     private readonly IManifestService _manifestService;
     private readonly IQueueServiceFactory _queueServiceFactory;
     private readonly IUserProvider _userProvider;
+    private readonly IWebhookQueueService _webhookQueueService;
 
     public int RequiredNumberOfUploadedObjects => 2;
 
     public ProjectUploadService(IManifestService manifestService,
-                                ICallbackQueueService callbackQueueService,
+                                IWebhookQueueService QueueService,
                                 IQueueServiceFactory queueServiceFactory,
                                 IBlobService blobService,
                                 IUserProvider userProvider,
                                 ILoggerFactory loggerFactory)
     {
-        _callbackQueueService = callbackQueueService;
         _manifestService = manifestService;
         _queueServiceFactory = queueServiceFactory;
         _blobService = blobService;
         _userProvider = userProvider;
         _log = loggerFactory.CreateLogger<ProjectUploadService>();
+        _webhookQueueService = QueueService;
     }
 
     public async Task StoreInitialProjectUploadAsync(IFormFileCollection formCollection)
@@ -48,7 +48,7 @@ internal class ProjectUploadService : IProjectUploadService
 
         await QueueManifestAsync(manifest);
 
-        await QueueCallbackMessageAsync(manifest);
+        await QueueWebhookMessageAsync(manifest);
     }
 
     private async Task QueueManifestAsync(Manifest manifest)
@@ -91,20 +91,20 @@ internal class ProjectUploadService : IProjectUploadService
         return formFiles.Count == RequiredNumberOfUploadedObjects;
     }
 
-    private async Task QueueCallbackMessageAsync(Manifest manifest)
+    private async Task QueueWebhookMessageAsync(Manifest manifest)
     {
         try
         {
-            await _callbackQueueService.QueueCallbackAsync(new InternalCallbackMessage
+            await _webhookQueueService.QueueWebhookMessageAsync(new InternalWebhookMessage
             {
                 ProjectId = manifest.ProjectId,
-                RemoteUri = manifest.CallbackUri,
+                RemoteUri = manifest.WebhookUri,
                 Status = "Upload received"
             });
         }
         catch (Exception ex)
         {
-            const string errorManifest = "An error was encountered while queuing the callback message.";
+            const string errorManifest = "An error was encountered while queuing the  message.";
             _log.LogError(errorManifest, ex);
             throw new Exception(errorManifest);
         }

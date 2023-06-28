@@ -14,43 +14,43 @@ internal class WebhookService : IWebhookService
         _webhookTableService = webhookTableService;
     }
 
-    public async Task AttemptDeliveryAndRecordAsync(InternalCallbackMessage internalCallbackMessage)
+    public async Task AttemptDeliveryAndRecordAsync(InternalWebhookMessage internalWebhookMessage)
     {
         const string absoluteUriPrefix = "http";
 
-        // Don't sent the InternalCallbackMessage.
-        var callbackMessage = internalCallbackMessage.ToCallbackMessage();
+        // Don't sent the InternalWebhookMessage.
+        var webhookMessage = internalWebhookMessage.ToWebhookMessage();
 
-        // Obtain a Uri object from the CallbackMessage.RemoteUri string.
-        if (String.IsNullOrWhiteSpace(internalCallbackMessage.RemoteUri)
-            || !internalCallbackMessage.RemoteUri.StartsWith(absoluteUriPrefix)
-            || !Uri.TryCreate(internalCallbackMessage.RemoteUri, UriKind.Absolute, out var remoteUri))
+        // Obtain a Uri object from the WebhookMessage.RemoteUri string.
+        if (String.IsNullOrWhiteSpace(internalWebhookMessage.RemoteUri)
+            || !internalWebhookMessage.RemoteUri.StartsWith(absoluteUriPrefix)
+            || !Uri.TryCreate(internalWebhookMessage.RemoteUri, UriKind.Absolute, out var remoteUri))
         {
             return;
         }
 
         // Dispatch the message.
-        var isSuccessfullyDispatched = await _webhookDispatcher.AttemptDeliveryAsync(callbackMessage, remoteUri);
+        var isSuccessfullyDispatched = await _webhookDispatcher.AttemptDeliveryAsync(webhookMessage, remoteUri);
 
         // Record whether successful.
-        internalCallbackMessage.IsDelivered = isSuccessfullyDispatched;
+        internalWebhookMessage.IsDelivered = isSuccessfullyDispatched;
 
         // If unsuccessful, update the FailureCount property.
         if (!isSuccessfullyDispatched)
         {
-            internalCallbackMessage.IncrementFailureCount();
+            internalWebhookMessage.IncrementFailureCount();
         }
 
-        // Store the InternalCallbackMessage object.
-        //  - This should overwrite any previous entry for this InternalCallbackMessage because PartitionKey and RowKey are unchanged.
-        await _webhookTableService.StoreAsync(internalCallbackMessage);
+        // Store the InternalWebhookMessage object.
+        //  - This should overwrite any previous entry for this InternalWebhookMessage because PartitionKey and RowKey are unchanged.
+        await _webhookTableService.StoreAsync(internalWebhookMessage);
     }
 
     public async Task DispatchUndeliveredAsync()
     {
-        var undeliveredInternalCallbackMessages = await _webhookTableService.GetUndeliveredAsync();
+        var undeliveredInternalWebhookMessages = await _webhookTableService.GetUndeliveredAsync();
 
-        var reAttemptTasks = undeliveredInternalCallbackMessages.Select(AttemptDeliveryAndRecordAsync);
+        var reAttemptTasks = undeliveredInternalWebhookMessages.Select(AttemptDeliveryAndRecordAsync);
 
         await Task.WhenAll(reAttemptTasks);
     }

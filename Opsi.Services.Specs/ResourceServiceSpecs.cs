@@ -24,7 +24,7 @@ public class ResourceServiceSpecs
     private VersionInfo _versionInfo = new(VersionIndex);
 
     private IBlobService _blobService;
-    private ICallbackQueueService _callbackQueueService;
+    private IWebhookQueueService _QueueService;
     private ILoggerFactory _loggerFactory;
     private IProjectsService _projectsService;
     private IResourcesService _resourcesService;
@@ -36,7 +36,7 @@ public class ResourceServiceSpecs
     public void TestInit()
     {
         _blobService = A.Fake<IBlobService>();
-        _callbackQueueService = A.Fake<ICallbackQueueService>();
+        _QueueService = A.Fake<IWebhookQueueService>();
         _loggerFactory = new NullLoggerFactory();
         _projectsService = A.Fake<IProjectsService>();
         _resourcesService = A.Fake<IResourcesService>();
@@ -45,7 +45,7 @@ public class ResourceServiceSpecs
                                                                A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.FullPath.Value))))
             .Returns(_versionInfo);
 
-        A.CallTo(() => _projectsService.GetCallbackUriAsync(_projectId)).Returns(RemoteUriAsString);
+        A.CallTo(() => _projectsService.GetWebhookUriAsync(_projectId)).Returns(RemoteUriAsString);
 
         _resourceStorageInfo = new ResourceStorageInfo(_projectId,
                                                        RestOfPath,
@@ -54,7 +54,7 @@ public class ResourceServiceSpecs
 
         _testee = new ResourceService(_resourcesService,
                                       _blobService,
-                                      _callbackQueueService,
+                                      _QueueService,
                                       _projectsService,
                                       _loggerFactory);
     }
@@ -134,23 +134,23 @@ public class ResourceServiceSpecs
     {
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _projectsService.GetCallbackUriAsync(_projectId)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _projectsService.GetWebhookUriAsync(_projectId)).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
-    public async Task StoreResourceAsync_WhenResourceIsStored_CallbackMessageIsQueuedWithCorrectProjectId()
+    public async Task StoreResourceAsync_WhenResourceIsStored_WebhookMessageIsQueuedWithCorrectProjectId()
     {
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_projectId)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_projectId)))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
-    public async Task StoreResourceAsync_WhenResourceIsStored_CallbackMessageIsQueuedWithCorrectRemoteUri()
+    public async Task StoreResourceAsync_WhenResourceIsStored_WebhookMessageIsQueuedWithCorrectRemoteUri()
     {
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.RemoteUri != null && cm.RemoteUri.Equals(RemoteUriAsString)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.RemoteUri != null && cm.RemoteUri.Equals(RemoteUriAsString)))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]

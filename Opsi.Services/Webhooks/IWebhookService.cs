@@ -4,7 +4,7 @@ namespace Opsi.Services.Webhooks;
 
 public interface IWebhookService
 {
-    Task AttemptDeliveryAndRecordAsync(InternalCallbackMessage internalCallbackMessage);
+    Task AttemptDeliveryAndRecordAsync(InternalWebhookMessage internalWebhookMessage);
 
     Task DispatchUndeliveredAsync();
 }

@@ -3,7 +3,6 @@ using Azure.Data.Tables;
 using FakeItEasy;
 using FluentAssertions;
 using Opsi.AzureStorage;
-using Opsi.AzureStorage.TableEntities;
 using Opsi.Services.InternalTypes;
 using Opsi.Services.TableServices;
 
@@ -35,37 +34,37 @@ public class WebhookTableServiceSpecs
     [TestMethod]
     public async Task GetUndeliveredAsync_WhenResultCountIsNonZero_ReturnsResultsOfTableQuery()
     {
-        var callbackResults = GetInternalCallbackMessages().Take(2).ToList();
-        var page = Page<InternalCallbackMessage>.FromValues(callbackResults,
-                                                            continuationToken: null,
-                                                            response: A.Fake<Response>());
-        var pages = AsyncPageable<InternalCallbackMessage>.FromPages(new[] { page });
+        var Results = GetInternalWebhookMessages().Take(2).ToList();
+        var page = Page<InternalWebhookMessage>.FromValues(Results,
+                                                           continuationToken: null,
+                                                           response: A.Fake<Response>());
+        var pages = AsyncPageable<InternalWebhookMessage>.FromPages(new[] { page });
 
-        A.CallTo(() => _tableClient.QueryAsync<InternalCallbackMessage>(A<string>.That.Matches(filter => filter.Contains(nameof(InternalCallbackMessage.IsDelivered)) && filter.Contains(nameof(InternalCallbackMessage.FailureCount))),
-                                                                        A<int?>._,
-                                                                        A<IEnumerable<string>>._,
-                                                                        A<CancellationToken>._)).Returns(pages);
+        A.CallTo(() => _tableClient.QueryAsync<InternalWebhookMessage>(A<string>.That.Matches(filter => filter.Contains(nameof(InternalWebhookMessage.IsDelivered)) && filter.Contains(nameof(InternalWebhookMessage.FailureCount))),
+                                                                       A<int?>._,
+                                                                       A<IEnumerable<string>>._,
+                                                                       A<CancellationToken>._)).Returns(pages);
 
         var result = await _testee.GetUndeliveredAsync();
 
         result.Should()
               .NotBeNull()
-              .And.HaveCount(callbackResults.Count);
+              .And.HaveCount(Results.Count);
     }
 
     [TestMethod]
     public async Task GetUndeliveredAsync_WhenResultCountIsZero_ReturnsEmptyCollection()
     {
-        var callbackResults = GetInternalCallbackMessages().Take(0).ToList();
-        var page = Page<InternalCallbackMessage>.FromValues(callbackResults,
-                                                            continuationToken: null,
-                                                            response: A.Fake<Response>());
-        var pages = AsyncPageable<InternalCallbackMessage>.FromPages(new[] { page });
+        var Results = GetInternalWebhookMessages().Take(0).ToList();
+        var page = Page<InternalWebhookMessage>.FromValues(Results,
+                                                           continuationToken: null,
+                                                           response: A.Fake<Response>());
+        var pages = AsyncPageable<InternalWebhookMessage>.FromPages(new[] { page });
 
-        A.CallTo(() => _tableClient.QueryAsync<InternalCallbackMessage>(A<string>.That.Matches(filter => filter.Contains(nameof(InternalCallbackMessage.IsDelivered)) && filter.Contains(nameof(InternalCallbackMessage.FailureCount))),
-                                                                        A<int?>._,
-                                                                        A<IEnumerable<string>>._,
-                                                                        A<CancellationToken>._)).Returns(pages);
+        A.CallTo(() => _tableClient.QueryAsync<InternalWebhookMessage>(A<string>.That.Matches(filter => filter.Contains(nameof(InternalWebhookMessage.IsDelivered)) && filter.Contains(nameof(InternalWebhookMessage.FailureCount))),
+                                                                       A<int?>._,
+                                                                       A<IEnumerable<string>>._,
+                                                                       A<CancellationToken>._)).Returns(pages);
 
         var result = await _testee.GetUndeliveredAsync();
 
@@ -77,20 +76,20 @@ public class WebhookTableServiceSpecs
     [TestMethod]
     public async Task StoreProjectAsync_PassesProjectToTableService()
     {
-        var internalCallbackMessage = GetInternalCallbackMessages().Take(1).Single();
+        var internalWebhookMessage = GetInternalWebhookMessages().Take(1).Single();
 
-        await _testee.StoreAsync(internalCallbackMessage);
+        await _testee.StoreAsync(internalWebhookMessage);
 
-        A.CallTo(() => _tableService.StoreTableEntityAsync(internalCallbackMessage)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _tableService.StoreTableEntityAsync(internalWebhookMessage)).MustHaveHappenedOnceExactly();
     }
 
-    private static IEnumerable<InternalCallbackMessage> GetInternalCallbackMessages()
+    private static IEnumerable<InternalWebhookMessage> GetInternalWebhookMessages()
     {
         var statusIndex = 0;
 
         while (true)
         {
-            yield return new InternalCallbackMessage
+            yield return new InternalWebhookMessage
             {
                 Status = statusIndex++.ToString()
             };

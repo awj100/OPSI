@@ -1,7 +1,6 @@
 ﻿using FakeItEasy;
 using FluentAssertions;
 using Opsi.AzureStorage.TableEntities;
-using Opsi.Pocos;
 using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
@@ -12,9 +11,9 @@ namespace Opsi.Services.Specs;
 public class ProjectsServiceSpecs
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    private ICallbackQueueService _callbackQueueService;
     private Project _project;
     private IProjectsTableService _projectsTableService;
+    private IWebhookQueueService _webhookQueueService;
     private ProjectsService _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -23,33 +22,33 @@ public class ProjectsServiceSpecs
     {
         _project = new Project
         {
-            CallbackUri = "https://test.com",
-            Id = Guid.NewGuid()
+            Id = Guid.NewGuid(),
+            WebhookUri = "https://test.com"
         };
 
-        _callbackQueueService = A.Fake<ICallbackQueueService>();
         _projectsTableService = A.Fake<IProjectsTableService>();
+        _webhookQueueService = A.Fake<IWebhookQueueService>();
 
-        _testee = new ProjectsService(_projectsTableService, _callbackQueueService);
+        _testee = new ProjectsService(_projectsTableService, _webhookQueueService);
     }
 
     [TestMethod]
-    public async Task GetCallbackUriAsync_WhenMatchingProjectFound_ReturnsProjectCallback()
+    public async Task GetWebhookUriAsync_WhenMatchingProjectFound_ReturnsProjectWebhook()
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(_project);
 
-        var result = await _testee.GetCallbackUriAsync(_project.Id);
+        var result = await _testee.GetWebhookUriAsync(_project.Id);
 
-        result.Should().Be(_project.CallbackUri);
+        result.Should().Be(_project.WebhookUri);
     }
 
     [TestMethod]
-    public async Task GetCallbackUriAsync_WhenNoMatchingProjectFound_ReturnsNull()
+    public async Task GetWebhookUriAsync_WhenNoMatchingProjectFound_ReturnsNull()
     {
         Project? projectQueryResult = null;
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(projectQueryResult);
 
-        var result = await _testee.GetCallbackUriAsync(_project.Id);
+        var result = await _testee.GetWebhookUriAsync(_project.Id);
 
         result.Should().BeNull();
     }
@@ -84,18 +83,18 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
-    public async Task StoreProjectAsync_InvokesCallbackWithCorrectProjectId()
+    public async Task StoreProjectAsync_InvokesWebhookWithCorrectProjectId()
     {
         await _testee.StoreProjectAsync(_project);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
-    public async Task StoreProjectAsync_InvokesCallbackWithCorrectRemoteUri()
+    public async Task StoreProjectAsync_InvokesWebhookWithCorrectRemoteUri()
     {
         await _testee.StoreProjectAsync(_project);
 
-        A.CallTo(() => _callbackQueueService.QueueCallbackAsync(A<InternalCallbackMessage>.That.Matches(cm => cm.RemoteUri != null && cm.RemoteUri.Equals(_project.CallbackUri)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.RemoteUri != null && cm.RemoteUri.Equals(_project.WebhookUri)))).MustHaveHappenedOnceExactly();
     }
 }

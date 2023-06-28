@@ -4,7 +4,7 @@ namespace Opsi.Services.TableServices;
 
 public interface IWebhookTableService
 {
-    Task<IReadOnlyCollection<InternalCallbackMessage>> GetUndeliveredAsync();
+    Task<IReadOnlyCollection<InternalWebhookMessage>> GetUndeliveredAsync();
 
-    Task StoreAsync(InternalCallbackMessage internalCallbackMessage);
+    Task StoreAsync(InternalWebhookMessage internalWebhookMessage);
 }

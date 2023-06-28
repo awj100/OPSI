@@ -8,10 +8,10 @@ namespace Opsi.Pocos
         // Required for deserialisation.
         public InternalManifest()
         {
-            CallbackUri = String.Empty;
             PackageName = String.Empty;
             ProjectId = Guid.Empty;
             ResourceExclusionPaths = new List<string>();
+            WebhookUri = String.Empty;
         }
 
         public InternalManifest(Manifest manifest, string username)

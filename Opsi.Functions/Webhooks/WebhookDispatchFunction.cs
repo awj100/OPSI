@@ -18,10 +18,10 @@ public class WebhookDispatchFunction
     }
 
     [Function("WebhookDispatchFunction")]
-    public async Task Run([QueueTrigger(QueueNames.Callback, Connection = "AzureWebJobsStorage")] InternalCallbackMessage internalCallbackMessage)
+    public async Task Run([QueueTrigger(QueueNames.Webhook, Connection = "AzureWebJobsStorage")] InternalWebhookMessage internalWebhookMessage)
     {
         _logger.LogInformation($"{nameof(WebhookDispatchFunction)} triggered for first-time delivery of message.");
 
-        await _webhookService.AttemptDeliveryAndRecordAsync(internalCallbackMessage);
+        await _webhookService.AttemptDeliveryAndRecordAsync(internalWebhookMessage);
     }
 }

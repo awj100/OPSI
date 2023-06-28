@@ -10,8 +10,8 @@ namespace Opsi.Services.Specs.Webhooks;
 public class WebhookServiceSpecs
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    private CallbackMessage _callbackMessage;
-    private InternalCallbackMessage _internalCallbackMessage;
+    private WebhookMessage _webhookMessage;
+    private InternalWebhookMessage _internalWebhookMessage;
     private string _remoteUriAsString = "https://test.url.com/";
     private IWebhookDispatcher _webhookDispatcher;
     private IWebhookTableService _webhookTableService;
@@ -21,8 +21,8 @@ public class WebhookServiceSpecs
     [TestInitialize]
     public void TestInit()
     {
-        _callbackMessage = new CallbackMessage { Status = Guid.NewGuid().ToString() };
-        _internalCallbackMessage = new InternalCallbackMessage(_callbackMessage, _remoteUriAsString);
+        _webhookMessage = new WebhookMessage { Status = Guid.NewGuid().ToString() };
+        _internalWebhookMessage = new InternalWebhookMessage(_webhookMessage, _remoteUriAsString);
 
         _webhookDispatcher = A.Fake<IWebhookDispatcher>();
         _webhookTableService = A.Fake<IWebhookTableService>();
@@ -33,61 +33,61 @@ public class WebhookServiceSpecs
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsEmpty_DoesNotAttemptDispatch()
     {
-        _internalCallbackMessage.RemoteUri = String.Empty;
+        _internalWebhookMessage.RemoteUri = String.Empty;
 
-        await _testee.AttemptDeliveryAndRecordAsync(_internalCallbackMessage);
+        await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<CallbackMessage>._, A<Uri>._)).MustNotHaveHappened();
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>._, A<Uri>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsEmpty_StoresNothing()
     {
-        _internalCallbackMessage.RemoteUri = String.Empty;
+        _internalWebhookMessage.RemoteUri = String.Empty;
 
-        await _testee.AttemptDeliveryAndRecordAsync(_internalCallbackMessage);
+        await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalCallbackMessage>._)).MustNotHaveHappened();
+        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalWebhookMessage>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNotAbsoluteUrl_DoesNotAttemptDispatch()
     {
-        _internalCallbackMessage.RemoteUri = "/test/segment";
+        _internalWebhookMessage.RemoteUri = "/test/segment";
 
-        await _testee.AttemptDeliveryAndRecordAsync(_internalCallbackMessage);
+        await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<CallbackMessage>._, A<Uri>._)).MustNotHaveHappened();
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>._, A<Uri>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNotAbsoluteUrl_StoresNothing()
     {
-        _internalCallbackMessage.RemoteUri = "/test/segment";
+        _internalWebhookMessage.RemoteUri = "/test/segment";
 
-        await _testee.AttemptDeliveryAndRecordAsync(_internalCallbackMessage);
+        await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalCallbackMessage>._)).MustNotHaveHappened();
+        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalWebhookMessage>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNull_DoesNotAttemptDispatch()
     {
-        _internalCallbackMessage.RemoteUri = null;
+        _internalWebhookMessage.RemoteUri = null;
 
-        await _testee.AttemptDeliveryAndRecordAsync(_internalCallbackMessage);
+        await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<CallbackMessage>._, A<Uri>._)).MustNotHaveHappened();
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>._, A<Uri>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNull_StoresNothing()
     {
-        _internalCallbackMessage.RemoteUri = null;
+        _internalWebhookMessage.RemoteUri = null;
 
-        await _testee.AttemptDeliveryAndRecordAsync(_internalCallbackMessage);
+        await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalCallbackMessage>._)).MustNotHaveHappened();
+        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalWebhookMessage>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
@@ -95,13 +95,13 @@ public class WebhookServiceSpecs
     {
         const bool isDelivered = true;
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<CallbackMessage>.That.Matches(cm => cm.Status.Equals(_callbackMessage.Status)),
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
             .Returns(isDelivered);
 
-        await _testee.AttemptDeliveryAndRecordAsync(_internalCallbackMessage);
+        await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalCallbackMessage>.That.Matches(icm => icm.IsDelivered == isDelivered))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalWebhookMessage>.That.Matches(icm => icm.IsDelivered == isDelivered))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -110,15 +110,15 @@ public class WebhookServiceSpecs
         const int failureCount = 2;
         const bool isDelivered = true;
 
-        _internalCallbackMessage.FailureCount = failureCount;
+        _internalWebhookMessage.FailureCount = failureCount;
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<CallbackMessage>.That.Matches(cm => cm.Status.Equals(_callbackMessage.Status)),
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
             .Returns(isDelivered);
 
-        await _testee.AttemptDeliveryAndRecordAsync(_internalCallbackMessage);
+        await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalCallbackMessage>.That.Matches(icm => icm.FailureCount == failureCount))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalWebhookMessage>.That.Matches(icm => icm.FailureCount == failureCount))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -126,13 +126,13 @@ public class WebhookServiceSpecs
     {
         const bool isDelivered = false;
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<CallbackMessage>.That.Matches(cm => cm.Status.Equals(_callbackMessage.Status)),
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
             .Returns(isDelivered);
 
-        await _testee.AttemptDeliveryAndRecordAsync(_internalCallbackMessage);
+        await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalCallbackMessage>.That.Matches(icm => icm.IsDelivered == isDelivered))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalWebhookMessage>.That.Matches(icm => icm.IsDelivered == isDelivered))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -142,23 +142,23 @@ public class WebhookServiceSpecs
         const int incrementedFailureCount = failureCount + 1;
         const bool isDelivered = false;
 
-        _internalCallbackMessage.FailureCount = failureCount;
+        _internalWebhookMessage.FailureCount = failureCount;
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<CallbackMessage>.That.Matches(cm => cm.Status.Equals(_callbackMessage.Status)),
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
             .Returns(isDelivered);
 
-        await _testee.AttemptDeliveryAndRecordAsync(_internalCallbackMessage);
+        await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalCallbackMessage>.That.Matches(icm => icm.FailureCount == incrementedFailureCount))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _webhookTableService.StoreAsync(A<InternalWebhookMessage>.That.Matches(icm => icm.FailureCount == incrementedFailureCount))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
-    public async Task DispatchUndeliveredAsync_GetsUndeliveredCallbacksFromTableService()
+    public async Task DispatchUndeliveredAsync_GetsUndeliveredWebhooksFromTableService()
     {
-        var undeliveredInternalCallbackMessages = GetInternalCallbackMessages().Take(3).ToList();
+        var undeliveredInternalWebhookMessages = GetInternalWebhookMessages().Take(3).ToList();
 
-        A.CallTo(() => _webhookTableService.GetUndeliveredAsync()).Returns(undeliveredInternalCallbackMessages);
+        A.CallTo(() => _webhookTableService.GetUndeliveredAsync()).Returns(undeliveredInternalWebhookMessages);
 
         await _testee.DispatchUndeliveredAsync();
 
@@ -166,17 +166,17 @@ public class WebhookServiceSpecs
     }
 
     [TestMethod]
-    public async Task DispatchUndeliveredAsync_WhenUndeliveredCallbacksObtained_AttemptsDeliveryOfEachUndeliveredCallback()
+    public async Task DispatchUndeliveredAsync_WhenUndeliveredWebhooksObtained_AttemptsDeliveryOfEachUndeliveredWebhook()
     {
-        var undeliveredInternalCallbackMessages = GetInternalCallbackMessages().Take(3).ToList();
+        var undeliveredInternalWebhookMessages = GetInternalWebhookMessages().Take(3).ToList();
 
-        A.CallTo(() => _webhookTableService.GetUndeliveredAsync()).Returns(undeliveredInternalCallbackMessages);
+        A.CallTo(() => _webhookTableService.GetUndeliveredAsync()).Returns(undeliveredInternalWebhookMessages);
 
         await _testee.DispatchUndeliveredAsync();
 
-        foreach (var undeliveredInternalCallbackMessage in undeliveredInternalCallbackMessages)
+        foreach (var undeliveredInternalWebhookMessage in undeliveredInternalWebhookMessages)
         {
-            A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<CallbackMessage>.That.Matches(cm => cm.Status.Equals(undeliveredInternalCallbackMessage.Status)),
+            A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(undeliveredInternalWebhookMessage.Status)),
                                                                    A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
                 .MustHaveHappenedOnceExactly();
         }
@@ -184,13 +184,13 @@ public class WebhookServiceSpecs
         // No need to test other functionality inside AttemptDeliveryAndRecordAsync in this test.
     }
 
-    private IEnumerable<InternalCallbackMessage> GetInternalCallbackMessages()
+    private IEnumerable<InternalWebhookMessage> GetInternalWebhookMessages()
     {
         var statusIndex = 0;
 
         while (true)
         {
-            yield return new InternalCallbackMessage
+            yield return new InternalWebhookMessage
             {
                 FailureCount = 2,
                 IsDelivered = false,

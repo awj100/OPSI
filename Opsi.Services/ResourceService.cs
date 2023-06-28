@@ -9,22 +9,22 @@ namespace Opsi.Services;
 internal class ResourceService : IResourceService
 {
     private readonly AzureStorage.IBlobService _blobService;
-    private readonly ICallbackQueueService _callbackQueueService;
     private readonly ILogger<ResourceService> _log;
     private readonly IProjectsService _projectsService;
     private readonly AzureStorage.IResourcesService _resourcesService;
+    private readonly IWebhookQueueService _webhookQueueService;
 
     public ResourceService(AzureStorage.IResourcesService resourcesService,
                            AzureStorage.IBlobService blobService,
-                           ICallbackQueueService callbackQueueService,
+                           IWebhookQueueService webhookQueueService,
                            IProjectsService projectsService,
                            ILoggerFactory loggerFactory)
     {
         _blobService = blobService;
-        _callbackQueueService = callbackQueueService;
         _projectsService = projectsService;
         _log = loggerFactory.CreateLogger<ResourceService>();
         _resourcesService = resourcesService;
+        _webhookQueueService = webhookQueueService;
     }
 
     public async Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo)
@@ -40,7 +40,7 @@ internal class ResourceService : IResourceService
 
         await StoreFileDataAndVersionAsync(resourceStorageInfo);
 
-        await QueueCallbackMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo);
+        await QueueWebhookMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo);
 
         if (currentVersionInfo.LockedTo.IsSome)
         {
@@ -50,7 +50,7 @@ internal class ResourceService : IResourceService
 
     private async Task<string?> GetWebhookRemoteUriAsync(Guid projectId)
     {
-        return await _projectsService.GetCallbackUriAsync(projectId);
+        return await _projectsService.GetWebhookUriAsync(projectId);
     }
 
     private async Task<VersionInfo> GetVersionInfoAsync(ResourceStorageInfo resourceStorageInfo)
@@ -101,7 +101,7 @@ internal class ResourceService : IResourceService
         }
     }
 
-    private async Task QueueCallbackMessageAsync(Guid projectId, ResourceStorageInfo resourceStorageInfo)
+    private async Task QueueWebhookMessageAsync(Guid projectId, ResourceStorageInfo resourceStorageInfo)
     {
         var remoteUri = await GetWebhookRemoteUriAsync(projectId);
         if (remoteUri == null)
@@ -109,7 +109,7 @@ internal class ResourceService : IResourceService
             return;
         }
 
-        await _callbackQueueService.QueueCallbackAsync(new InternalCallbackMessage
+        await _webhookQueueService.QueueWebhookMessageAsync(new InternalWebhookMessage
         {
             ProjectId = projectId,
             RemoteUri = remoteUri,
