@@ -21,6 +21,8 @@ public class InternalWebhookMessage : WebhookMessage, ITableEntity
         RemoteUri = remoteUri;
     }
 
+    public ETag ETag { get; set; }
+
     public int FailureCount { get; set; } = default;
 
     public bool IsDelivered { get; set; } = default;
@@ -46,8 +48,6 @@ public class InternalWebhookMessage : WebhookMessage, ITableEntity
         get => Status;
         set => Status = value;
     }
-
-    public ETag ETag { get; set; }
 
     public DateTimeOffset? Timestamp { get; set; } = default!;
 

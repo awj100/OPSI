@@ -99,7 +99,8 @@ internal class ProjectUploadService : IProjectUploadService
             {
                 ProjectId = manifest.ProjectId,
                 RemoteUri = manifest.WebhookUri,
-                Status = "Upload received"
+                Status = "Upload received",
+                Username = _userProvider.Username.Value
             });
         }
         catch (Exception ex)

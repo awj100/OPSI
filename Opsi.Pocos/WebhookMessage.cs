@@ -14,5 +14,7 @@ namespace Opsi.Pocos
 		public string Status { get; set; }
 
 		public DateTime TimeStamp { get; set; }
+
+		public string Username { get; set; }
 	}
 }

@@ -8,11 +8,15 @@ namespace Opsi.Services;
 public class ProjectsService : IProjectsService
 {
     private readonly IProjectsTableService _projectsTableService;
+    private readonly IUserProvider _userProvider;
     private readonly IWebhookQueueService _webhookQueueService;
 
-    public ProjectsService(IProjectsTableService projectsTableService, IWebhookQueueService QueueService)
+    public ProjectsService(IProjectsTableService projectsTableService,
+                           IUserProvider userProvider,
+                           IWebhookQueueService QueueService)
     {
         _projectsTableService = projectsTableService;
+        _userProvider = userProvider;
         _webhookQueueService = QueueService;
     }
 
@@ -43,7 +47,8 @@ public class ProjectsService : IProjectsService
         {
             ProjectId = projectId,
             RemoteUri = Uri,
-            Status = "Project created"
+            Status = "Project created",
+            Username = _userProvider.Username.Value
         });
     }
 }

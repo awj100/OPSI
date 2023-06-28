@@ -15,6 +15,7 @@ namespace Opsi.Services.Specs.QueueHandlers;
 [TestClass]
 public class ZippedQueueHandlerSpecs
 {
+    private const string _username = "user@test.com";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private InternalManifest _manifest;
     private IReadOnlyCollection<string> _nonManifestContentFilePaths;
@@ -25,6 +26,7 @@ public class ZippedQueueHandlerSpecs
     private ISettingsProvider _settingsProvider;
     private IUnzipService _unzipService;
     private IUnzipServiceFactory _unzipServiceFactory;
+    private IUserProvider _userProvider;
     private IWebhookQueueService _webhookQueueService;
     private ZippedQueueHandler _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -51,11 +53,13 @@ public class ZippedQueueHandlerSpecs
         _settingsProvider = A.Fake<ISettingsProvider>();
         _unzipService = A.Fake<IUnzipService>();
         _unzipServiceFactory = A.Fake<IUnzipServiceFactory>();
+        _userProvider = A.Fake<IUserProvider>();
         _webhookQueueService = A.Fake<IWebhookQueueService>();
 
         A.CallTo(() => _blobService.RetrieveAsync(A<string>.That.Matches(s => s.Contains(_manifest.ProjectId.ToString())))).Returns(_nonManifestStream);
         A.CallTo(() => _unzipServiceFactory.Create(_nonManifestStream)).Returns(_unzipService);
         A.CallTo(() => _unzipService.GetFilePathsFromPackage()).Returns(_nonManifestContentFilePaths);
+        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
 
         var loggerFactory = new NullLoggerFactory();
 
@@ -65,6 +69,7 @@ public class ZippedQueueHandlerSpecs
                                          _blobService,
                                          _unzipServiceFactory,
                                          _resourceDispatcher,
+                                         _userProvider,
                                          loggerFactory);
     }
 

@@ -18,6 +18,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
     private readonly IResourceDispatcher _resourceDispatcher;
     private readonly ISettingsProvider _settingsProvider;
     private readonly IUnzipServiceFactory _unzipServiceFactory;
+    private readonly IUserProvider _userProvider;
 
     public ZippedQueueHandler(ISettingsProvider settingsProvider,
                               IProjectsService projectsService,
@@ -25,6 +26,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
                               IBlobService blobService,
                               IUnzipServiceFactory unzipServiceFactory,
                               IResourceDispatcher resourceDispatcher,
+                              IUserProvider userProvider,
                               ILoggerFactory loggerFactory)
     {
         _blobService = blobService;
@@ -34,6 +36,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         _resourceDispatcher = resourceDispatcher;
         _settingsProvider = settingsProvider;
         _unzipServiceFactory = unzipServiceFactory;
+        _userProvider = userProvider;
     }
 
     public async Task RetrieveAndHandleUploadAsync(InternalManifest internalManifest)
@@ -114,22 +117,18 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         }
     }
 
-    private static Project GetProject(InternalManifest internalManifest)
-    {
-        return new Project(internalManifest);
-    }
-
-    private static InternalWebhookMessage GetProjectConflictWebhookMessage(Manifest manifest)
+    private InternalWebhookMessage GetProjectConflictWebhookMessage(Manifest manifest)
     {
         return new InternalWebhookMessage
         {
             ProjectId = manifest.ProjectId,
             RemoteUri = manifest.WebhookUri,
-            Status = $"A project with ID \"{manifest.ProjectId}\" already exists."
+            Status = $"A project with ID \"{manifest.ProjectId}\" already exists.",
+            Username = _userProvider.Username.Value
         };
     }
 
-    private static InternalWebhookMessage GetResourceStorageWebhookMessage(Guid projectId, string filePath, HttpResponseMessage response, string uri)
+    private InternalWebhookMessage GetResourceStorageWebhookMessage(Guid projectId, string filePath, HttpResponseMessage response, string uri)
     {
         return new InternalWebhookMessage
         {
@@ -137,7 +136,13 @@ internal class ZippedQueueHandler : IZippedQueueHandler
             RemoteUri = uri,
             Status = response.IsSuccessStatusCode
                 ? $"Resource stored: {filePath}"
-                : $"Resource could not be stored (\"{filePath}\"): {response.ReasonPhrase}"
+                : $"Resource could not be stored (\"{filePath}\"): {response.ReasonPhrase}",
+            Username = _userProvider.Username.Value
         };
+    }
+
+    private static Project GetProject(InternalManifest internalManifest)
+    {
+        return new Project(internalManifest);
     }
 }

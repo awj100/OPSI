@@ -10,9 +10,11 @@ namespace Opsi.Services.Specs;
 [TestClass]
 public class ProjectsServiceSpecs
 {
+    private const string _username = "user@test.com";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private Project _project;
     private IProjectsTableService _projectsTableService;
+    private IUserProvider _userProvider;
     private IWebhookQueueService _webhookQueueService;
     private ProjectsService _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -27,9 +29,12 @@ public class ProjectsServiceSpecs
         };
 
         _projectsTableService = A.Fake<IProjectsTableService>();
+        _userProvider = A.Fake<IUserProvider>();
         _webhookQueueService = A.Fake<IWebhookQueueService>();
 
-        _testee = new ProjectsService(_projectsTableService, _webhookQueueService);
+        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
+
+        _testee = new ProjectsService(_projectsTableService, _userProvider, _webhookQueueService);
     }
 
     [TestMethod]

@@ -13,10 +13,12 @@ namespace Opsi.Services.Specs.Webhooks;
 public class WebhookDispatcherSpecs
 {
     private const string _remoteUriAsString = "https://test.url.com";
+    private const string _username = "user@test.com";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private WebhookMessage _webhookMessage;
     private IHttpClientFactory _httpClientFactory;
     private Uri _remoteUri;
+    private IUserProvider _userProvider;
     private WebhookDispatcher _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -26,11 +28,15 @@ public class WebhookDispatcherSpecs
         _webhookMessage = new WebhookMessage
         {
             ProjectId = Guid.NewGuid(),
-            Status = Guid.NewGuid().ToString()
+            Status = Guid.NewGuid().ToString(),
+            Username = _username
         };
         _remoteUri = new(_remoteUriAsString);
 
         _httpClientFactory = A.Fake<IHttpClientFactory>();
+        _userProvider = A.Fake<IUserProvider>();
+
+        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
 
         _testee = new WebhookDispatcher(_httpClientFactory);
     }
@@ -76,7 +82,8 @@ public class WebhookDispatcherSpecs
         var uriAndResponse = new ContentConditionalUriAndResponse<WebhookMessage>(_remoteUri,
                                                                                   responseMessage,
                                                                                   cm => cm.ProjectId.Equals(_webhookMessage.ProjectId)
-                                                                                        && cm.Status.Equals(_webhookMessage.Status),
+                                                                                        && cm.Status.Equals(_webhookMessage.Status)
+                                                                                        && cm.Username.Equals(_webhookMessage.Username),
                                                                                   json => System.Text.Json.JsonSerializer.Deserialize<WebhookMessage>(json)!);
         
         ConfigureHttpResponse(uriAndResponse);

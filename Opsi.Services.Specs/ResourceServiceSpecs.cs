@@ -29,6 +29,7 @@ public class ResourceServiceSpecs
     private IProjectsService _projectsService;
     private IResourcesService _resourcesService;
     private ResourceStorageInfo _resourceStorageInfo;
+    private IUserProvider _userProvider;
     private ResourceService _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -40,12 +41,14 @@ public class ResourceServiceSpecs
         _loggerFactory = new NullLoggerFactory();
         _projectsService = A.Fake<IProjectsService>();
         _resourcesService = A.Fake<IResourcesService>();
+        _userProvider = A.Fake<IUserProvider>();
 
         A.CallTo(() => _resourcesService.GetCurrentVersionInfo(A<Guid>.That.Matches(g => g.Equals(_resourceStorageInfo.ProjectId)),
                                                                A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.FullPath.Value))))
             .Returns(_versionInfo);
 
         A.CallTo(() => _projectsService.GetWebhookUriAsync(_projectId)).Returns(RemoteUriAsString);
+        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => Username));
 
         _resourceStorageInfo = new ResourceStorageInfo(_projectId,
                                                        RestOfPath,
@@ -56,6 +59,7 @@ public class ResourceServiceSpecs
                                       _blobService,
                                       _QueueService,
                                       _projectsService,
+                                      _userProvider,
                                       _loggerFactory);
     }
 

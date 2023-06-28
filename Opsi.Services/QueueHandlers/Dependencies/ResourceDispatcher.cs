@@ -1,6 +1,5 @@
 ﻿using System.Net.Http.Headers;
 using Opsi.Constants;
-using Opsi.Services.Auth.OneTimeAuth;
 
 namespace Opsi.Services.QueueHandlers.Dependencies;
 

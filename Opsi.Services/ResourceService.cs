@@ -12,18 +12,21 @@ internal class ResourceService : IResourceService
     private readonly ILogger<ResourceService> _log;
     private readonly IProjectsService _projectsService;
     private readonly AzureStorage.IResourcesService _resourcesService;
+    private readonly IUserProvider _userProvider;
     private readonly IWebhookQueueService _webhookQueueService;
 
     public ResourceService(AzureStorage.IResourcesService resourcesService,
                            AzureStorage.IBlobService blobService,
                            IWebhookQueueService webhookQueueService,
                            IProjectsService projectsService,
+                           IUserProvider userProvider,
                            ILoggerFactory loggerFactory)
     {
         _blobService = blobService;
         _projectsService = projectsService;
         _log = loggerFactory.CreateLogger<ResourceService>();
         _resourcesService = resourcesService;
+        _userProvider = userProvider;
         _webhookQueueService = webhookQueueService;
     }
 
@@ -113,7 +116,8 @@ internal class ResourceService : IResourceService
         {
             ProjectId = projectId,
             RemoteUri = remoteUri,
-            Status = $"Resource stored: {resourceStorageInfo.FileName}"
+            Status = $"Resource stored: {resourceStorageInfo.FileName}",
+            Username = _userProvider.Username.Value
         });
     }
 
