@@ -2,7 +2,7 @@
 
 public class UnauthenticatedException : ResourceBaseException
 {
-    public UnauthenticatedException() : base("User has been authenticated.")
+    public UnauthenticatedException() : base("User has not been authenticated.")
     {
     }
 }

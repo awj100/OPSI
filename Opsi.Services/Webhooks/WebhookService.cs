@@ -30,13 +30,14 @@ internal class WebhookService : IWebhookService
         }
 
         // Dispatch the message.
-        var isSuccessfullyDispatched = await _webhookDispatcher.AttemptDeliveryAsync(webhookMessage, remoteUri);
+        var webhookDispatchResponse = await _webhookDispatcher.AttemptDeliveryAsync(webhookMessage, remoteUri);
 
         // Record whether successful.
-        internalWebhookMessage.IsDelivered = isSuccessfullyDispatched;
+        internalWebhookMessage.IsDelivered = webhookDispatchResponse.IsSuccessful;
+        internalWebhookMessage.LastFailureReason = webhookDispatchResponse.FailureReason;
 
         // If unsuccessful, update the FailureCount property.
-        if (!isSuccessfullyDispatched)
+        if (!internalWebhookMessage.IsDelivered)
         {
             internalWebhookMessage.IncrementFailureCount();
         }

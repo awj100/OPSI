@@ -12,30 +12,39 @@ namespace Opsi.Services.Specs.QueueHandlers.Dependencies;
 [TestClass]
 public class ResourceDispatcherSpecs
 {
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private const string FilePath = "file/path";
     private const string HostUrl = "https://request.not.sent";
+    private const string OneTimeAuthHeaderScheme = "OneTime";
+    private const string OneTimeAuthHeaderValue = "Test one-time auth header";
+    private const string Username = "user@test.com";
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private IHttpClientFactory _httpClientFactory;
-    private readonly Guid _projectId = Guid.NewGuid();
+    private AuthenticationHeaderValue _oneTimeAuthHeader;
+    private IOneTimeAuthService _oneTimeAuthService;
+    private Guid _projectId;
     private Stream _testStream;
     private string _testContent;
     private Uri _testUri;
-    private const string Username = "user@test.com";
     private ResourceDispatcher _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     [TestInitialize]
     public void TestInit()
     {
+        _oneTimeAuthHeader = new AuthenticationHeaderValue(OneTimeAuthHeaderScheme, OneTimeAuthHeaderValue);
+        _projectId = Guid.NewGuid();
         _testContent = Guid.NewGuid().ToString();
 
         var testContentBytes = System.Text.Encoding.UTF8.GetBytes(_testContent);
         _testStream = new MemoryStream(testContentBytes);
 
         _httpClientFactory = A.Fake<IHttpClientFactory>();
+        _oneTimeAuthService = A.Fake<IOneTimeAuthService>();
         _testUri = new Uri($"{HostUrl}/projects/{_projectId}/resource/{FilePath}");
 
-        _testee = new ResourceDispatcher(_httpClientFactory);
+        A.CallTo(() => _oneTimeAuthService.GetAuthenticationHeaderAsync(Username)).Returns(_oneTimeAuthHeader);
+
+        _testee = new ResourceDispatcher(_httpClientFactory, _oneTimeAuthService);
     }
 
     [TestCleanup]
@@ -101,7 +110,7 @@ public class ResourceDispatcherSpecs
     }
 
     [TestMethod]
-    public async Task DispatchAsync_UsesOneTimeAuthClient()
+    public async Task DispatchAsync_GetsAuthHeaderFromOneTimeAuthService()
     {
         var response = await _testee.DispatchAsync(HostUrl,
                                                    _projectId,
@@ -109,7 +118,35 @@ public class ResourceDispatcherSpecs
                                                    _testStream,
                                                    Username);
 
-        A.CallTo(() => _httpClientFactory.CreateClient(HttpClientNames.OneTimeAuth)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _httpClientFactory.CreateClient(HttpClientNames.SelfWithoutAuth)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _oneTimeAuthService.GetAuthenticationHeaderAsync(Username)).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task DispatchAsync_UsesAuthHeaderFromOneTimeAuthService()
+    {
+        const HttpStatusCode httpStatusCode = HttpStatusCode.Accepted;
+
+        var responseMessage = new HttpResponseMessage(httpStatusCode);
+        var uriAndResponse = new RequestConditionalUriAndResponse(_testUri,
+                                                                  responseMessage,
+                                                                  request => {
+                                                                      request.Headers.Authorization.Should().NotBeNull();
+                                                                      request.Headers.Authorization!.Scheme.Should().Be(OneTimeAuthHeaderScheme);
+                                                                      request.Headers.Authorization!.Parameter.Should().Be(OneTimeAuthHeaderValue);
+
+                                                                      return true;
+                                                                  });
+
+        ConfigureHttpResponse(uriAndResponse);
+
+        var response = await _testee.DispatchAsync(HostUrl,
+                                                   _projectId,
+                                                   FilePath,
+                                                   _testStream,
+                                                   Username);
+
+        response.StatusCode.Should().Be(httpStatusCode);
     }
 
     private void ConfigureHttpResponse(UriAndResponse uriAndResponse)

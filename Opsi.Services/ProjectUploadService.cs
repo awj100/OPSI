@@ -95,13 +95,12 @@ internal class ProjectUploadService : IProjectUploadService
     {
         try
         {
-            await _webhookQueueService.QueueWebhookMessageAsync(new InternalWebhookMessage
+            await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
             {
                 ProjectId = manifest.ProjectId,
-                RemoteUri = manifest.WebhookUri,
                 Status = "Upload received",
                 Username = _userProvider.Username.Value
-            });
+            }, manifest.WebhookUri);
         }
         catch (Exception ex)
         {

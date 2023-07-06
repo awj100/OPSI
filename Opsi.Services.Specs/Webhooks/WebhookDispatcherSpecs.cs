@@ -53,7 +53,8 @@ public class WebhookDispatcherSpecs
 
         var result = await _testee.AttemptDeliveryAsync(_webhookMessage, _remoteUri);
 
-        result.Should().BeTrue();
+        result.Should().NotBeNull();
+        result.IsSuccessful.Should().BeTrue();
     }
 
     [TestMethod]
@@ -68,7 +69,8 @@ public class WebhookDispatcherSpecs
 
         var result = await _testee.AttemptDeliveryAsync(_webhookMessage, _remoteUri);
 
-        result.Should().BeFalse();
+        result.Should().NotBeNull();
+        result.IsSuccessful.Should().BeFalse();
     }
     
     [TestMethod]
@@ -90,7 +92,8 @@ public class WebhookDispatcherSpecs
 
         var result = await _testee.AttemptDeliveryAsync(_webhookMessage, _remoteUri);
 
-        result.Should().BeTrue();
+        result.Should().NotBeNull();
+        result.IsSuccessful.Should().BeTrue();
     }
 
     [TestMethod]
@@ -117,7 +120,8 @@ public class WebhookDispatcherSpecs
 
         var result = await _testee.AttemptDeliveryAsync(internalWebhookMessage, _remoteUri);
 
-        result.Should().BeTrue();
+        result.Should().NotBeNull();
+        result.IsSuccessful.Should().BeTrue();
     }
 
     private void ConfigureHttpResponse(UriAndResponse uriAndResponse)

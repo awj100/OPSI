@@ -94,10 +94,11 @@ public class WebhookServiceSpecs
     public async Task AttemptDeliveryAndRecordAsync_WhenMessageSuccessfullyDispatched_RecordsIsDeliveredAsTrue()
     {
         const bool isDelivered = true;
+        var webhookDispatchResponse = new WebhookDispatchResponse { IsSuccessful = isDelivered };
 
         A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
-            .Returns(isDelivered);
+            .Returns(webhookDispatchResponse);
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -109,12 +110,13 @@ public class WebhookServiceSpecs
     {
         const int failureCount = 2;
         const bool isDelivered = true;
+        var webhookDispatchResponse = new WebhookDispatchResponse { IsSuccessful = isDelivered };
 
         _internalWebhookMessage.FailureCount = failureCount;
 
         A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
-            .Returns(isDelivered);
+            .Returns(webhookDispatchResponse);
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -125,10 +127,11 @@ public class WebhookServiceSpecs
     public async Task AttemptDeliveryAndRecordAsync_WhenMessageUnsuccessfullyDispatched_RecordsIsDeliveredAsFalse()
     {
         const bool isDelivered = false;
+        var webhookDispatchResponse = new WebhookDispatchResponse { IsSuccessful = isDelivered };
 
         A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
-            .Returns(isDelivered);
+            .Returns(webhookDispatchResponse);
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -141,12 +144,13 @@ public class WebhookServiceSpecs
         const int failureCount = 2;
         const int incrementedFailureCount = failureCount + 1;
         const bool isDelivered = false;
+        var webhookDispatchResponse = new WebhookDispatchResponse { IsSuccessful = isDelivered };
 
         _internalWebhookMessage.FailureCount = failureCount;
 
         A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
-            .Returns(isDelivered);
+            .Returns(webhookDispatchResponse);
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -190,12 +194,13 @@ public class WebhookServiceSpecs
 
         while (true)
         {
-            yield return new InternalWebhookMessage
+            yield return new InternalWebhookMessage(new WebhookMessage
+            {
+                Status = statusIndex++.ToString()
+            }, _remoteUriAsString)
             {
                 FailureCount = 2,
                 IsDelivered = false,
-                RemoteUri = _remoteUriAsString,
-                Status = statusIndex++.ToString()
             };
         }
     }

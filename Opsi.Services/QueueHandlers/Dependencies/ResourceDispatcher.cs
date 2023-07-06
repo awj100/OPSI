@@ -1,15 +1,18 @@
 ﻿using System.Net.Http.Headers;
 using Opsi.Constants;
+using Opsi.Services.Auth.OneTimeAuth;
 
 namespace Opsi.Services.QueueHandlers.Dependencies;
 
 internal class ResourceDispatcher : IResourceDispatcher
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IOneTimeAuthService _oneTimeAuthService;
 
-    public ResourceDispatcher(IHttpClientFactory httpClientFactory)
+    public ResourceDispatcher(IHttpClientFactory httpClientFactory, IOneTimeAuthService oneTimeAuthService)
     {
         _httpClientFactory = httpClientFactory;
+        _oneTimeAuthService = oneTimeAuthService;
     }
 
     public async Task<HttpResponseMessage> DispatchAsync(string hostUrl,
@@ -22,9 +25,10 @@ internal class ResourceDispatcher : IResourceDispatcher
 
         var fileName = Path.GetFileName(filePath);
 
-        using (var httpClient = _httpClientFactory.CreateClient(HttpClientNames.OneTimeAuth))
+        using (var httpClient = _httpClientFactory.CreateClient(HttpClientNames.SelfWithoutAuth))
         using (var content = new MultipartFormDataContent())
         {
+            httpClient.DefaultRequestHeaders.Authorization = await _oneTimeAuthService.GetAuthenticationHeaderAsync(username);
             content.Headers.ContentType = MediaTypeHeaderValue.Parse(mediaTypeHeaderValue);
             using (var streamContent = new StreamContent(contentsStream))
             {

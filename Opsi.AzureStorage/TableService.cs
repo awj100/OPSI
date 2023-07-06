@@ -1,4 +1,5 @@
-﻿using Azure.Data.Tables;
+﻿using Azure;
+using Azure.Data.Tables;
 using Opsi.Common;
 
 namespace Opsi.AzureStorage;
@@ -31,8 +32,31 @@ internal class TableService : StorageServiceBase, ITableService
     {
         var tableClient = GetTableClient();
 
-        await tableClient.CreateIfNotExistsAsync();
+        try
+        {
+            await tableClient.AddEntityAsync(tableEntity);
+        }
+        catch (RequestFailedException exception) when (exception.Status == 409)
+        {
+            await UpdateTableEntityAsync(tableEntity);
+        }
+        catch (Exception exception)
+        {
+            throw new Exception($"Unable to store {tableEntity.GetType().Name}: {exception.Message}");
+        }
+    }
 
-        await tableClient.AddEntityAsync<ITableEntity>(tableEntity);
+    public async Task UpdateTableEntityAsync(ITableEntity tableEntity)
+    {
+        var tableClient = GetTableClient();
+
+        try
+        {
+            await tableClient.UpdateEntityAsync(tableEntity, ETag.All, TableUpdateMode.Replace);
+        }
+        catch (Exception exception)
+        {
+            throw new Exception($"Unable to update {tableEntity.GetType().Name}: {exception.Message}");
+        }
     }
 }

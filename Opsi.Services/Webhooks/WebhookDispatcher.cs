@@ -16,7 +16,7 @@ internal class WebhookDispatcher : IWebhookDispatcher
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<bool> AttemptDeliveryAsync(WebhookMessage webhookMessage, Uri remoteUri)
+    public async Task<WebhookDispatchResponse> AttemptDeliveryAsync(WebhookMessage webhookMessage, Uri remoteUri)
     {
         if (webhookMessage is InternalWebhookMessage message)
         {
@@ -31,9 +31,18 @@ internal class WebhookDispatcher : IWebhookDispatcher
             content.Headers.ContentType = new MediaTypeHeaderValue(MediaTypeNames.Application.Json);
             using (var stringContent = new StringContent(serialisedContent))
             {
-                var response = await httpClient.PostAsync(remoteUri, stringContent);
+                var dispatchResponse = new WebhookDispatchResponse();
 
-                return response.IsSuccessStatusCode;
+                try
+                {
+                    dispatchResponse.IsSuccessful = (await httpClient.PostAsync(remoteUri, stringContent)).IsSuccessStatusCode;
+                }
+                catch (Exception ex)
+                {
+                    dispatchResponse.FailureReason = ex.Message;
+                }
+
+                return dispatchResponse;
             }
         }
     }

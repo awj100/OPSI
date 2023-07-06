@@ -176,6 +176,6 @@ public class ProjectUploadServiceSpecs
     {
         await _testee.StoreInitialProjectUploadAsync(_formFileCollection);
 
-        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)), A<string>._)).MustHaveHappenedOnceExactly();
     }
 }

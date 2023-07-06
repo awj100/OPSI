@@ -3,6 +3,7 @@ using Azure.Data.Tables;
 using FakeItEasy;
 using FluentAssertions;
 using Opsi.AzureStorage;
+using Opsi.Pocos;
 using Opsi.Services.InternalTypes;
 using Opsi.Services.TableServices;
 
@@ -11,6 +12,7 @@ namespace Opsi.Services.Specs.TableServices;
 [TestClass]
 public class WebhookTableServiceSpecs
 {
+    private const string RemoteUri = "https://a.test.url";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private TableClient _tableClient;
     private ITableService _tableService;
@@ -89,10 +91,10 @@ public class WebhookTableServiceSpecs
 
         while (true)
         {
-            yield return new InternalWebhookMessage
+            yield return new InternalWebhookMessage(new WebhookMessage
             {
                 Status = statusIndex++.ToString()
-            };
+            }, RemoteUri);
         }
     }
 }

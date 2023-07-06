@@ -1,5 +1,4 @@
 ﻿using Opsi.AzureStorage;
-using Opsi.AzureStorage.TableEntities;
 using Opsi.Services.InternalTypes;
 
 namespace Opsi.Services.TableServices;
@@ -17,9 +16,9 @@ public class WebhookTableService : IWebhookTableService
 
     public async Task<IReadOnlyCollection<InternalWebhookMessage>> GetUndeliveredAsync()
     {
-        const int maxResultsPerPage = 1;
+        const int maxResultsPerPage = 100;
         IEnumerable<string>? selectProps = null;
-        var Results = new List<InternalWebhookMessage>();
+        var results = new List<InternalWebhookMessage>();
 
         var tableClient = _tableService.GetTableClient();
 
@@ -30,14 +29,21 @@ public class WebhookTableService : IWebhookTableService
 
         await foreach (var queryResult in queryResults)
         {
-            Results.Add(queryResult);
+            results.Add(queryResult);
         }
 
-        return Results;
+        return results;
     }
 
     public async Task StoreAsync(InternalWebhookMessage internalWebhookMessage)
     {
-        await _tableService.StoreTableEntityAsync(internalWebhookMessage);
+        if (internalWebhookMessage.FailureCount > 1)
+        {
+            await _tableService.UpdateTableEntityAsync(internalWebhookMessage);
+        }
+        else
+        {
+            await _tableService.StoreTableEntityAsync(internalWebhookMessage);
+        }
     }
 }

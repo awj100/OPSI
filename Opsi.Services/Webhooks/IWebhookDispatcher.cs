@@ -1,8 +1,9 @@
 ﻿using Opsi.Pocos;
+using Opsi.Services.InternalTypes;
 
 namespace Opsi.Services.Webhooks;
 
 public interface IWebhookDispatcher
 {
-    Task<bool> AttemptDeliveryAsync(WebhookMessage webhookMessage, Uri remoteUri);
+    Task<WebhookDispatchResponse> AttemptDeliveryAsync(WebhookMessage webhookMessage, Uri remoteUri);
 }

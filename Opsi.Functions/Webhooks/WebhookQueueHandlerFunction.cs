@@ -1,6 +1,5 @@
 ﻿using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using Opsi.Services.InternalTypes;
 using Opsi.Services.Webhooks;
 
 namespace Opsi.Functions.Webhooks

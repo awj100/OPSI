@@ -146,7 +146,7 @@ public class ResourceServiceSpecs
     {
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_projectId)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_projectId)), A<string>._)).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -154,7 +154,7 @@ public class ResourceServiceSpecs
     {
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.RemoteUri != null && cm.RemoteUri.Equals(RemoteUriAsString)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<string>.That.Matches(s => s != null && s.Equals(RemoteUriAsString)))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]

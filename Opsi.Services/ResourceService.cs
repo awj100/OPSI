@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage.Types;
 using Opsi.Common.Exceptions;
-using Opsi.Services.InternalTypes;
+using Opsi.Pocos;
 using Opsi.Services.QueueServices;
 
 namespace Opsi.Services;
@@ -112,13 +112,12 @@ internal class ResourceService : IResourceService
             return;
         }
 
-        await _webhookQueueService.QueueWebhookMessageAsync(new InternalWebhookMessage
+        await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
         {
             ProjectId = projectId,
-            RemoteUri = remoteUri,
             Status = $"Resource stored: {resourceStorageInfo.FileName}",
             Username = _userProvider.Username.Value
-        });
+        }, remoteUri);
     }
 
     private async Task UnlockFileAsync(ResourceStorageInfo resourceStorageInfo)

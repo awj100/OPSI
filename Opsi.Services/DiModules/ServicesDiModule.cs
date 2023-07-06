@@ -55,7 +55,14 @@ public static class ServicesDiModule
             var userProvider = provider.GetRequiredService<IUserProvider>();
 
             httpClient.BaseAddress = new Uri(hostUrl);
-            httpClient.DefaultRequestHeaders.Authorization = await oneTimeAuthService.GetAuthenticationHeaderAsync(userProvider.Username.Value);
+            try
+            {
+                httpClient.DefaultRequestHeaders.Authorization = await oneTimeAuthService.GetAuthenticationHeaderAsync(userProvider.Username.Value);
+            }
+            catch (Exception exception)
+            {
+                throw new Exception($"Unable to provide an HttpClient with one-time authentication: {exception.Message}");
+            }
         });
 
         services.AddHttpClient(HttpClientNames.SelfWithContextAuth, (provider, httpClient) =>

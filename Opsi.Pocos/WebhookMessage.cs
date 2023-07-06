@@ -6,14 +6,17 @@ namespace Opsi.Pocos
 	{
 		public WebhookMessage()
 		{
-			TimeStamp = DateTime.Now;
-		}
+			Id = Guid.NewGuid();
+			OccurredOn = DateTime.UtcNow;
+        }
 
-		public Guid ProjectId { get; set; }
+		public Guid Id { get; set; }
+
+		public DateTime OccurredOn { get; set; }
+
+        public Guid ProjectId { get; set; }
 
 		public string Status { get; set; }
-
-		public DateTime TimeStamp { get; set; }
 
 		public string Username { get; set; }
 	}

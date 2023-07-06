@@ -1,5 +1,5 @@
 ﻿using Opsi.AzureStorage.TableEntities;
-using Opsi.Services.InternalTypes;
+using Opsi.Pocos;
 using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
 
@@ -8,15 +8,11 @@ namespace Opsi.Services;
 public class ProjectsService : IProjectsService
 {
     private readonly IProjectsTableService _projectsTableService;
-    private readonly IUserProvider _userProvider;
     private readonly IWebhookQueueService _webhookQueueService;
 
-    public ProjectsService(IProjectsTableService projectsTableService,
-                           IUserProvider userProvider,
-                           IWebhookQueueService QueueService)
+    public ProjectsService(IProjectsTableService projectsTableService, IWebhookQueueService QueueService)
     {
         _projectsTableService = projectsTableService;
-        _userProvider = userProvider;
         _webhookQueueService = QueueService;
     }
 
@@ -38,17 +34,16 @@ public class ProjectsService : IProjectsService
     {
         await _projectsTableService.StoreProjectAsync(project);
 
-        await QueueWebhookMessageAsync(project.Id, project.WebhookUri);
+        await QueueWebhookMessageAsync(project.Id, project.WebhookUri, project.Username);
     }
 
-    private async Task QueueWebhookMessageAsync(Guid projectId, string Uri)
+    private async Task QueueWebhookMessageAsync(Guid projectId, string uri, string username)
     {
-        await _webhookQueueService.QueueWebhookMessageAsync(new InternalWebhookMessage
+        await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
         {
             ProjectId = projectId,
-            RemoteUri = Uri,
             Status = "Project created",
-            Username = _userProvider.Username.Value
-        });
+            Username = username
+        }, uri);
     }
 }

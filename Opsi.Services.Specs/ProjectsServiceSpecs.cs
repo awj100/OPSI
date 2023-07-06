@@ -1,6 +1,7 @@
 ﻿using FakeItEasy;
 using FluentAssertions;
 using Opsi.AzureStorage.TableEntities;
+using Opsi.Pocos;
 using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
@@ -14,7 +15,6 @@ public class ProjectsServiceSpecs
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private Project _project;
     private IProjectsTableService _projectsTableService;
-    private IUserProvider _userProvider;
     private IWebhookQueueService _webhookQueueService;
     private ProjectsService _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -29,12 +29,9 @@ public class ProjectsServiceSpecs
         };
 
         _projectsTableService = A.Fake<IProjectsTableService>();
-        _userProvider = A.Fake<IUserProvider>();
         _webhookQueueService = A.Fake<IWebhookQueueService>();
 
-        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
-
-        _testee = new ProjectsService(_projectsTableService, _userProvider, _webhookQueueService);
+        _testee = new ProjectsService(_projectsTableService, _webhookQueueService);
     }
 
     [TestMethod]
@@ -92,7 +89,7 @@ public class ProjectsServiceSpecs
     {
         await _testee.StoreProjectAsync(_project);
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)), A<string>._)).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -100,6 +97,6 @@ public class ProjectsServiceSpecs
     {
         await _testee.StoreProjectAsync(_project);
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.RemoteUri != null && cm.RemoteUri.Equals(_project.WebhookUri)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<string>.That.Matches(s => s != null && s.Equals(_project.WebhookUri)))).MustHaveHappenedOnceExactly();
     }
 }

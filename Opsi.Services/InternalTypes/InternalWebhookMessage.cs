@@ -1,4 +1,5 @@
-﻿using Azure;
+﻿using System.Web;
+using Azure;
 using Azure.Data.Tables;
 using Opsi.Pocos;
 
@@ -6,7 +7,6 @@ namespace Opsi.Services.InternalTypes;
 
 public class InternalWebhookMessage : WebhookMessage, ITableEntity
 {
-    // Default constructor, required for JSON deserialisation.
     public InternalWebhookMessage()
     {
     }
@@ -27,6 +27,8 @@ public class InternalWebhookMessage : WebhookMessage, ITableEntity
 
     public bool IsDelivered { get; set; } = default;
 
+    public string? LastFailureReason { get; set; } = default;
+
     public string PartitionKey
     {
         get => ProjectId.ToString();
@@ -45,15 +47,23 @@ public class InternalWebhookMessage : WebhookMessage, ITableEntity
 
     public string RowKey
     {
-        get => Status;
-        set => Status = value;
+        get => Id.ToString();
+        set
+        {
+            if (!Guid.TryParse(value, out var id))
+            {
+                throw new ArgumentException($"Invalid value for {nameof(InternalWebhookMessage)}.{nameof(RowKey)}: {value}.");
+            }
+
+            Id = id;
+        }
     }
 
     public DateTimeOffset? Timestamp { get; set; } = default!;
 
     public void IncrementFailureCount()
     {
-        FailureCount = FailureCount + 1;
+        FailureCount++;
     }
 
     public WebhookMessage ToWebhookMessage()
