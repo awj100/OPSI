@@ -304,7 +304,7 @@ public class ZippedQueueHandlerSpecs
 
         foreach (var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals($"Resource stored: {nonExcludedFilePath}")), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals($"Resource.Stored:{nonExcludedFilePath}")), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
         }
     }
 
@@ -356,7 +356,7 @@ public class ZippedQueueHandlerSpecs
 
         foreach(var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.StartsWith($"Resource could not be stored (\"{nonExcludedFilePath}\")")), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.StartsWith($"Resource.StorageFailure:{nonExcludedFilePath}")), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
         }
     }
 

@@ -139,7 +139,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
             ProjectId = internalManifest.ProjectId,
             Status = response.IsSuccessStatusCode
                 ? $"Resource.Stored:{filePath}"
-                : $"Resource.StoreFailure:{filePath}:{response.ReasonPhrase}",
+                : $"Resource.StorageFailure:{filePath}:{response.ReasonPhrase}",
             Username = internalManifest.Username
         };
     }

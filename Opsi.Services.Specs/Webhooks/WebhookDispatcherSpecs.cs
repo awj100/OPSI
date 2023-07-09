@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text.Json;
 using FakeItEasy;
 using FluentAssertions;
 using Opsi.Constants;
@@ -24,6 +25,7 @@ public class WebhookDispatcherSpecs
     private WebhookMessage _webhookMessage;
     private ConsumerWebhookSpecification _webhookSpec;
     private IHttpClientFactory _httpClientFactory;
+    private JsonSerializerOptions _jsonSerialiserOptions;
     private Uri _remoteUri;
     private IUserProvider _userProvider;
     private WebhookDispatcher _testee;
@@ -33,6 +35,7 @@ public class WebhookDispatcherSpecs
     public void TestInit()
     {
         _id = Guid.NewGuid();
+        _jsonSerialiserOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
         _webhookCustomProps = new Dictionary<string, object>
         {
@@ -109,7 +112,7 @@ public class WebhookDispatcherSpecs
                                                                                               dwm => dwm.Id.Equals(_id)
                                                                                                      && dwm.CustomProps != null
                                                                                                      && dwm.CustomProps.Count.Equals(_webhookCustomProps.Count),
-                                                                                              json => System.Text.Json.JsonSerializer.Deserialize<DispatchableWebhookMessage>(json)!);
+                                                                                              json => JsonSerializer.Deserialize<DispatchableWebhookMessage>(json, _jsonSerialiserOptions)!);
 
         ConfigureHttpResponse(uriAndResponse);
 
