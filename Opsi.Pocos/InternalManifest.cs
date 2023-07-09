@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Opsi.Pocos
 {
@@ -11,15 +12,25 @@ namespace Opsi.Pocos
             PackageName = String.Empty;
             ProjectId = Guid.Empty;
             ResourceExclusionPaths = new List<string>();
-            WebhookUri = String.Empty;
         }
 
         public InternalManifest(Manifest manifest, string username)
 		{
             foreach (var propertyInfo in manifest.GetType()
-                                                 .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                                                 .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                                                 .Where(propInfo => propInfo.Name != nameof(Manifest.WebhookSpecification)))
             {
                 propertyInfo.SetValue(this, propertyInfo.GetValue(manifest));
+            }
+
+            if (manifest.WebhookSpecification != null)
+            {
+                WebhookSpecification = new ConsumerWebhookSpecification();
+                foreach (var propertyInfo in manifest.WebhookSpecification.GetType()
+                                                                          .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                {
+                    propertyInfo.SetValue(WebhookSpecification, propertyInfo.GetValue(manifest.WebhookSpecification));
+                }
             }
 
             Username = username;

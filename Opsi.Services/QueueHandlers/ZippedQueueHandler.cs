@@ -1,9 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage;
-using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Pocos;
-using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueHandlers.Dependencies;
 using Opsi.Services.QueueServices;
 
@@ -42,7 +40,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         if (!isNewProject)
         {
             var webhookMessage = GetProjectConflictWebhookMessage(internalManifest);
-            await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest.WebhookUri);
+            await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest.WebhookSpecification);
             _log.LogWarning(webhookMessage.Status);
             return;
         }
@@ -76,9 +74,14 @@ internal class ZippedQueueHandler : IZippedQueueHandler
 
     private async Task NotifyOfResourceStorageResponseAsync(InternalManifest internalManifest, string filePath, HttpResponseMessage response)
     {
+        if (String.IsNullOrWhiteSpace(internalManifest.WebhookSpecification?.Uri))
+        {
+            return;
+        }
+
         var webhookMessage = GetResourceStorageWebhookMessage(internalManifest, filePath, response);
 
-        await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest.WebhookUri);
+        await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest.WebhookSpecification);
     }
 
     private async Task<HttpResponseMessage> SendResourceForStoringAsync(string hostUrl,
@@ -135,8 +138,8 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         {
             ProjectId = internalManifest.ProjectId,
             Status = response.IsSuccessStatusCode
-                ? $"Resource stored: {filePath}"
-                : $"Resource could not be stored (\"{filePath}\"): {response.ReasonPhrase}",
+                ? $"Resource.Stored:{filePath}"
+                : $"Resource.StoreFailure:{filePath}:{response.ReasonPhrase}",
             Username = internalManifest.Username
         };
     }

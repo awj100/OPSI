@@ -10,7 +10,6 @@ using Opsi.AzureStorage;
 using Opsi.Common.Exceptions;
 using Opsi.Functions.FormHelpers;
 using Opsi.Pocos;
-using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 
 namespace Opsi.Services.Specs;
@@ -46,10 +45,13 @@ public class ProjectUploadServiceSpecs
     {
         _manifest = new Manifest
         {
-            WebhookUri = WebhookUri,
             HandlerQueue = HandlerQueueName,
             PackageName = PackageName,
-            ProjectId = Guid.NewGuid()
+            ProjectId = Guid.NewGuid(),
+            WebhookSpecification = new ConsumerWebhookSpecification
+            {
+                Uri = WebhookUri
+            },
         };
         var serialisedManifest = JsonSerializer.Serialize(_manifest);
         _manifestStream = new MemoryStream(Encoding.UTF8.GetBytes(serialisedManifest));
@@ -131,7 +133,7 @@ public class ProjectUploadServiceSpecs
     {
         await _testee.StoreInitialProjectUploadAsync(_formFileCollection);
 
-        A.CallTo(() => _queueService.AddMessageAsync(A<InternalManifest>.That.Matches(m => m.WebhookUri.Equals(_manifest.WebhookUri))))
+        A.CallTo(() => _queueService.AddMessageAsync(A<InternalManifest>.That.Matches(m => m.WebhookSpecification.Uri.Equals(_manifest.WebhookSpecification.Uri))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -176,6 +178,6 @@ public class ProjectUploadServiceSpecs
     {
         await _testee.StoreInitialProjectUploadAsync(_formFileCollection);
 
-        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)), A<string>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
     }
 }

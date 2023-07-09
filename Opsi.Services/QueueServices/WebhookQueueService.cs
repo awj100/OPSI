@@ -12,19 +12,24 @@ internal class WebhookQueueService : IWebhookQueueService
     public WebhookQueueService(IQueueServiceFactory queueServiceFactory, IErrorQueueService errorQueueService)
     {
         _errorQueueService = errorQueueService;
-        _queueService = queueServiceFactory.Create(Constants.QueueNames.Webhook);
+        _queueService = queueServiceFactory.Create(Constants.QueueNames.ConsumerWebhookSpecification);
     }
 
-    public async Task QueueWebhookMessageAsync(WebhookMessage webhookMessage, string remoteUri)
+    public async Task QueueWebhookMessageAsync(WebhookMessage webhookMessage, ConsumerWebhookSpecification webhookSpec)
     {
-        var internalWebhookMessage = new InternalWebhookMessage(webhookMessage, remoteUri);
+        if (webhookSpec == null || String.IsNullOrWhiteSpace(webhookSpec.Uri))
+        {
+            return;
+        }
+
+        var internalWebhookMessage = new InternalWebhookMessage(webhookMessage, webhookSpec);
 
         await QueueWebhookMessageAsync(internalWebhookMessage);
     }
 
     public async Task QueueWebhookMessageAsync(InternalWebhookMessage internalWebhookMessage)
     {
-        if (String.IsNullOrWhiteSpace(internalWebhookMessage.RemoteUri))
+        if (String.IsNullOrWhiteSpace(internalWebhookMessage.WebhookSpecification.Uri))
         {
             return;
         }

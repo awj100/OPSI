@@ -1,7 +1,7 @@
 ﻿using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Opsi.Constants;
-using Opsi.Services.InternalTypes;
+using Opsi.Pocos;
 using Opsi.Services.Webhooks;
 
 namespace Opsi.Functions.Webhooks;
@@ -18,7 +18,7 @@ public class WebhookDispatchFunction
     }
 
     [Function("WebhookDispatchFunction")]
-    public async Task Run([QueueTrigger(QueueNames.Webhook, Connection = "AzureWebJobsStorage")] InternalWebhookMessage internalWebhookMessage)
+    public async Task Run([QueueTrigger(QueueNames.ConsumerWebhookSpecification, Connection = "AzureWebJobsStorage")] InternalWebhookMessage internalWebhookMessage)
     {
         _logger.LogInformation($"{nameof(WebhookDispatchFunction)} triggered for first-time delivery of message.");
 

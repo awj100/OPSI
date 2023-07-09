@@ -1,5 +1,6 @@
 ﻿using Opsi.AzureStorage;
-using Opsi.Services.InternalTypes;
+using Opsi.AzureStorage.TableEntities;
+using Opsi.Pocos;
 
 namespace Opsi.Services.TableServices;
 
@@ -22,14 +23,14 @@ public class WebhookTableService : IWebhookTableService
 
         var tableClient = _tableService.GetTableClient();
 
-        var queryResults = tableClient.QueryAsync<InternalWebhookMessage>($"{nameof(InternalWebhookMessage.IsDelivered)} eq false and {nameof(InternalWebhookMessage.FailureCount)} lt {MaxFailureCount}",
-                                                                           maxResultsPerPage,
-                                                                           selectProps,
-                                                                           CancellationToken.None);
+        var queryResults = tableClient.QueryAsync<InternalWebhookMessageTableEntity>($"{nameof(InternalWebhookMessageTableEntity.IsDelivered)} eq false and {nameof(InternalWebhookMessageTableEntity.FailureCount)} lt {MaxFailureCount}",
+                                                                                     maxResultsPerPage,
+                                                                                     selectProps,
+                                                                                     CancellationToken.None);
 
         await foreach (var queryResult in queryResults)
         {
-            results.Add(queryResult);
+            results.Add(queryResult.ToInternalWebhookMessage());
         }
 
         return results;
@@ -37,13 +38,15 @@ public class WebhookTableService : IWebhookTableService
 
     public async Task StoreAsync(InternalWebhookMessage internalWebhookMessage)
     {
+        var tableEntity = InternalWebhookMessageTableEntity.FromInternalWebhookMessage(internalWebhookMessage);
+
         if (internalWebhookMessage.FailureCount > 1)
         {
-            await _tableService.UpdateTableEntityAsync(internalWebhookMessage);
+            await _tableService.UpdateTableEntityAsync(tableEntity);
         }
         else
         {
-            await _tableService.StoreTableEntityAsync(internalWebhookMessage);
+            await _tableService.StoreTableEntityAsync(tableEntity);
         }
     }
 }

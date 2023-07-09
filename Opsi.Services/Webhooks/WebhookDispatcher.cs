@@ -9,6 +9,7 @@ namespace Opsi.Services.Webhooks;
 
 internal class WebhookDispatcher : IWebhookDispatcher
 {
+    private readonly JsonSerializerOptions _jsonSerialiserOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     private readonly IHttpClientFactory _httpClientFactory;
 
     public WebhookDispatcher(IHttpClientFactory httpClientFactory)
@@ -16,14 +17,16 @@ internal class WebhookDispatcher : IWebhookDispatcher
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<WebhookDispatchResponse> AttemptDeliveryAsync(WebhookMessage webhookMessage, Uri remoteUri)
+    public async Task<WebhookDispatchResponse> AttemptDeliveryAsync(WebhookMessage webhookMessage, Uri remoteUri, Dictionary<string, object> customProps)
     {
         if (webhookMessage is InternalWebhookMessage message)
         {
             webhookMessage = message.ToWebhookMessage();
         }
 
-        var serialisedContent = JsonSerializer.Serialize(webhookMessage);
+        var dispatchableWebhookMessage = DispatchableWebhookMessage.FromWebhookMessage(webhookMessage, customProps);
+
+        var serialisedContent = JsonSerializer.Serialize(dispatchableWebhookMessage, _jsonSerialiserOptions);
 
         using (var httpClient = _httpClientFactory.CreateClient(HttpClientNames.SelfWithoutAuth))
         using (var content = new MultipartFormDataContent())

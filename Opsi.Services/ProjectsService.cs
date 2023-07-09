@@ -1,5 +1,4 @@
-﻿using Opsi.AzureStorage.TableEntities;
-using Opsi.Pocos;
+﻿using Opsi.Pocos;
 using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
 
@@ -16,11 +15,38 @@ public class ProjectsService : IProjectsService
         _webhookQueueService = QueueService;
     }
 
-    public async Task<string?> GetWebhookUriAsync(Guid projectId)
+    public async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)
     {
         var project = await _projectsTableService.GetProjectByIdAsync(projectId);
 
-        return project?.WebhookUri;
+        if (project == null || String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
+        {
+            return null;
+        }
+
+        return project.WebhookSpecification;
+
+        //var uri = project.WebhookUri;
+
+        //var webhook = new ConsumerWebhookSpecification { Uri = uri };
+
+        //var customPropsAsString = project?.WebhookCustomProps;
+        //if (!String.IsNullOrWhiteSpace(customPropsAsString))
+        //{
+        //    try
+        //    {
+        //        webhook.CustomProps = JsonSerializer.Deserialize<Dictionary<string, object>>(customPropsAsString);
+        //    }
+        //    catch (Exception exception)
+        //    {
+        //        webhook.CustomProps = new Dictionary<string, object>
+        //        {
+        //            {"exception", exception.Message }
+        //        };
+        //    }
+        //}
+
+        //return webhook;
     }
 
     public async Task<bool> IsNewProjectAsync(Guid projectId)
@@ -34,16 +60,29 @@ public class ProjectsService : IProjectsService
     {
         await _projectsTableService.StoreProjectAsync(project);
 
-        await QueueWebhookMessageAsync(project.Id, project.WebhookUri, project.Username);
+        if (!String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
+        {
+            await QueueWebhookMessageAsync(project.Id,
+                                           project.WebhookSpecification.Uri,
+                                           project.WebhookSpecification.CustomProps,
+                                           project.Username);
+        }
     }
 
-    private async Task QueueWebhookMessageAsync(Guid projectId, string uri, string username)
+    private async Task QueueWebhookMessageAsync(Guid projectId,
+                                                string? webhookRemoteUri,
+                                                Dictionary<string, object> webhookCustomProps,
+                                                string username)
     {
         await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
         {
             ProjectId = projectId,
-            Status = "Project created",
+            Status = "Project.Created",
             Username = username
-        }, uri);
+        }, new ConsumerWebhookSpecification
+        {
+            CustomProps = webhookCustomProps,
+            Uri = webhookRemoteUri
+        });
     }
 }

@@ -1,10 +1,11 @@
 ﻿using Opsi.AzureStorage.TableEntities;
+using Opsi.Pocos;
 
 namespace Opsi.Services;
 
 public interface IProjectsService
 {
-    Task<string?> GetWebhookUriAsync(Guid projectId);
+    Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId);
 
     Task<bool> IsNewProjectAsync(Guid projectId);
 

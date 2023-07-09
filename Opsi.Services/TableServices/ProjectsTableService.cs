@@ -1,5 +1,6 @@
 ﻿using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
+using Opsi.Pocos;
 
 namespace Opsi.Services.TableServices;
 
@@ -20,14 +21,14 @@ internal class ProjectsTableService : IProjectsTableService
 
         var tableClient = _projectsTableService.GetTableClient();
 
-        var results = tableClient.QueryAsync<Project>($"{nameof(Project.Id)} eq guid'{projectId}'",
-                                                      maxResultsPerPage,
-                                                      selectProps,
-                                                      CancellationToken.None);
+        var results = tableClient.QueryAsync<ProjectTableEntity>($"{nameof(Project.Id)} eq guid'{projectId}'",
+                                                                 maxResultsPerPage,
+                                                                 selectProps,
+                                                                 CancellationToken.None);
 
         await foreach (var result in results)
         {
-            return result;
+            return result.ToProject();
         }
 
         return null;
@@ -35,6 +36,8 @@ internal class ProjectsTableService : IProjectsTableService
 
     public async Task StoreProjectAsync(Project project)
     {
-        await _projectsTableService.StoreTableEntityAsync(project);
+        var projectTableEntity = ProjectTableEntity.FromProject(project);
+
+        await _projectsTableService.StoreTableEntityAsync(projectTableEntity);
     }
 }

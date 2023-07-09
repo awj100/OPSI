@@ -2,10 +2,8 @@
 using FakeItEasy;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.AzureStorage;
-using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Pocos;
-using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueHandlers;
 using Opsi.Services.QueueHandlers.Dependencies;
 using Opsi.Services.QueueServices;
@@ -16,6 +14,7 @@ namespace Opsi.Services.Specs.QueueHandlers;
 public class ZippedQueueHandlerSpecs
 {
     private const string Username = "user@test.com";
+    private const string WebhookUri = "https://a.test.url";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private InternalManifest _manifest;
     private IReadOnlyCollection<string> _nonManifestContentFilePaths;
@@ -37,7 +36,11 @@ public class ZippedQueueHandlerSpecs
         {
             ResourceExclusionPaths = new List<string> { GetTestFilePath(1) },
             ProjectId = Guid.NewGuid(),
-            Username = Username
+            Username = Username,
+            WebhookSpecification = new ConsumerWebhookSpecification
+            {
+                Uri = WebhookUri
+            }
         };
         _nonManifestContentFilePaths = new List<string>
         {
@@ -125,7 +128,7 @@ public class ZippedQueueHandlerSpecs
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
                                                                                                               && cm.Status.Equals($"A project with ID \"{_manifest.ProjectId}\" already exists.")),
-                                                                                                              A<string>._))
+                                                                                                              A<ConsumerWebhookSpecification>._))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -301,7 +304,7 @@ public class ZippedQueueHandlerSpecs
 
         foreach (var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals($"Resource stored: {nonExcludedFilePath}")), A<string>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals($"Resource stored: {nonExcludedFilePath}")), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
         }
     }
 
@@ -316,7 +319,7 @@ public class ZippedQueueHandlerSpecs
 
         var nonExcludedFilePaths = _nonManifestContentFilePaths.Except(_manifest.ResourceExclusionPaths).ToList();
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)), A<string>._)).MustHaveHappenedANumberOfTimesMatching(times => times == nonExcludedFilePaths.Count);
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)), A<ConsumerWebhookSpecification>._)).MustHaveHappenedANumberOfTimesMatching(times => times == nonExcludedFilePaths.Count);
     }
 
     [TestMethod]
@@ -353,7 +356,7 @@ public class ZippedQueueHandlerSpecs
 
         foreach(var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.StartsWith($"Resource could not be stored (\"{nonExcludedFilePath}\")")), A<string>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.StartsWith($"Resource could not be stored (\"{nonExcludedFilePath}\")")), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
         }
     }
 

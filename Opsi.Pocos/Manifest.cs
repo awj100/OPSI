@@ -10,7 +10,6 @@ namespace Opsi.Pocos
 			PackageName = String.Empty;
 			ProjectId = Guid.Empty;
             ResourceExclusionPaths = new List<string>();
-            WebhookUri = String.Empty;
         }
 
 		public string HandlerQueue { get; set; }
@@ -21,7 +20,7 @@ namespace Opsi.Pocos
 
         public List<string> ResourceExclusionPaths { get; set; }
 
-        public string WebhookUri { get; set; }
+        public ConsumerWebhookSpecification WebhookSpecification { get; set; }
 
         public string GetPackagePathForStore()
 		{

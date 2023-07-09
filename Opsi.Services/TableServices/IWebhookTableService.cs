@@ -1,4 +1,4 @@
-﻿using Opsi.Services.InternalTypes;
+﻿using Opsi.Pocos;
 
 namespace Opsi.Services.TableServices;
 

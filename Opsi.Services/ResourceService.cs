@@ -51,9 +51,11 @@ internal class ResourceService : IResourceService
         }
     }
 
-    private async Task<string?> GetWebhookRemoteUriAsync(Guid projectId)
+    private async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)
     {
-        return await _projectsService.GetWebhookUriAsync(projectId);
+        var webhookSpec = await _projectsService.GetWebhookSpecificationAsync(projectId);
+
+        return webhookSpec;
     }
 
     private async Task<VersionInfo> GetVersionInfoAsync(ResourceStorageInfo resourceStorageInfo)
@@ -106,8 +108,8 @@ internal class ResourceService : IResourceService
 
     private async Task QueueWebhookMessageAsync(Guid projectId, ResourceStorageInfo resourceStorageInfo)
     {
-        var remoteUri = await GetWebhookRemoteUriAsync(projectId);
-        if (remoteUri == null)
+        var webhookSpec = await GetWebhookSpecificationAsync(projectId);
+        if (webhookSpec == null)
         {
             return;
         }
@@ -115,9 +117,9 @@ internal class ResourceService : IResourceService
         await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
         {
             ProjectId = projectId,
-            Status = $"Resource stored: {resourceStorageInfo.FileName}",
+            Status = $"Resource.Stored:{resourceStorageInfo.FileName}",
             Username = _userProvider.Username.Value
-        }, remoteUri);
+        }, webhookSpec);
     }
 
     private async Task UnlockFileAsync(ResourceStorageInfo resourceStorageInfo)

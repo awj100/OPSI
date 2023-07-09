@@ -7,7 +7,6 @@ using Opsi.AzureStorage.Types;
 using Opsi.Common;
 using Opsi.Common.Exceptions;
 using Opsi.Pocos;
-using Opsi.Services.InternalTypes;
 using Opsi.Services.QueueServices;
 
 namespace Opsi.Services.Specs;
@@ -47,7 +46,7 @@ public class ResourceServiceSpecs
                                                                A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.FullPath.Value))))
             .Returns(_versionInfo);
 
-        A.CallTo(() => _projectsService.GetWebhookUriAsync(_projectId)).Returns(RemoteUriAsString);
+        A.CallTo(() => _projectsService.GetWebhookSpecificationAsync(_projectId)).Returns(new ConsumerWebhookSpecification { Uri = RemoteUriAsString });
         A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => Username));
 
         _resourceStorageInfo = new ResourceStorageInfo(_projectId,
@@ -138,7 +137,7 @@ public class ResourceServiceSpecs
     {
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _projectsService.GetWebhookUriAsync(_projectId)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _projectsService.GetWebhookSpecificationAsync(_projectId)).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -146,7 +145,7 @@ public class ResourceServiceSpecs
     {
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_projectId)), A<string>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_projectId)), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -154,7 +153,9 @@ public class ResourceServiceSpecs
     {
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<string>.That.Matches(s => s != null && s.Equals(RemoteUriAsString)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _QueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
+                                                                                                                                       && cws.Uri != null
+                                                                                                                                       && cws.Uri.Equals(RemoteUriAsString)))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]

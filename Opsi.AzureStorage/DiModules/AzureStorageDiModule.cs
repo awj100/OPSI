@@ -3,6 +3,7 @@ using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 
 [assembly: InternalsVisibleTo("Opsi.Services.Specs")]
+[assembly: InternalsVisibleTo("Opsi.AzureStorage.Specs")]
 
 namespace Opsi.AzureStorage.DiModules;
 

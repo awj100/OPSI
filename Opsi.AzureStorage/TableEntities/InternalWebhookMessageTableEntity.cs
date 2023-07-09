@@ -1,0 +1,108 @@
+﻿using System.Text.Json;
+using Azure;
+using Azure.Data.Tables;
+using Opsi.Pocos;
+
+namespace Opsi.AzureStorage.TableEntities;
+
+public class InternalWebhookMessageTableEntity : InternalWebhookMessageBase, ITableEntity
+{
+    public InternalWebhookMessageTableEntity()
+    {
+    }
+
+    public static InternalWebhookMessageTableEntity FromInternalWebhookMessage(InternalWebhookMessage internalWebhookMessage)
+    {
+        var tableEntity = new InternalWebhookMessageTableEntity
+        {
+            FailureCount = internalWebhookMessage.FailureCount,
+            Id = internalWebhookMessage.Id,
+            IsDelivered = internalWebhookMessage.IsDelivered,
+            LastFailureReason = internalWebhookMessage.LastFailureReason,
+            OccurredOn = internalWebhookMessage.OccurredOn,
+            ProjectId = internalWebhookMessage.ProjectId,
+            Status = internalWebhookMessage.Status,
+            Username = internalWebhookMessage.Username,
+            WebhookUri = internalWebhookMessage.WebhookSpecification.Uri
+        };
+
+        try
+        {
+            tableEntity.SerialisedWebhookCustomProps= JsonSerializer.Serialize(internalWebhookMessage.WebhookSpecification.CustomProps);
+        }
+        catch (Exception exception)
+        {
+            tableEntity.SerialisedWebhookCustomProps = $"Unable to serialise {nameof(InternalWebhookMessage)}.{nameof(InternalWebhookMessage.WebhookSpecification)}.{nameof(InternalWebhookMessage.WebhookSpecification.CustomProps)}: {exception.Message}";
+        }
+
+        return tableEntity;
+    }
+
+    public InternalWebhookMessage ToInternalWebhookMessage()
+    {
+        var internalWebhookMessage = new InternalWebhookMessage
+        {
+            FailureCount = FailureCount,
+            Id = Id,
+            IsDelivered = IsDelivered,
+            LastFailureReason = LastFailureReason,
+            OccurredOn = OccurredOn,
+            ProjectId = ProjectId,
+            Status = Status,
+            Username = Username,
+            WebhookSpecification = new ConsumerWebhookSpecification()
+        };
+
+        internalWebhookMessage.WebhookSpecification.Uri = WebhookUri;
+
+        try
+        {
+            internalWebhookMessage.WebhookSpecification.CustomProps = JsonSerializer.Deserialize<Dictionary<string, object>>(SerialisedWebhookCustomProps);
+        }
+        catch (Exception exception)
+        {
+            internalWebhookMessage.WebhookSpecification.CustomProps = new Dictionary<string, object>
+            {
+                {exception.GetType().Name, exception.Message }
+            };
+        }
+
+        return internalWebhookMessage;
+    }
+
+    public ETag ETag { get; set; }
+
+    public string PartitionKey
+    {
+        get => ProjectId.ToString();
+        set
+        {
+            if (!Guid.TryParse(value, out var projectId))
+            {
+                throw new ArgumentException($"Invalid value for {nameof(InternalWebhookMessageTableEntity)}.{nameof(PartitionKey)}: {value}.");
+            }
+
+            ProjectId = projectId;
+        }
+    }
+
+    public string RowKey
+    {
+        get => Id.ToString();
+        set
+        {
+            if (!Guid.TryParse(value, out var id))
+            {
+                throw new ArgumentException($"Invalid value for {nameof(InternalWebhookMessageTableEntity)}.{nameof(RowKey)}: {value}.");
+            }
+
+            Id = id;
+        }
+    }
+
+    public DateTimeOffset? Timestamp { get; set; }
+
+    public string WebhookUri { get; set; } = default!;
+
+    public string SerialisedWebhookCustomProps { get; set; } = default!;
+}

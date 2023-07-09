@@ -9,10 +9,11 @@ namespace Opsi.Services.Specs.Webhooks;
 [TestClass]
 public class WebhookServiceSpecs
 {
+    private const string _remoteUriAsString = "https://test.url.com/";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private WebhookMessage _webhookMessage;
+    private ConsumerWebhookSpecification _webhookSpec;
     private InternalWebhookMessage _internalWebhookMessage;
-    private string _remoteUriAsString = "https://test.url.com/";
     private IWebhookDispatcher _webhookDispatcher;
     private IWebhookTableService _webhookTableService;
     private WebhookService _testee;
@@ -22,7 +23,8 @@ public class WebhookServiceSpecs
     public void TestInit()
     {
         _webhookMessage = new WebhookMessage { Status = Guid.NewGuid().ToString() };
-        _internalWebhookMessage = new InternalWebhookMessage(_webhookMessage, _remoteUriAsString);
+        _webhookSpec = new ConsumerWebhookSpecification(_remoteUriAsString);
+        _internalWebhookMessage = new InternalWebhookMessage(_webhookMessage, _webhookSpec);
 
         _webhookDispatcher = A.Fake<IWebhookDispatcher>();
         _webhookTableService = A.Fake<IWebhookTableService>();
@@ -33,17 +35,17 @@ public class WebhookServiceSpecs
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsEmpty_DoesNotAttemptDispatch()
     {
-        _internalWebhookMessage.RemoteUri = String.Empty;
+        _internalWebhookMessage.WebhookSpecification.Uri = String.Empty;
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>._, A<Uri>._)).MustNotHaveHappened();
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>._, A<Uri>._, A<Dictionary<string, object>>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsEmpty_StoresNothing()
     {
-        _internalWebhookMessage.RemoteUri = String.Empty;
+        _internalWebhookMessage.WebhookSpecification.Uri = String.Empty;
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -53,17 +55,17 @@ public class WebhookServiceSpecs
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNotAbsoluteUrl_DoesNotAttemptDispatch()
     {
-        _internalWebhookMessage.RemoteUri = "/test/segment";
+        _internalWebhookMessage.WebhookSpecification.Uri = "/test/segment";
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>._, A<Uri>._)).MustNotHaveHappened();
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>._, A<Uri>._, A<Dictionary<string, object>>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNotAbsoluteUrl_StoresNothing()
     {
-        _internalWebhookMessage.RemoteUri = "/test/segment";
+        _internalWebhookMessage.WebhookSpecification.Uri = "/test/segment";
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -73,17 +75,17 @@ public class WebhookServiceSpecs
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNull_DoesNotAttemptDispatch()
     {
-        _internalWebhookMessage.RemoteUri = null;
+        _internalWebhookMessage.WebhookSpecification.Uri = null;
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>._, A<Uri>._)).MustNotHaveHappened();
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>._, A<Uri>._, A<Dictionary<string, object>>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNull_StoresNothing()
     {
-        _internalWebhookMessage.RemoteUri = null;
+        _internalWebhookMessage.WebhookSpecification.Uri = null;
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -97,7 +99,8 @@ public class WebhookServiceSpecs
         var webhookDispatchResponse = new WebhookDispatchResponse { IsSuccessful = isDelivered };
 
         A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
-                                                               A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
+                                                               A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString)),
+                                                               A<Dictionary<string, object>>._))
             .Returns(webhookDispatchResponse);
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
@@ -115,7 +118,8 @@ public class WebhookServiceSpecs
         _internalWebhookMessage.FailureCount = failureCount;
 
         A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
-                                                               A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
+                                                               A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString)),
+                                                               A<Dictionary<string, object>>._))
             .Returns(webhookDispatchResponse);
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
@@ -130,7 +134,8 @@ public class WebhookServiceSpecs
         var webhookDispatchResponse = new WebhookDispatchResponse { IsSuccessful = isDelivered };
 
         A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
-                                                               A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
+                                                               A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString)),
+                                                               A<Dictionary<string, object>>._))
             .Returns(webhookDispatchResponse);
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
@@ -149,7 +154,8 @@ public class WebhookServiceSpecs
         _internalWebhookMessage.FailureCount = failureCount;
 
         A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
-                                                               A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
+                                                               A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString)),
+                                                               A<Dictionary<string, object>>._))
             .Returns(webhookDispatchResponse);
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
@@ -181,7 +187,8 @@ public class WebhookServiceSpecs
         foreach (var undeliveredInternalWebhookMessage in undeliveredInternalWebhookMessages)
         {
             A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(undeliveredInternalWebhookMessage.Status)),
-                                                                   A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString))))
+                                                                   A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString)),
+                                                                   A<Dictionary<string, object>>._))
                 .MustHaveHappenedOnceExactly();
         }
 
@@ -197,7 +204,7 @@ public class WebhookServiceSpecs
             yield return new InternalWebhookMessage(new WebhookMessage
             {
                 Status = statusIndex++.ToString()
-            }, _remoteUriAsString)
+            }, _webhookSpec)
             {
                 FailureCount = 2,
                 IsDelivered = false,
