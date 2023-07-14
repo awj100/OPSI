@@ -11,6 +11,9 @@ public class InternalWebhookMessageSpecs
     private const string _customProp1Value = nameof(_customProp1Value);
     private const string _customProp2Name = nameof(_customProp2Name);
     private const int _customProp2Value = 2;
+    private const string _event = "TEST EVENT";
+    private const string _level = "TEST LEVEL";
+    private const string _name = "TEST NAME";
     private const string _status = "TEST STATUS";
     private const string _uri = "https://a.test.url";
     private const string _username = "TEST USERNAME";
@@ -45,19 +48,23 @@ public class InternalWebhookMessageSpecs
 
         _webhookMessage = new WebhookMessage
         {
+            Event = _event,
             Id = _id,
+            Level = _level,
+            Name = _name,
             OccurredOn = _occurredOn,
             ProjectId = _projectId,
-            Status = _status,
             Username = _username
         };
 
         _internalWebhookMessage = new InternalWebhookMessage
         {
+            Event = _event,
             Id = _id,
+            Level = _level,
+            Name = _name,
             OccurredOn = _occurredOn,
             ProjectId = _projectId,
-            Status = _status,
             Username = _username,
             WebhookSpecification = _webhookSpec
         };

@@ -123,12 +123,14 @@ public class WebhookTableServiceSpecs
         {
             yield return new InternalWebhookMessage
             {
+                Event = statusIndex++.ToString(),
                 FailureCount = 9,
                 Id = Guid.NewGuid(),
+                Level = statusIndex.ToString(),
                 IsDelivered = true,
+                Name = statusIndex.ToString(),
                 OccurredOn = DateTime.Now,
                 ProjectId = Guid.NewGuid(),
-                Status = statusIndex++.ToString(),
                 Username = "user@test.com",
                 WebhookSpecification = _webhookSpec
             };
@@ -143,12 +145,14 @@ public class WebhookTableServiceSpecs
         {
             yield return new InternalWebhookMessageTableEntity
             {
+                Event = statusIndex++.ToString(),
                 FailureCount = 9,
                 Id = Guid.NewGuid(),
                 IsDelivered = true,
+                Level = statusIndex.ToString(),
+                Name = statusIndex.ToString(),
                 OccurredOn = DateTime.Now,
                 ProjectId = Guid.NewGuid(),
-                Status = statusIndex++.ToString(),
                 Username = "user@test.com",
                 WebhookUri = _webhookSpec.Uri,
                 SerialisedWebhookCustomProps = _serialisedCustomProps

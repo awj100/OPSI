@@ -10,6 +10,9 @@ namespace Opsi.Services.Specs.Webhooks;
 public class WebhookServiceSpecs
 {
     private const string _remoteUriAsString = "https://test.url.com/";
+    private const string _webhookEvent = "TEST WEBHOOK EVENT";
+    private const string _webhookLevel = "TEST WEBHOOK LEVEL";
+    private const string _webhookName = "TEST WEBHOOK NAME";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private WebhookMessage _webhookMessage;
     private ConsumerWebhookSpecification _webhookSpec;
@@ -22,7 +25,12 @@ public class WebhookServiceSpecs
     [TestInitialize]
     public void TestInit()
     {
-        _webhookMessage = new WebhookMessage { Status = Guid.NewGuid().ToString() };
+        _webhookMessage = new WebhookMessage
+        {
+            Event = _webhookEvent,
+            Level = _webhookLevel,
+            Name = _webhookName
+        };
         _webhookSpec = new ConsumerWebhookSpecification(_remoteUriAsString);
         _internalWebhookMessage = new InternalWebhookMessage(_webhookMessage, _webhookSpec);
 
@@ -98,7 +106,9 @@ public class WebhookServiceSpecs
         const bool isDelivered = true;
         var webhookDispatchResponse = new WebhookDispatchResponse { IsSuccessful = isDelivered };
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Event.Equals(_webhookMessage.Event)
+                                                                                                    && cm.Level.Equals(_webhookLevel)
+                                                                                                    && cm.Name.Equals(_webhookName)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString)),
                                                                A<Dictionary<string, object>>._))
             .Returns(webhookDispatchResponse);
@@ -117,7 +127,9 @@ public class WebhookServiceSpecs
 
         _internalWebhookMessage.FailureCount = failureCount;
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Event.Equals(_webhookMessage.Event)
+                                                                                                    && cm.Level.Equals(_webhookLevel)
+                                                                                                    && cm.Name.Equals(_webhookName)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString)),
                                                                A<Dictionary<string, object>>._))
             .Returns(webhookDispatchResponse);
@@ -133,7 +145,9 @@ public class WebhookServiceSpecs
         const bool isDelivered = false;
         var webhookDispatchResponse = new WebhookDispatchResponse { IsSuccessful = isDelivered };
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Event.Equals(_webhookMessage.Event)
+                                                                                                    && cm.Level.Equals(_webhookLevel)
+                                                                                                    && cm.Name.Equals(_webhookName)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString)),
                                                                A<Dictionary<string, object>>._))
             .Returns(webhookDispatchResponse);
@@ -153,7 +167,9 @@ public class WebhookServiceSpecs
 
         _internalWebhookMessage.FailureCount = failureCount;
 
-        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(_webhookMessage.Status)),
+        A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Event.Equals(_webhookMessage.Event)
+                                                                                                    && cm.Level.Equals(_webhookLevel)
+                                                                                                    && cm.Name.Equals(_webhookName)),
                                                                A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString)),
                                                                A<Dictionary<string, object>>._))
             .Returns(webhookDispatchResponse);
@@ -186,7 +202,9 @@ public class WebhookServiceSpecs
 
         foreach (var undeliveredInternalWebhookMessage in undeliveredInternalWebhookMessages)
         {
-            A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals(undeliveredInternalWebhookMessage.Status)),
+            A.CallTo(() => _webhookDispatcher.AttemptDeliveryAsync(A<WebhookMessage>.That.Matches(cm => cm.Event.Equals(undeliveredInternalWebhookMessage.Event)
+                                                                                                        && cm.Level.Equals(undeliveredInternalWebhookMessage.Level)
+                                                                                                        && cm.Name.Equals(undeliveredInternalWebhookMessage.Name)),
                                                                    A<Uri>.That.Matches(uri => uri.AbsoluteUri.Equals(_remoteUriAsString)),
                                                                    A<Dictionary<string, object>>._))
                 .MustHaveHappenedOnceExactly();
@@ -203,7 +221,9 @@ public class WebhookServiceSpecs
         {
             yield return new InternalWebhookMessage(new WebhookMessage
             {
-                Status = statusIndex++.ToString()
+                Event = statusIndex++.ToString(),
+                Level = statusIndex.ToString(),
+                Name = statusIndex.ToString()
             }, _webhookSpec)
             {
                 FailureCount = 2,

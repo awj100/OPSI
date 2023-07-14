@@ -2,6 +2,7 @@
 using Opsi.Abstractions;
 using Opsi.AzureStorage;
 using Opsi.Common.Exceptions;
+using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueServices;
 
@@ -101,8 +102,10 @@ internal class ProjectUploadService : IProjectUploadService
         {
             await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
             {
+                Event = Events.Uploaded,
+                Level = Levels.Project,
+                Name = manifest.PackageName,
                 ProjectId = manifest.ProjectId,
-                Status = "Project.Uploaded",
                 Username = _userProvider.Username.Value
             }, manifest.WebhookSpecification);
         }

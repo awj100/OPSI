@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage;
 using Opsi.Common;
+using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueHandlers.Dependencies;
 using Opsi.Services.QueueServices;
@@ -41,7 +42,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         {
             var webhookMessage = GetProjectConflictWebhookMessage(internalManifest);
             await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest.WebhookSpecification);
-            _log.LogWarning(webhookMessage.Status);
+            _log.LogWarning($"{webhookMessage.Level}:{webhookMessage.Event}:{webhookMessage.Name}");
             return;
         }
 
@@ -126,8 +127,10 @@ internal class ZippedQueueHandler : IZippedQueueHandler
     {
         return new WebhookMessage
         {
+            Event = Events.AlreadyExists,
+            Level = Levels.Project,
+            Name = internalManifest.PackageName,
             ProjectId = internalManifest.ProjectId,
-            Status = $"A project with ID \"{internalManifest.ProjectId}\" already exists.",
             Username = internalManifest.Username
         };
     }
@@ -136,10 +139,10 @@ internal class ZippedQueueHandler : IZippedQueueHandler
     {
         return new WebhookMessage
         {
+            Event = Events.Stored,
+            Level = Levels.Resource,
+            Name = filePath,
             ProjectId = internalManifest.ProjectId,
-            Status = response.IsSuccessStatusCode
-                ? $"Resource.Stored:{filePath}"
-                : $"Resource.StorageFailure:{filePath}:{response.ReasonPhrase}",
             Username = internalManifest.Username
         };
     }

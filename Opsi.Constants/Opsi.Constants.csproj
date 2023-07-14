@@ -6,4 +6,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="Webhooks\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Webhooks\" />
+  </ItemGroup>
 </Project>

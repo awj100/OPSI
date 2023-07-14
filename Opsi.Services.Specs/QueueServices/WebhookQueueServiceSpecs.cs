@@ -9,6 +9,9 @@ namespace Opsi.Services.Specs.QueueServices;
 [TestClass]
 public class WebhookQueueServiceSpecs
 {
+    private const string _event = "TEST EVENT";
+    private const string _level = "TEST LEVEL";
+    private const string _name = "TEST NAME";
     private const string RemoteUri = "https://a.test.url";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private WebhookMessage _webhookMessage;
@@ -24,8 +27,10 @@ public class WebhookQueueServiceSpecs
     {
         _webhookMessage = new WebhookMessage
         {
+            Event = _event,
+            Level = _level,
+            Name = _name,
             ProjectId = Guid.NewGuid(),
-            Status = Guid.NewGuid().ToString()
         };
 
         _webhookSpec = new ConsumerWebhookSpecification { Uri = RemoteUri };
@@ -45,7 +50,9 @@ public class WebhookQueueServiceSpecs
         await _testee.QueueWebhookMessageAsync(_webhookMessage, _webhookSpec);
 
         A.CallTo(() => _queueService.AddMessageAsync(A<InternalWebhookMessage>.That.Matches(iwm => iwm.ProjectId.Equals(_webhookMessage.ProjectId)
-                                                                                                   && iwm.Status.Equals(_webhookMessage.Status)
+                                                                                                   && iwm.Event.Equals(_webhookMessage.Event)
+                                                                                                   && iwm.Level.Equals(_webhookMessage.Level)
+                                                                                                   && iwm.Name.Equals(_webhookMessage.Name)
                                                                                                    && iwm.WebhookSpecification != null
                                                                                                    && iwm.WebhookSpecification.Uri != null && iwm.WebhookSpecification.Uri!.Equals(RemoteUri))))
             .MustHaveHappenedOnceExactly();

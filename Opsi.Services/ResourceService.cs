@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage.Types;
 using Opsi.Common.Exceptions;
+using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueServices;
 
@@ -116,8 +117,10 @@ internal class ResourceService : IResourceService
 
         await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
         {
+            Event = Events.Stored,
+            Level = Levels.Resource,
+            Name = resourceStorageInfo.FileName.Value,
             ProjectId = projectId,
-            Status = $"Resource.Stored:{resourceStorageInfo.FileName}",
             Username = _userProvider.Username.Value
         }, webhookSpec);
     }

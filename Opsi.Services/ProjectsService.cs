@@ -1,4 +1,5 @@
-﻿using Opsi.Pocos;
+﻿using Opsi.Constants.Webhooks;
+using Opsi.Pocos;
 using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
 
@@ -25,28 +26,6 @@ public class ProjectsService : IProjectsService
         }
 
         return project.WebhookSpecification;
-
-        //var uri = project.WebhookUri;
-
-        //var webhook = new ConsumerWebhookSpecification { Uri = uri };
-
-        //var customPropsAsString = project?.WebhookCustomProps;
-        //if (!String.IsNullOrWhiteSpace(customPropsAsString))
-        //{
-        //    try
-        //    {
-        //        webhook.CustomProps = JsonSerializer.Deserialize<Dictionary<string, object>>(customPropsAsString);
-        //    }
-        //    catch (Exception exception)
-        //    {
-        //        webhook.CustomProps = new Dictionary<string, object>
-        //        {
-        //            {"exception", exception.Message }
-        //        };
-        //    }
-        //}
-
-        //return webhook;
     }
 
     public async Task<bool> IsNewProjectAsync(Guid projectId)
@@ -63,6 +42,7 @@ public class ProjectsService : IProjectsService
         if (!String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
         {
             await QueueWebhookMessageAsync(project.Id,
+                                           project.Name,
                                            project.WebhookSpecification.Uri,
                                            project.WebhookSpecification.CustomProps,
                                            project.Username);
@@ -70,14 +50,17 @@ public class ProjectsService : IProjectsService
     }
 
     private async Task QueueWebhookMessageAsync(Guid projectId,
+                                                string projectName,
                                                 string? webhookRemoteUri,
                                                 Dictionary<string, object> webhookCustomProps,
                                                 string username)
     {
         await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
         {
+            Event = Events.Stored,
+            Level = Levels.Project,
+            Name = projectName,
             ProjectId = projectId,
-            Status = "Project.Created",
             Username = username
         }, new ConsumerWebhookSpecification
         {

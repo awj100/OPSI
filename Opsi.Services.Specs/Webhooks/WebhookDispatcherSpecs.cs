@@ -17,6 +17,9 @@ public class WebhookDispatcherSpecs
     private const string _customProp1Value = nameof(_customProp1Value);
     private const string _customProp2Name = nameof(_customProp2Name);
     private const int _customProp2Value = 2;
+    private const string _event = "TEST EVENT";
+    private const string _level = "TEST LEVEL";
+    private const string _name = "TEST NAME";
     private const string _remoteUriAsString = "https://test.url.com";
     private const string _username = "user@test.com";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -45,9 +48,11 @@ public class WebhookDispatcherSpecs
 
         _webhookMessage = new WebhookMessage
         {
+            Event = _event,
             Id = _id,
+            Level = _level,
+            Name = _name,
             ProjectId = Guid.NewGuid(),
-            Status = Guid.NewGuid().ToString(),
             Username = _username
         };
 

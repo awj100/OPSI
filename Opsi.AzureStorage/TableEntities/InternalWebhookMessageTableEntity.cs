@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Reflection;
+using System.Text.Json;
 using Azure;
 using Azure.Data.Tables;
 using Opsi.Pocos;
@@ -13,18 +14,12 @@ public class InternalWebhookMessageTableEntity : InternalWebhookMessageBase, ITa
 
     public static InternalWebhookMessageTableEntity FromInternalWebhookMessage(InternalWebhookMessage internalWebhookMessage)
     {
-        var tableEntity = new InternalWebhookMessageTableEntity
+        var tableEntity = new InternalWebhookMessageTableEntity();
+
+        foreach(var propInfo in typeof(InternalWebhookMessageBase).GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
-            FailureCount = internalWebhookMessage.FailureCount,
-            Id = internalWebhookMessage.Id,
-            IsDelivered = internalWebhookMessage.IsDelivered,
-            LastFailureReason = internalWebhookMessage.LastFailureReason,
-            OccurredOn = internalWebhookMessage.OccurredOn,
-            ProjectId = internalWebhookMessage.ProjectId,
-            Status = internalWebhookMessage.Status,
-            Username = internalWebhookMessage.Username,
-            WebhookUri = internalWebhookMessage.WebhookSpecification.Uri
-        };
+            propInfo.SetValue(tableEntity, propInfo.GetValue(internalWebhookMessage));
+        }
 
         try
         {
@@ -35,25 +30,21 @@ public class InternalWebhookMessageTableEntity : InternalWebhookMessageBase, ITa
             tableEntity.SerialisedWebhookCustomProps = $"Unable to serialise {nameof(InternalWebhookMessage)}.{nameof(InternalWebhookMessage.WebhookSpecification)}.{nameof(InternalWebhookMessage.WebhookSpecification.CustomProps)}: {exception.Message}";
         }
 
+        tableEntity.WebhookUri = internalWebhookMessage.WebhookSpecification.Uri;
+
         return tableEntity;
     }
 
     public InternalWebhookMessage ToInternalWebhookMessage()
     {
-        var internalWebhookMessage = new InternalWebhookMessage
-        {
-            FailureCount = FailureCount,
-            Id = Id,
-            IsDelivered = IsDelivered,
-            LastFailureReason = LastFailureReason,
-            OccurredOn = OccurredOn,
-            ProjectId = ProjectId,
-            Status = Status,
-            Username = Username,
-            WebhookSpecification = new ConsumerWebhookSpecification()
-        };
+        var internalWebhookMessage = new InternalWebhookMessage();
 
-        internalWebhookMessage.WebhookSpecification.Uri = WebhookUri;
+        foreach (var propInfo in typeof(InternalWebhookMessageBase).GetProperties(BindingFlags.Instance | BindingFlags.Public))
+        {
+            propInfo.SetValue(internalWebhookMessage, propInfo.GetValue(this));
+        }
+
+        internalWebhookMessage.WebhookSpecification = new ConsumerWebhookSpecification { Uri = WebhookUri };
 
         try
         {

@@ -12,9 +12,12 @@ public class InternalWebhookMessageTableEntitySpecs
     private const string _customProp1Value = nameof(_customProp1Value);
     private const string _customProp2Name = nameof(_customProp2Name);
     private const int _customProp2Value = 2;
+    private const string _event = "TEST EVENT";
     private const int _failureCount = 9;
     private const bool _isDelivered = true;
     private const string _lastFailureReason = "TEST LAST FAILURE REASON";
+    private const string _level = "TEST LEVEL";
+    private const string _name = "TEST NAME";
     private const string _status = "TEST STATUS";
     private const string _uri = "https://a.test.url";
     private const string _username = "TEST USERNAME";
@@ -52,27 +55,31 @@ public class InternalWebhookMessageTableEntitySpecs
 
         _internalWebhookMessage = new InternalWebhookMessage
         {
+            Event = _event,
             FailureCount = _failureCount,
             Id = _id,
             IsDelivered = _isDelivered,
             LastFailureReason = _lastFailureReason,
+            Level = _level,
+            Name = _name,
             OccurredOn = _occurredOn,
             ProjectId = _projectId,
-            Status = _status,
             Username = _username,
             WebhookSpecification = _webhookSpec
         };
 
         _internalWebhookMessageTableEntity = new InternalWebhookMessageTableEntity
         {
+            Event = _event,
             FailureCount = _failureCount,
             Id = _id,
             IsDelivered = _isDelivered,
             LastFailureReason = _lastFailureReason,
+            Level = _level,
+            Name = _name,
             OccurredOn = _occurredOn,
             ProjectId = _projectId,
             SerialisedWebhookCustomProps = _serialisedCustomProps,
-            Status = _status,
             Username = _username
         };
     }
@@ -82,14 +89,16 @@ public class InternalWebhookMessageTableEntitySpecs
     {
         var tableEntity = InternalWebhookMessageTableEntity.FromInternalWebhookMessage(_internalWebhookMessage);
 
+        tableEntity.Event.Should().Be(_internalWebhookMessage.Event);
         tableEntity.FailureCount.Should().Be(_internalWebhookMessage.FailureCount);
         tableEntity.Id.Should().Be(_internalWebhookMessage.Id);
         tableEntity.IsDelivered.Should().Be(_internalWebhookMessage.IsDelivered);
         tableEntity.LastFailureReason.Should().Be(_internalWebhookMessage.LastFailureReason);
+        tableEntity.Level.Should().Be(_internalWebhookMessage.Level);
+        tableEntity.Name.Should().Be(_internalWebhookMessage.Name);
         tableEntity.OccurredOn.Should().Be(_internalWebhookMessage.OccurredOn);
         tableEntity.ProjectId.Should().Be(_internalWebhookMessage.ProjectId);
         tableEntity.SerialisedWebhookCustomProps.Should().NotBeNull();
-        tableEntity.Status.Should().Be(_internalWebhookMessage.Status);
         tableEntity.Username.Should().Be(_internalWebhookMessage.Username);
         tableEntity.SerialisedWebhookCustomProps.Should().NotBeNull();
         tableEntity.WebhookUri.Should().Be(_internalWebhookMessage.WebhookSpecification.Uri);
@@ -119,13 +128,15 @@ public class InternalWebhookMessageTableEntitySpecs
     {
         var internalWebhookMessage = _internalWebhookMessageTableEntity.ToInternalWebhookMessage();
 
+        internalWebhookMessage.Event.Should().Be(_internalWebhookMessageTableEntity.Event);
         internalWebhookMessage.FailureCount.Should().Be(_internalWebhookMessageTableEntity.FailureCount);
         internalWebhookMessage.Id.Should().Be(_internalWebhookMessageTableEntity.Id);
         internalWebhookMessage.IsDelivered.Should().Be(_internalWebhookMessageTableEntity.IsDelivered);
         internalWebhookMessage.LastFailureReason.Should().Be(_internalWebhookMessageTableEntity.LastFailureReason);
+        internalWebhookMessage.Level.Should().Be(_internalWebhookMessageTableEntity.Level);
+        internalWebhookMessage.Name.Should().Be(_internalWebhookMessageTableEntity.Name);
         internalWebhookMessage.OccurredOn.Should().Be(_internalWebhookMessageTableEntity.OccurredOn);
         internalWebhookMessage.ProjectId.Should().Be(_internalWebhookMessageTableEntity.ProjectId);
-        internalWebhookMessage.Status.Should().Be(_internalWebhookMessageTableEntity.Status);
         internalWebhookMessage.Username.Should().Be(_internalWebhookMessageTableEntity.Username);
         internalWebhookMessage.WebhookSpecification.Should().NotBeNull();
         internalWebhookMessage.WebhookSpecification.Uri.Should().Be(_internalWebhookMessageTableEntity.WebhookUri);

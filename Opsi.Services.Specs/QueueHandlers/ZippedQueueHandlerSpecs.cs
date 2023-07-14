@@ -3,6 +3,7 @@ using FakeItEasy;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.AzureStorage;
 using Opsi.Common;
+using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueHandlers;
 using Opsi.Services.QueueHandlers.Dependencies;
@@ -114,7 +115,8 @@ public class ZippedQueueHandlerSpecs
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
-                                                                                                              && cm.Status.Contains("Resource stored"))))
+                                                                                                              && cm.Event.Equals(Events.Stored)
+                                                                                                              && cm.Level.Equals(Levels.Resource))))
             .MustNotHaveHappened();
     }
 
@@ -127,7 +129,8 @@ public class ZippedQueueHandlerSpecs
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)
-                                                                                                              && cm.Status.Equals($"A project with ID \"{_manifest.ProjectId}\" already exists.")),
+                                                                                                              && cm.Event.Equals(Events.AlreadyExists)
+                                                                                                              && cm.Level.Equals(Levels.Project)),
                                                                                                               A<ConsumerWebhookSpecification>._))
             .MustHaveHappenedOnceExactly();
     }
@@ -304,7 +307,10 @@ public class ZippedQueueHandlerSpecs
 
         foreach (var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.Equals($"Resource.Stored:{nonExcludedFilePath}")), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Event.Equals(Events.Stored)
+                                                                                                              && cm.Level.Equals(Levels.Resource)
+                                                                                                              && cm.Name.Equals(nonExcludedFilePath)),
+                                                                                                        A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
         }
     }
 
@@ -319,7 +325,9 @@ public class ZippedQueueHandlerSpecs
 
         var nonExcludedFilePaths = _nonManifestContentFilePaths.Except(_manifest.ResourceExclusionPaths).ToList();
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)), A<ConsumerWebhookSpecification>._)).MustHaveHappenedANumberOfTimesMatching(times => times == nonExcludedFilePaths.Count);
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_manifest.ProjectId)),
+                                                                     A<ConsumerWebhookSpecification>._))
+            .MustHaveHappenedANumberOfTimesMatching(times => times == nonExcludedFilePaths.Count);
     }
 
     [TestMethod]
@@ -333,7 +341,7 @@ public class ZippedQueueHandlerSpecs
 
         foreach (var excludedFilePath in _manifest.ResourceExclusionPaths)
         {
-            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.Status.Contains(excludedFilePath)))).MustNotHaveHappened();
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>.That.Matches(cm => cm.Name.Equals(excludedFilePath)))).MustNotHaveHappened();
         }
     }
 
@@ -356,7 +364,10 @@ public class ZippedQueueHandlerSpecs
 
         foreach(var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Status.StartsWith($"Resource.StorageFailure:{nonExcludedFilePath}")), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Event.Equals(Events.Stored)
+                                                                                                              && cm.Level.Equals(Levels.Resource)
+                                                                                                              && cm.Name.Equals(nonExcludedFilePath)), A<ConsumerWebhookSpecification>._))
+                .MustHaveHappenedOnceExactly();
         }
     }
 
