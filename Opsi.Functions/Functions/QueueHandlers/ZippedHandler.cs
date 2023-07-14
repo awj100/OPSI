@@ -5,7 +5,7 @@ using Opsi.Pocos;
 using Opsi.Services.QueueHandlers;
 using Opsi.Services.QueueServices;
 
-namespace Opsi.Functions.QueueHandlers;
+namespace Opsi.Functions.Functions.QueueHandlers;
 
 public class ZippedHandler : FunctionBase
 {

@@ -4,7 +4,7 @@ using Opsi.Constants;
 using Opsi.Pocos;
 using Opsi.Services.Webhooks;
 
-namespace Opsi.Functions.Webhooks;
+namespace Opsi.Functions.Functions.Webhooks;
 
 public class WebhookDispatchFunction
 {

@@ -5,7 +5,7 @@ using Opsi.AzureStorage.Types;
 using Opsi.Services;
 using Opsi.Services.QueueServices;
 
-namespace Opsi.Functions;
+namespace Opsi.Functions.Functions;
 
 public class ResourceHandler
 {
@@ -66,7 +66,7 @@ public class ResourceHandler
         const string expectedContentType = "application/octet-stream";
 
         return request != null
-            && String.Equals(GetContentType(request), expectedContentType, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(GetContentType(request), expectedContentType, StringComparison.OrdinalIgnoreCase)
             && request.Body?.Length > 0;
     }
 
@@ -77,7 +77,7 @@ public class ResourceHandler
             return contentType.First();
         }
 
-        return String.Empty;
+        return string.Empty;
     }
 }
 

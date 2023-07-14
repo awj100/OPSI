@@ -16,12 +16,13 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.2.0" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="QueueHandlers\" />
     <None Remove="FormHelpers\" />
     <None Remove="DiModules\" />
     <None Remove="Middleware\" />
     <None Remove="Extensions\" />
-    <None Remove="Webhooks\" />
+    <None Remove="Functions\" />
+    <None Remove="Functions\QueueHandlers\" />
+    <None Remove="Functions\Webhooks\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.editorconfig" />
@@ -68,11 +69,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="QueueHandlers\" />
     <Folder Include="FormHelpers\" />
     <Folder Include="DiModules\" />
     <Folder Include="Middleware\" />
     <Folder Include="Extensions\" />
-    <Folder Include="Webhooks\" />
+    <Folder Include="Functions\" />
+    <Folder Include="Functions\QueueHandlers\" />
+    <Folder Include="Functions\Webhooks\" />
   </ItemGroup>
 </Project>

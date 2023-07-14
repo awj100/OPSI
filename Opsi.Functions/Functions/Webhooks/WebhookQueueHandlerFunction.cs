@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Opsi.Services.Webhooks;
 
-namespace Opsi.Functions.Webhooks
+namespace Opsi.Functions.Functions.Webhooks
 {
     public class WebhookQueueHandlerFunction
     {
