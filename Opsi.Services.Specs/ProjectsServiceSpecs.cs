@@ -1,5 +1,6 @@
 ﻿using FakeItEasy;
 using FluentAssertions;
+using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
@@ -9,6 +10,10 @@ namespace Opsi.Services.Specs;
 [TestClass]
 public class ProjectsServiceSpecs
 {
+    private const string _name = "TEST NAME";
+    private const string _state1 = "TEST STATE 1";
+    private const string _state2 = "TEST STATE 2";
+    private const string _username = "TEST USERNAME";
     private const string _webhookCustomProp1Name = nameof(_webhookCustomProp1Name);
     private const string _webhookCustomProp1Value = nameof(_webhookCustomProp1Value);
     private const string _webhookCustomProp2Name = nameof(_webhookCustomProp2Name);
@@ -41,11 +46,19 @@ public class ProjectsServiceSpecs
         _project = new Project
         {
             Id = Guid.NewGuid(),
+            Name = _name,
+            State = _state1,
+            Username = _username,
             WebhookSpecification = _webhookSpecs
         };
 
+        Project? nullProject = null;
+
         _projectsTableService = A.Fake<IProjectsTableService>();
         _webhookQueueService = A.Fake<IWebhookQueueService>();
+
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(_project.Id)).Returns(_project);
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Not.Matches(g => g.Equals(_project.Id)))).Returns(nullProject);
 
         _testee = new ProjectsService(_projectsTableService, _webhookQueueService);
     }
@@ -140,6 +153,168 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
+    public async Task StoreProjectAsync_WhenNameIsEmpty_ThrowsArgumentExceptionWithMeaningfulMessage()
+    {
+        _project.Name = String.Empty;
+
+        await _testee.Invoking(t => t.StoreProjectAsync(_project))
+                     .Should()
+                     .ThrowAsync<ArgumentNullException>()
+                     .WithParameterName(nameof(Project.Name));
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenNameIsEmpty_NoProjectIsPassedToTableService()
+    {
+        _project.Name = String.Empty;
+
+        try
+        {
+            await _testee.StoreProjectAsync(_project);
+        }
+        catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.Name)))
+        {
+        }
+
+        A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenNameIsNull_ThrowsArgumentExceptionWithMeaningfulMessage()
+    {
+        _project.Name = null;
+
+        await _testee.Invoking(t => t.StoreProjectAsync(_project))
+                     .Should()
+                     .ThrowAsync<ArgumentNullException>()
+                     .WithParameterName(nameof(Project.Name));
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenNameIsNull_NoProjectIsPassedToTableService()
+    {
+        _project.Name = null;
+
+        try
+        {
+            await _testee.StoreProjectAsync(_project);
+        }
+        catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.Name)))
+        {
+        }
+
+        A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenStateIsEmpty_ThrowsArgumentExceptionWithMeaningfulMessage()
+    {
+        _project.State = String.Empty;
+
+        await _testee.Invoking(t => t.StoreProjectAsync(_project))
+                     .Should()
+                     .ThrowAsync<ArgumentNullException>()
+                     .WithParameterName(nameof(Project.State));
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenStateIsEmpty_NoProjectIsPassedToTableService()
+    {
+        _project.State = String.Empty;
+
+        try
+        {
+            await _testee.StoreProjectAsync(_project);
+        }
+        catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.State)))
+        {
+        }
+
+        A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenStateIsNull_ThrowsArgumentExceptionWithMeaningfulMessage()
+    {
+        _project.State = null;
+
+        await _testee.Invoking(t => t.StoreProjectAsync(_project))
+                     .Should()
+                     .ThrowAsync<ArgumentNullException>()
+                     .WithParameterName(nameof(Project.State));
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenStateIsNull_NoProjectIsPassedToTableService()
+    {
+        _project.State = null;
+
+        try
+        {
+            await _testee.StoreProjectAsync(_project);
+        }
+        catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.State)))
+        {
+        }
+
+        A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenUsernameIsEmpty_ThrowsArgumentExceptionWithMeaningfulMessage()
+    {
+        _project.Username = String.Empty;
+
+        await _testee.Invoking(t => t.StoreProjectAsync(_project))
+                     .Should()
+                     .ThrowAsync<ArgumentNullException>()
+                     .WithParameterName(nameof(Project.Username));
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenUsernameIsEmpty_NoProjectIsPassedToTableService()
+    {
+        _project.Username = String.Empty;
+
+        try
+        {
+            await _testee.StoreProjectAsync(_project);
+        }
+        catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.Username)))
+        {
+        }
+
+        A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenUsernameIsNull_ThrowsArgumentExceptionWithMeaningfulMessage()
+    {
+        _project.Username = null;
+
+        await _testee.Invoking(t => t.StoreProjectAsync(_project))
+                     .Should()
+                     .ThrowAsync<ArgumentNullException>()
+                     .WithParameterName(nameof(Project.Username));
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenUsernameIsNull_NoProjectIsPassedToTableService()
+    {
+        _project.Username = null;
+
+        try
+        {
+            await _testee.StoreProjectAsync(_project);
+        }
+        catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.Username)))
+        {
+        }
+
+        A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
     public async Task StoreProjectAsync_InvokesWebhookWithCorrectProjectId()
     {
         await _testee.StoreProjectAsync(_project);
@@ -152,11 +327,10 @@ public class ProjectsServiceSpecs
     {
         await _testee.StoreProjectAsync(_project);
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(
-            A<WebhookMessage>._,
-            A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
-                                                                && cws.CustomProps != null
-                                                                && cws.CustomProps.Count == _webhookCustomProps.Count)))
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
+                                                                     A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
+                                                                                                                         && cws.CustomProps != null
+                                                                                                                         && cws.CustomProps.Count == _webhookCustomProps.Count)))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -165,11 +339,102 @@ public class ProjectsServiceSpecs
     {
         await _testee.StoreProjectAsync(_project);
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(
-            A<WebhookMessage>._,
-            A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
-                                                                && !String.IsNullOrWhiteSpace(cws.Uri)
-                                                                && cws.Uri.Equals(_webhookUri))))
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
+                                                                     A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
+                                                                                                                         && !String.IsNullOrWhiteSpace(cws.Uri)
+                                                                                                                         && cws.Uri.Equals(_webhookUri))))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_PassesProjectWithNewStateToTableService()
+    {
+        await _testee.UpdateProjectStateAsync(_project.Id, _state2);
+
+        A.CallTo(() => _projectsTableService.UpdateProjectAsync(A<Project>.That.Matches(project => project.Id.Equals(_project.Id)
+                                                                                                   && project.State!.Equals(_state2))))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenNoMatchingProjectFoundById_DoesNotInvokeWebhook()
+    {
+        var invalidProjectId = Guid.NewGuid();
+
+        await _testee.UpdateProjectStateAsync(invalidProjectId, _state2);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenNoMatchingProjectFoundById_DoesNotPassProjectToTableService()
+    {
+        var invalidProjectId = Guid.NewGuid();
+
+        await _testee.UpdateProjectStateAsync(invalidProjectId, _state2);
+
+        A.CallTo(() => _projectsTableService.UpdateProjectAsync(A<Project>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenNoStateChange_DoesNotInvokeWebhook()
+    {
+        await _testee.UpdateProjectStateAsync(_project.Id, _state1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenNoStateChange_DoesNotPassProjectToTableService()
+    {
+        await _testee.UpdateProjectStateAsync(_project.Id, _state1);
+
+        A.CallTo(() => _projectsTableService.UpdateProjectAsync(A<Project>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectProjectId()
+    {
+        await _testee.UpdateProjectStateAsync(_project.Id, _state2);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)),
+                                                                     A<ConsumerWebhookSpecification>._))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectStateTextInEventProperty()
+    {
+        await _testee.UpdateProjectStateAsync(_project.Id, _state2);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)
+                                                                                                          && cm.Event.Contains(Events.StateChange)
+                                                                                                          && cm.Event.Contains(_state2)),
+                                                                     A<ConsumerWebhookSpecification>._))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectCustomProps()
+    {
+        await _testee.UpdateProjectStateAsync(_project.Id, _state2);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
+                                                                     A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
+                                                                                                                         && cws.CustomProps != null
+                                                                                                                         && cws.CustomProps.Count == _webhookCustomProps.Count)))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectRemoteUri()
+    {
+        await _testee.UpdateProjectStateAsync(_project.Id, _state2);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
+                                                                     A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
+                                                                                                                         && !String.IsNullOrWhiteSpace(cws.Uri)
+                                                                                                                         && cws.Uri.Equals(_webhookUri))))
             .MustHaveHappenedOnceExactly();
     }
 }

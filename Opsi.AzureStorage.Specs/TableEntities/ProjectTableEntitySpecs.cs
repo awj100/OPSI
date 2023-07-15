@@ -9,6 +9,7 @@ namespace Opsi.AzureStorage.Specs;
 public class ProjectTableEntitySpecs
 {
     private const string _name = "TEST PROJECT NAME";
+    private const string _state = "TEST STATE";
     private const string _uri = "https://a.test.url";
     private const string _username = "user@test.com";
     private Guid _id;
@@ -35,6 +36,7 @@ public class ProjectTableEntitySpecs
         {
             Id = _id,
             Name = _name,
+            State = _state,
             Username = _username
         };
 
@@ -42,6 +44,7 @@ public class ProjectTableEntitySpecs
         {
             Id = _id,
             Name = _name,
+            State = _state,
             Username = _username
         };
 
@@ -61,6 +64,7 @@ public class ProjectTableEntitySpecs
 
         projectTableEntity.Id.Should().Be(_project.Id);
         projectTableEntity.Name.Should().Be(_project.Name);
+        projectTableEntity.State.Should().Be(_project.State);
         projectTableEntity.Username.Should().Be(_project.Username);
 
         projectTableEntity.WebhookCustomProps.Should().BeNull();
@@ -75,6 +79,7 @@ public class ProjectTableEntitySpecs
 
         projectTableEntity.Id.Should().Be(_project.Id);
         projectTableEntity.Name.Should().Be(_project.Name);
+        projectTableEntity.State.Should().Be(_project.State);
         projectTableEntity.Username.Should().Be(_project.Username);
 
         projectTableEntity.WebhookCustomProps.Should().Be(_serialisedCustomProps);
@@ -88,6 +93,7 @@ public class ProjectTableEntitySpecs
 
         project.Id.Should().Be(project.Id);
         project.Name.Should().Be(project.Name);
+        project.State.Should().Be(project.State);
         project.Username.Should().Be(project.Username);
         project.WebhookSpecification.Should().BeNull();
     }
@@ -101,6 +107,7 @@ public class ProjectTableEntitySpecs
 
         project.Id.Should().Be(project.Id);
         project.Name.Should().Be(project.Name);
+        project.State.Should().Be(project.State);
         project.Username.Should().Be(project.Username);
         project.WebhookSpecification.Should().NotBeNull();
         project.WebhookSpecification.Uri.Should().Be(_uri);

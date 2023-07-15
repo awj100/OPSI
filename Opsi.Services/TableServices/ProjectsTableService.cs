@@ -40,4 +40,11 @@ internal class ProjectsTableService : IProjectsTableService
 
         await _projectsTableService.StoreTableEntityAsync(projectTableEntity);
     }
+
+    public async Task UpdateProjectAsync(Project project)
+    {
+        var projectTableEntity = ProjectTableEntity.FromProject(project);
+
+        await _projectsTableService.UpdateTableEntityAsync(projectTableEntity);
+    }
 }

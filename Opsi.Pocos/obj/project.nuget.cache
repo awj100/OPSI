@@ -1,11 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "yYyV0Gj+0Dmmb8/sQqwEBRMe7ykqEKYFrbFVpBNCTna58wwQp4tG3P6oFzrYp57We1oigX47uK8UNE28Rw9xAw==",
+  "dgSpecHash": "fE8OhoGaQoRD60xVyAWTgHoe87g5k43L0jIIzCBIKAwRTi+uQVgxnFwmylRfveQ+MVLzXeV+/uPDYl59D2g98g==",
   "success": true,
   "projectFilePath": "/Users/andrew/Projects/Opsi/Opsi.Pocos/Opsi.Pocos.csproj",
-  "expectedPackageFiles": [
-    "/Users/andrew/.nuget/packages/microsoft.netcore.platforms/1.1.0/microsoft.netcore.platforms.1.1.0.nupkg.sha512",
-    "/Users/andrew/.nuget/packages/netstandard.library/2.0.3/netstandard.library.2.0.3.nupkg.sha512"
-  ],
+  "expectedPackageFiles": [],
   "logs": []
 }

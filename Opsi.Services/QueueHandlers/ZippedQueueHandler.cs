@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage;
 using Opsi.Common;
+using Opsi.Constants;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueHandlers.Dependencies;
@@ -50,6 +51,8 @@ internal class ZippedQueueHandler : IZippedQueueHandler
 
         await _projectsService.StoreProjectAsync(project);
 
+        bool areAllResourcesStored = false;
+
         using (var zipStream = await _blobService.RetrieveAsync(internalManifest.GetPackagePathForStore()))
         using (var unzipService = _unzipServiceFactory.Create(zipStream))
         {
@@ -57,8 +60,14 @@ internal class ZippedQueueHandler : IZippedQueueHandler
                                         .Except(internalManifest.ResourceExclusionPaths)
                                         .ToList();
 
-            await SendResourcesForStoringAsync(filePaths, unzipService, internalManifest);
+            areAllResourcesStored = await SendResourcesForStoringAsync(filePaths, unzipService, internalManifest);
         }
+
+        var newState = areAllResourcesStored
+            ? ProjectStates.InProgress
+            : ProjectStates.Error;
+
+        await SetProjectStateAsync(project.Id, newState);
     }
 
     private async Task<bool> IsNewProjectAsync(Guid projectId)
@@ -105,22 +114,32 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         }
     }
 
-    private async Task SendResourcesForStoringAsync(IReadOnlyCollection<string> filePaths, IUnzipService unzipService, InternalManifest internalManifest)
+    private async Task<bool> SendResourcesForStoringAsync(IReadOnlyCollection<string> filePaths, IUnzipService unzipService, InternalManifest internalManifest)
     {
         const string configKeyHostUrl = "hostUrl";
         var hostUrl = _settingsProvider.GetValue(configKeyHostUrl);
+        var areAllResourcesStored = true;
 
         foreach (var filePath in filePaths)
         {
             var response = await SendResourceForStoringAsync(hostUrl, filePath, unzipService, internalManifest);
 
             await NotifyOfResourceStorageResponseAsync(internalManifest, filePath, response);
+
+            areAllResourcesStored = areAllResourcesStored && response.IsSuccessStatusCode;
         }
+
+        return areAllResourcesStored;
+    }
+
+    private async Task SetProjectStateAsync(Guid projectId, string newState)
+    {
+        await _projectsService.UpdateProjectStateAsync(projectId, newState);
     }
 
     private static Project GetProject(InternalManifest internalManifest)
     {
-        return new Project(internalManifest);
+        return new Project(internalManifest, ProjectStates.Initialising);
     }
 
     private static WebhookMessage GetProjectConflictWebhookMessage(InternalManifest internalManifest)

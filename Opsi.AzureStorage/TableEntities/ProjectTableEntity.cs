@@ -17,6 +17,7 @@ public class ProjectTableEntity : ProjectBase, ITableEntity
         {
             Id = project.Id,
             Name = project.Name,
+            State = project.State,
             Username = project.Username,
             WebhookUri = project.WebhookSpecification?.Uri
         };
@@ -40,9 +41,10 @@ public class ProjectTableEntity : ProjectBase, ITableEntity
     {
         var project = new Project
         {
-            Id = this.Id,
-            Name = this.Name,
-            Username = this.Username
+            Id = Id,
+            Name = Name,
+            State = State,
+            Username = Username
         };
 
         if (!String.IsNullOrWhiteSpace(this.WebhookUri))

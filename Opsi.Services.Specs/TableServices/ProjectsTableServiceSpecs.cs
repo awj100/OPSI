@@ -84,4 +84,12 @@ public class ProjectsTableServiceSpecs
 
         A.CallTo(() => _tableService.StoreTableEntityAsync(A<ProjectTableEntity>.That.Matches(pte => pte.Id.Equals(_project.Id)))).MustHaveHappenedOnceExactly();
     }
+
+    [TestMethod]
+    public async Task UpdateProjectAsync_PassesProjectToTableService()
+    {
+        await _testee.UpdateProjectAsync(_project);
+
+        A.CallTo(() => _tableService.UpdateTableEntityAsync(A<ProjectTableEntity>.That.Matches(pte => pte.Id.Equals(_project.Id)))).MustHaveHappenedOnceExactly();
+    }
 }

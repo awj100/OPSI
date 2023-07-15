@@ -3,6 +3,7 @@ using FakeItEasy;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.AzureStorage;
 using Opsi.Common;
+using Opsi.Constants;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueHandlers;
@@ -136,14 +137,16 @@ public class ZippedQueueHandlerSpecs
     }
 
     [TestMethod]
-    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_StoresProject()
+    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_StoresProjectWithStateInitialising()
     {
         const bool isNewProject = true;
         A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
-        A.CallTo(() => _projectsService.StoreProjectAsync(A<Project>.That.Matches(p => p.Id.Equals(_manifest.ProjectId)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _projectsService.StoreProjectAsync(A<Project>.That.Matches(p => p.Id.Equals(_manifest.ProjectId)
+                                                                                       && p.State.Equals(ProjectStates.Initialising))))
+            .MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -369,6 +372,44 @@ public class ZippedQueueHandlerSpecs
                                                                                                               && cm.Name.Equals(nonExcludedFilePath)), A<ConsumerWebhookSpecification>._))
                 .MustHaveHappenedOnceExactly();
         }
+    }
+
+    [TestMethod]
+    public async Task RetrieveAndHandleUploadAsync_WhenAllResourcesStored_ChangesProjectStateToInProgress()
+    {
+        var expectedNewState = ProjectStates.InProgress;
+        const bool isNewProject = true;
+        var successResponse = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
+        A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
+        A.CallTo(() => _unzipService.GetFilePathsFromPackage()).Returns(_nonManifestContentFilePaths);
+        A.CallTo(() => _resourceDispatcher.DispatchAsync(A<string>._,
+                                                         A<Guid>._,
+                                                         A<string>._,
+                                                         A<Stream>._,
+                                                         A<string>._)).Returns(successResponse);
+
+        await _testee.RetrieveAndHandleUploadAsync(_manifest);
+
+        A.CallTo(() => _projectsService.UpdateProjectStateAsync(_manifest.ProjectId, expectedNewState)).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RetrieveAndHandleUploadAsync_WhenNotAllResourcesStored_ChangesProjectStateToError()
+    {
+        var expectedNewState = ProjectStates.Error;
+        const bool isNewProject = true;
+        var nonSuccessResponse = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest);
+        A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
+        A.CallTo(() => _unzipService.GetFilePathsFromPackage()).Returns(_nonManifestContentFilePaths);
+        A.CallTo(() => _resourceDispatcher.DispatchAsync(A<string>._,
+                                                         A<Guid>._,
+                                                         A<string>._,
+                                                         A<Stream>._,
+                                                         A<string>._)).Returns(nonSuccessResponse);
+
+        await _testee.RetrieveAndHandleUploadAsync(_manifest);
+
+        A.CallTo(() => _projectsService.UpdateProjectStateAsync(_manifest.ProjectId, expectedNewState)).MustHaveHappenedOnceExactly();
     }
 
     private static Stream GetNonManifestArchiveStream(IReadOnlyCollection<string> filePaths)

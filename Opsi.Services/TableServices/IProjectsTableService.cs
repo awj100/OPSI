@@ -7,4 +7,6 @@ public interface IProjectsTableService
     Task<Project?> GetProjectByIdAsync(Guid projectId);
 
     Task StoreProjectAsync(Project project);
+
+    Task UpdateProjectAsync(Project project);
 }

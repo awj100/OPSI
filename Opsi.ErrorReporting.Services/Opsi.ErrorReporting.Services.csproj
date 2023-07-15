@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Opsi.AzureStorage\Opsi.AzureStorage.csproj" />
-    <ProjectReference Include="..\Opsi.Constants\Opsi.Constants.csproj" />
     <ProjectReference Include="..\Opsi.Notifications.Abstractions\Opsi.Notifications.Abstractions.csproj" />
     <ProjectReference Include="..\Opsi.Pocos\Opsi.Pocos.csproj" />
   </ItemGroup>

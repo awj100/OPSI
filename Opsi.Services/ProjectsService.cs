@@ -37,6 +37,23 @@ public class ProjectsService : IProjectsService
 
     public async Task StoreProjectAsync(Project project)
     {
+#pragma warning disable CA2208 // Instantiate argument exceptions correctly
+        if (String.IsNullOrWhiteSpace(project.Name))
+        {
+            throw new ArgumentNullException(nameof(Project.Name));
+        }
+
+        if (String.IsNullOrWhiteSpace(project.State))
+        {
+            throw new ArgumentNullException(nameof(Project.State));
+        }
+
+        if (String.IsNullOrWhiteSpace(project.Username))
+        {
+            throw new ArgumentNullException(nameof(Project.Username));
+        }
+#pragma warning restore CA2208 // Instantiate argument exceptions correctly
+
         await _projectsTableService.StoreProjectAsync(project);
 
         if (!String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
@@ -45,19 +62,48 @@ public class ProjectsService : IProjectsService
                                            project.Name,
                                            project.WebhookSpecification.Uri,
                                            project.WebhookSpecification.CustomProps,
-                                           project.Username);
+                                           project.Username,
+                                           Events.Stored);
         }
+    }
+
+    public async Task UpdateProjectStateAsync(Guid projectId, string newState)
+    {
+        var project = await _projectsTableService.GetProjectByIdAsync(projectId);
+
+        if (project == null)
+        {
+            return;
+        }
+
+        if (project != null && project.State!.Equals(newState))
+        {
+            return;
+        }
+
+        project!.State = newState;
+
+        await _projectsTableService.UpdateProjectAsync(project);
+
+        var stateChangeEventText = GetStateChangeEventText(Events.StateChange, newState);
+        await QueueWebhookMessageAsync(project.Id,
+                                       project.Name!,
+                                       project.WebhookSpecification.Uri,
+                                       project.WebhookSpecification.CustomProps,
+                                       project.Username!,
+                                       stateChangeEventText);
     }
 
     private async Task QueueWebhookMessageAsync(Guid projectId,
                                                 string projectName,
                                                 string? webhookRemoteUri,
                                                 Dictionary<string, object> webhookCustomProps,
-                                                string username)
+                                                string username,
+                                                string eventText)
     {
         await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
         {
-            Event = Events.Stored,
+            Event = eventText,
             Level = Levels.Project,
             Name = projectName,
             ProjectId = projectId,
@@ -67,5 +113,10 @@ public class ProjectsService : IProjectsService
             CustomProps = webhookCustomProps,
             Uri = webhookRemoteUri
         });
+    }
+
+    private static string GetStateChangeEventText(string eventText, string newState)
+    {
+        return $"{eventText}:{newState}";
     }
 }

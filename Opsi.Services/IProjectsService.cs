@@ -1,5 +1,4 @@
-﻿using Opsi.AzureStorage.TableEntities;
-using Opsi.Pocos;
+﻿using Opsi.Pocos;
 
 namespace Opsi.Services;
 
@@ -10,4 +9,6 @@ public interface IProjectsService
     Task<bool> IsNewProjectAsync(Guid projectId);
 
     Task StoreProjectAsync(Project project);
+
+    Task UpdateProjectStateAsync(Guid projectId, string newState);
 }
