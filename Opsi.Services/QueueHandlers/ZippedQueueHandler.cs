@@ -42,7 +42,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         if (!isNewProject)
         {
             var webhookMessage = GetProjectConflictWebhookMessage(internalManifest);
-            await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest.WebhookSpecification);
+            await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest?.WebhookSpecification);
             _log.LogWarning($"{webhookMessage.Level}:{webhookMessage.Event}:{webhookMessage.Name}");
             return;
         }

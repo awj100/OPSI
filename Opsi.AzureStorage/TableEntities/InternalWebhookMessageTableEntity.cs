@@ -23,14 +23,16 @@ public class InternalWebhookMessageTableEntity : InternalWebhookMessageBase, ITa
 
         try
         {
-            tableEntity.SerialisedWebhookCustomProps= JsonSerializer.Serialize(internalWebhookMessage.WebhookSpecification.CustomProps);
+            tableEntity.SerialisedWebhookCustomProps = internalWebhookMessage?.WebhookSpecification?.CustomProps != null
+                ? JsonSerializer.Serialize(internalWebhookMessage?.WebhookSpecification?.CustomProps)
+                : String.Empty;
         }
         catch (Exception exception)
         {
             tableEntity.SerialisedWebhookCustomProps = $"Unable to serialise {nameof(InternalWebhookMessage)}.{nameof(InternalWebhookMessage.WebhookSpecification)}.{nameof(InternalWebhookMessage.WebhookSpecification.CustomProps)}: {exception.Message}";
         }
 
-        tableEntity.WebhookUri = internalWebhookMessage.WebhookSpecification.Uri;
+        tableEntity.WebhookUri = internalWebhookMessage?.WebhookSpecification?.Uri ?? String.Empty;
 
         return tableEntity;
     }
@@ -48,14 +50,11 @@ public class InternalWebhookMessageTableEntity : InternalWebhookMessageBase, ITa
 
         try
         {
-            internalWebhookMessage.WebhookSpecification.CustomProps = JsonSerializer.Deserialize<Dictionary<string, object>>(SerialisedWebhookCustomProps);
+            internalWebhookMessage.WebhookSpecification.CustomProps = JsonSerializer.Deserialize<Dictionary<string, object>>(SerialisedWebhookCustomProps) ?? new Dictionary<string, object>(0);
         }
         catch (Exception exception)
         {
-            internalWebhookMessage.WebhookSpecification.CustomProps = new Dictionary<string, object>
-            {
-                {exception.GetType().Name, exception.Message }
-            };
+            internalWebhookMessage.WebhookSpecification.CustomProps = new Dictionary<string, object> { {exception.GetType().Name,exception.Message} };
         }
 
         return internalWebhookMessage;

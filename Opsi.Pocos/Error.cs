@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Opsi.Pocos
+﻿namespace Opsi.Pocos
 {
     public class Error
     {
@@ -16,9 +14,9 @@ namespace Opsi.Pocos
         public Error(string origin, Exception exception)
         {
             InnerError = exception.InnerException != null ? new Error(origin, exception.InnerException) : null;
-            Message = exception?.Message;
+            Message = exception.Message;
             Origin = origin;
-            StackTrace = exception?.StackTrace;
+            StackTrace = exception.StackTrace;
         }
 
         public Error(string origin, string message, string stackTrace) : this(origin, message, stackTrace, null)
@@ -29,7 +27,7 @@ namespace Opsi.Pocos
         {
         }
 
-        public Error(string origin, string message, string stackTrace, Error innerError)
+        public Error(string origin, string message, string? stackTrace, Error? innerError)
         {
             InnerError = innerError;
             Message = message;
@@ -37,12 +35,12 @@ namespace Opsi.Pocos
             StackTrace = stackTrace;
         }
 
-        public Error InnerError { get; set; }
+        public Error? InnerError { get; set; }
 
-        public string Message { get; set; }
+        public string Message { get; set; } = default!;
 
-        public string Origin { get; set; }
+        public string Origin { get; set; } = default!;
 
-        public string StackTrace { get; set; }
+        public string? StackTrace { get; set; }
     }
 }

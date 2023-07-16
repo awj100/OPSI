@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Opsi.Pocos
+﻿namespace Opsi.Pocos
 {
     public class ConsumerWebhookSpecification
     {
@@ -20,9 +18,9 @@ namespace Opsi.Pocos
             Uri = uri;
         }
 
-        public Dictionary<string, object> CustomProps { get; set; }
+        public Dictionary<string, object>? CustomProps { get; set; }
 
-        public string Uri { get; set; }
+        public string? Uri { get; set; }
     }
 }
 

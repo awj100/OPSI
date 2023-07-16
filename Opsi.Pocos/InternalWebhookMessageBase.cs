@@ -8,7 +8,7 @@ namespace Opsi.Pocos
 
         public bool IsDelivered { get; set; } = default;
 
-        public string LastFailureReason { get; set; } = default;
+        public string? LastFailureReason { get; set; }
 
         public virtual void IncrementFailureCount()
         {

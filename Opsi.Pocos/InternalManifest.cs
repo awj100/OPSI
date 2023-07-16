@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Opsi.Pocos
+﻿namespace Opsi.Pocos
 {
-	public class InternalManifest : Manifest
+    public class InternalManifest : Manifest
 	{
         // Required for deserialisation.
         public InternalManifest()
@@ -36,6 +32,6 @@ namespace Opsi.Pocos
             Username = username;
         }
 
-		public string Username { get; set; }
+		public string Username { get; set; } = default!;
     }
 }

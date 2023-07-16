@@ -22,7 +22,7 @@ internal class WebhookService : IWebhookService
         var webhookMessage = internalWebhookMessage.ToWebhookMessage();
 
         // Obtain a Uri object from the WebhookMessage.RemoteUri string.
-        if (String.IsNullOrWhiteSpace(internalWebhookMessage.WebhookSpecification.Uri)
+        if (String.IsNullOrWhiteSpace(internalWebhookMessage.WebhookSpecification?.Uri)
             || !internalWebhookMessage.WebhookSpecification.Uri.StartsWith(absoluteUriPrefix)
             || !Uri.TryCreate(internalWebhookMessage.WebhookSpecification.Uri, UriKind.Absolute, out var remoteUri))
         {
@@ -30,7 +30,7 @@ internal class WebhookService : IWebhookService
         }
 
         // Dispatch the message.
-        var webhookDispatchResponse = await _webhookDispatcher.AttemptDeliveryAsync(webhookMessage, remoteUri, internalWebhookMessage.WebhookSpecification.CustomProps);
+        var webhookDispatchResponse = await _webhookDispatcher.AttemptDeliveryAsync(webhookMessage, remoteUri, internalWebhookMessage.WebhookSpecification?.CustomProps);
 
         // Record whether successful.
         internalWebhookMessage.IsDelivered = webhookDispatchResponse.IsSuccessful;

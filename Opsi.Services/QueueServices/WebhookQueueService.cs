@@ -1,6 +1,5 @@
 ﻿using Opsi.AzureStorage;
 using Opsi.Pocos;
-using Opsi.Services.InternalTypes;
 
 namespace Opsi.Services.QueueServices;
 
@@ -15,7 +14,7 @@ internal class WebhookQueueService : IWebhookQueueService
         _queueService = queueServiceFactory.Create(Constants.QueueNames.ConsumerWebhookSpecification);
     }
 
-    public async Task QueueWebhookMessageAsync(WebhookMessage webhookMessage, ConsumerWebhookSpecification webhookSpec)
+    public async Task QueueWebhookMessageAsync(WebhookMessage webhookMessage, ConsumerWebhookSpecification? webhookSpec)
     {
         if (webhookSpec == null || String.IsNullOrWhiteSpace(webhookSpec.Uri))
         {
@@ -29,7 +28,7 @@ internal class WebhookQueueService : IWebhookQueueService
 
     public async Task QueueWebhookMessageAsync(InternalWebhookMessage internalWebhookMessage)
     {
-        if (String.IsNullOrWhiteSpace(internalWebhookMessage.WebhookSpecification.Uri))
+        if (String.IsNullOrWhiteSpace(internalWebhookMessage.WebhookSpecification?.Uri))
         {
             return;
         }

@@ -1,8 +1,6 @@
-﻿using System;
-
-namespace Opsi.Pocos
+﻿namespace Opsi.Pocos
 {
-	public class WebhookMessage
+    public class WebhookMessage
 	{
 		public WebhookMessage()
 		{
@@ -10,18 +8,18 @@ namespace Opsi.Pocos
 			OccurredOn = DateTime.UtcNow;
         }
 
-		public string Event { get; set; }
+		public string Event { get; set; } = default!;
 
-		public Guid Id { get; set; }
+        public Guid Id { get; set; }
 
-		public string Level { get; set; }
+		public string Level { get; set; } = default!;
 
-		public DateTime OccurredOn { get; set; }
+        public DateTime OccurredOn { get; set; }
 
         public Guid ProjectId { get; set; }
 
-		public string Name { get; set; }
+		public string Name { get; set; } = default!;
 
-		public string Username { get; set; }
+        public string Username { get; set; } = default!;
     }
 }

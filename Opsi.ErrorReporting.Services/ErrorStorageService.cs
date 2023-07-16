@@ -20,7 +20,7 @@ public class ErrorStorageService : IErrorStorageService
         await _tableService.StoreTableEntityAsync(errorTableEntity);
 
         string? parentRowKey = errorTableEntity.RowKey;
-        Error innerError = error.InnerError;
+        Error? innerError = error.InnerError;
 
         while (innerError != null)
         {

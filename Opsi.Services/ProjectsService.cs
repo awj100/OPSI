@@ -88,8 +88,8 @@ public class ProjectsService : IProjectsService
         var stateChangeEventText = GetStateChangeEventText(Events.StateChange, newState);
         await QueueWebhookMessageAsync(project.Id,
                                        project.Name!,
-                                       project.WebhookSpecification.Uri,
-                                       project.WebhookSpecification.CustomProps,
+                                       project.WebhookSpecification?.Uri,
+                                       project.WebhookSpecification?.CustomProps,
                                        project.Username!,
                                        stateChangeEventText);
     }
@@ -97,7 +97,7 @@ public class ProjectsService : IProjectsService
     private async Task QueueWebhookMessageAsync(Guid projectId,
                                                 string projectName,
                                                 string? webhookRemoteUri,
-                                                Dictionary<string, object> webhookCustomProps,
+                                                Dictionary<string, object>? webhookCustomProps,
                                                 string username,
                                                 string eventText)
     {

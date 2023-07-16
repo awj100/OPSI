@@ -22,7 +22,7 @@ public class ProjectTableEntity : ProjectBase, ITableEntity
             WebhookUri = project.WebhookSpecification?.Uri
         };
 
-        if (project.WebhookSpecification?.CustomProps.Count > 0)
+        if (project.WebhookSpecification?.CustomProps?.Count > 0)
         {
             try
             {
@@ -55,7 +55,7 @@ public class ProjectTableEntity : ProjectBase, ITableEntity
             {
                 try
                 {
-                    webhookSpec.CustomProps = JsonSerializer.Deserialize<Dictionary<string, object>>(this.WebhookCustomProps);
+                    webhookSpec.CustomProps = JsonSerializer.Deserialize<Dictionary<string, object>>(WebhookCustomProps) ?? new Dictionary<string, object>(0);
                 }
                 catch (Exception exception)
                 {

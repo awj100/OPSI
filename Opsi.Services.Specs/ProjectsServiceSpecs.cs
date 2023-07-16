@@ -93,9 +93,9 @@ public class ProjectsServiceSpecs
 
         result?.CustomProps.Should().NotBeNullOrEmpty();
         result!.CustomProps.Should().HaveCount(_webhookCustomProps.Count);
-        result!.CustomProps.Select(keyValuePair => keyValuePair.Key).Should().Contain(_webhookCustomProp1Name);
+        result!.CustomProps!.Select(keyValuePair => keyValuePair.Key).Should().Contain(_webhookCustomProp1Name);
         //result!.CustomProps[_webhookCustomProp1Name].Should().Be(_webhookCustomProp1Value);
-        result!.CustomProps.Select(keyValuePair => keyValuePair.Key).Should().Contain(_webhookCustomProp2Name);
+        result!.CustomProps!.Select(keyValuePair => keyValuePair.Key).Should().Contain(_webhookCustomProp2Name);
         //result!.CustomProps[_webhookCustomProp2Name].Should().Be(_webhookCustomProp2Value);
     }
 
@@ -180,33 +180,6 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
-    public async Task StoreProjectAsync_WhenNameIsNull_ThrowsArgumentExceptionWithMeaningfulMessage()
-    {
-        _project.Name = null;
-
-        await _testee.Invoking(t => t.StoreProjectAsync(_project))
-                     .Should()
-                     .ThrowAsync<ArgumentNullException>()
-                     .WithParameterName(nameof(Project.Name));
-    }
-
-    [TestMethod]
-    public async Task StoreProjectAsync_WhenNameIsNull_NoProjectIsPassedToTableService()
-    {
-        _project.Name = null;
-
-        try
-        {
-            await _testee.StoreProjectAsync(_project);
-        }
-        catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.Name)))
-        {
-        }
-
-        A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
-    }
-
-    [TestMethod]
     public async Task StoreProjectAsync_WhenStateIsEmpty_ThrowsArgumentExceptionWithMeaningfulMessage()
     {
         _project.State = String.Empty;
@@ -234,33 +207,6 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
-    public async Task StoreProjectAsync_WhenStateIsNull_ThrowsArgumentExceptionWithMeaningfulMessage()
-    {
-        _project.State = null;
-
-        await _testee.Invoking(t => t.StoreProjectAsync(_project))
-                     .Should()
-                     .ThrowAsync<ArgumentNullException>()
-                     .WithParameterName(nameof(Project.State));
-    }
-
-    [TestMethod]
-    public async Task StoreProjectAsync_WhenStateIsNull_NoProjectIsPassedToTableService()
-    {
-        _project.State = null;
-
-        try
-        {
-            await _testee.StoreProjectAsync(_project);
-        }
-        catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.State)))
-        {
-        }
-
-        A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
-    }
-
-    [TestMethod]
     public async Task StoreProjectAsync_WhenUsernameIsEmpty_ThrowsArgumentExceptionWithMeaningfulMessage()
     {
         _project.Username = String.Empty;
@@ -275,33 +221,6 @@ public class ProjectsServiceSpecs
     public async Task StoreProjectAsync_WhenUsernameIsEmpty_NoProjectIsPassedToTableService()
     {
         _project.Username = String.Empty;
-
-        try
-        {
-            await _testee.StoreProjectAsync(_project);
-        }
-        catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.Username)))
-        {
-        }
-
-        A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
-    }
-
-    [TestMethod]
-    public async Task StoreProjectAsync_WhenUsernameIsNull_ThrowsArgumentExceptionWithMeaningfulMessage()
-    {
-        _project.Username = null;
-
-        await _testee.Invoking(t => t.StoreProjectAsync(_project))
-                     .Should()
-                     .ThrowAsync<ArgumentNullException>()
-                     .WithParameterName(nameof(Project.Username));
-    }
-
-    [TestMethod]
-    public async Task StoreProjectAsync_WhenUsernameIsNull_NoProjectIsPassedToTableService()
-    {
-        _project.Username = null;
 
         try
         {

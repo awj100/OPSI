@@ -101,10 +101,10 @@ public class InternalWebhookMessageTableEntitySpecs
         tableEntity.SerialisedWebhookCustomProps.Should().NotBeNull();
         tableEntity.Username.Should().Be(_internalWebhookMessage.Username);
         tableEntity.SerialisedWebhookCustomProps.Should().NotBeNull();
-        tableEntity.WebhookUri.Should().Be(_internalWebhookMessage.WebhookSpecification.Uri);
+        tableEntity.WebhookUri.Should().Be(_internalWebhookMessage.WebhookSpecification!.Uri);
 
         var deserialisedCustomProps = JsonSerializer.Deserialize<Dictionary<string, object>>(tableEntity.SerialisedWebhookCustomProps);
-        deserialisedCustomProps.Should().HaveCount(_internalWebhookMessage.WebhookSpecification.CustomProps.Count);
+        deserialisedCustomProps.Should().HaveCount(_internalWebhookMessage.WebhookSpecification.CustomProps!.Count);
     }
 
     [TestMethod]
@@ -139,7 +139,7 @@ public class InternalWebhookMessageTableEntitySpecs
         internalWebhookMessage.ProjectId.Should().Be(_internalWebhookMessageTableEntity.ProjectId);
         internalWebhookMessage.Username.Should().Be(_internalWebhookMessageTableEntity.Username);
         internalWebhookMessage.WebhookSpecification.Should().NotBeNull();
-        internalWebhookMessage.WebhookSpecification.Uri.Should().Be(_internalWebhookMessageTableEntity.WebhookUri);
+        internalWebhookMessage.WebhookSpecification!.Uri.Should().Be(_internalWebhookMessageTableEntity.WebhookUri);
         internalWebhookMessage.WebhookSpecification.CustomProps.Should().HaveCount(_customProps.Count);
     }
 }

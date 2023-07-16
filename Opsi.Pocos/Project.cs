@@ -15,6 +15,6 @@
             WebhookSpecification = internalManifest.WebhookSpecification;
         }
 
-        public ConsumerWebhookSpecification WebhookSpecification { get; set; }
+        public ConsumerWebhookSpecification? WebhookSpecification { get; set; }
     }
 }

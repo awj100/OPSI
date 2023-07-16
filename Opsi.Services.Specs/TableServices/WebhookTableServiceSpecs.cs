@@ -154,7 +154,7 @@ public class WebhookTableServiceSpecs
                 OccurredOn = DateTime.Now,
                 ProjectId = Guid.NewGuid(),
                 Username = "user@test.com",
-                WebhookUri = _webhookSpec.Uri,
+                WebhookUri = _webhookSpec.Uri!,
                 SerialisedWebhookCustomProps = _serialisedCustomProps
             };
         }

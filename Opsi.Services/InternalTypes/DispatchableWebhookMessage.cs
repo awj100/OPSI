@@ -5,7 +5,7 @@ namespace Opsi.Services.InternalTypes;
 
 public class DispatchableWebhookMessage : WebhookMessage
 {
-    public static DispatchableWebhookMessage FromWebhookMessage(WebhookMessage webhookMessage, Dictionary<string, object> customProps)
+    public static DispatchableWebhookMessage FromWebhookMessage(WebhookMessage webhookMessage, Dictionary<string, object>? customProps)
     {
         var dispatchableWebhookMessage = new DispatchableWebhookMessage { CustomProps = customProps };
 

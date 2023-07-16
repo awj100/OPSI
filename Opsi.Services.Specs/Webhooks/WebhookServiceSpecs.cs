@@ -43,7 +43,7 @@ public class WebhookServiceSpecs
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsEmpty_DoesNotAttemptDispatch()
     {
-        _internalWebhookMessage.WebhookSpecification.Uri = String.Empty;
+        _internalWebhookMessage.WebhookSpecification!.Uri = String.Empty;
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -53,7 +53,7 @@ public class WebhookServiceSpecs
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsEmpty_StoresNothing()
     {
-        _internalWebhookMessage.WebhookSpecification.Uri = String.Empty;
+        _internalWebhookMessage.WebhookSpecification!.Uri = String.Empty;
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -63,7 +63,7 @@ public class WebhookServiceSpecs
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNotAbsoluteUrl_DoesNotAttemptDispatch()
     {
-        _internalWebhookMessage.WebhookSpecification.Uri = "/test/segment";
+        _internalWebhookMessage.WebhookSpecification!.Uri = "/test/segment";
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -73,7 +73,7 @@ public class WebhookServiceSpecs
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNotAbsoluteUrl_StoresNothing()
     {
-        _internalWebhookMessage.WebhookSpecification.Uri = "/test/segment";
+        _internalWebhookMessage.WebhookSpecification!.Uri = "/test/segment";
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -83,7 +83,7 @@ public class WebhookServiceSpecs
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNull_DoesNotAttemptDispatch()
     {
-        _internalWebhookMessage.WebhookSpecification.Uri = null;
+        _internalWebhookMessage.WebhookSpecification!.Uri = null;
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 
@@ -93,7 +93,7 @@ public class WebhookServiceSpecs
     [TestMethod]
     public async Task AttemptDeliveryAndRecordAsync_WhenRemoteUriIsNull_StoresNothing()
     {
-        _internalWebhookMessage.WebhookSpecification.Uri = null;
+        _internalWebhookMessage.WebhookSpecification!.Uri = null;
 
         await _testee.AttemptDeliveryAndRecordAsync(_internalWebhookMessage);
 

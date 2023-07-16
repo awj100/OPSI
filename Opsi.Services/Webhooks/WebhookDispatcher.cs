@@ -17,7 +17,7 @@ internal class WebhookDispatcher : IWebhookDispatcher
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<WebhookDispatchResponse> AttemptDeliveryAsync(WebhookMessage webhookMessage, Uri remoteUri, Dictionary<string, object> customProps)
+    public async Task<WebhookDispatchResponse> AttemptDeliveryAsync(WebhookMessage webhookMessage, Uri remoteUri, Dictionary<string, object>? customProps)
     {
         if (webhookMessage is InternalWebhookMessage message)
         {

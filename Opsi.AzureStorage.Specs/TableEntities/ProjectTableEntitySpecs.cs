@@ -110,7 +110,7 @@ public class ProjectTableEntitySpecs
         project.State.Should().Be(project.State);
         project.Username.Should().Be(project.Username);
         project.WebhookSpecification.Should().NotBeNull();
-        project.WebhookSpecification.Uri.Should().Be(_uri);
+        project.WebhookSpecification!.Uri.Should().Be(_uri);
         project.WebhookSpecification.CustomProps.Should().HaveCount(_customProps.Count);
     }
 }

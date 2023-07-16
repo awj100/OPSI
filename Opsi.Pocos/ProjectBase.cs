@@ -4,11 +4,11 @@
     {
         public Guid Id { get; set; }
 
-        public string? Name { get; set; }
+        public string Name { get; set; } = default!;
 
-        public string? State { get; set; }
+        public string State { get; set; } = default!;
 
-        public string? Username { get; set; }
+        public string Username { get; set; } = default!;
 
         public override string ToString()
         {
