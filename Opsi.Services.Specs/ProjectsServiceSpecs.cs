@@ -1,5 +1,6 @@
 ﻿using FakeItEasy;
 using FluentAssertions;
+using Opsi.Constants;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueServices;
@@ -11,7 +12,6 @@ namespace Opsi.Services.Specs;
 public class ProjectsServiceSpecs
 {
     private const string _name = "TEST NAME";
-    private const string _state1 = "TEST STATE 1";
     private const string _state2 = "TEST STATE 2";
     private const string _username = "TEST USERNAME";
     private const string _webhookCustomProp1Name = nameof(_webhookCustomProp1Name);
@@ -22,6 +22,7 @@ public class ProjectsServiceSpecs
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private Project _project;
     private IProjectsTableService _projectsTableService;
+    private readonly string _state1 = ProjectStates.InProgress;
     private IWebhookQueueService _webhookQueueService;
     private Dictionary<string, object> _webhookCustomProps;
     private ConsumerWebhookSpecification _webhookSpecs;
@@ -61,6 +62,28 @@ public class ProjectsServiceSpecs
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Not.Matches(g => g.Equals(_project.Id)))).Returns(nullProject);
 
         _testee = new ProjectsService(_projectsTableService, _webhookQueueService);
+    }
+
+    [TestMethod]
+    public async Task GetProjectsAsync_WhenProjectStateIsRecognised_ReturnsResultFromTableService ()
+    {
+        A.CallTo(() => _projectsTableService.GetProjectsByStateAsync(_state1)).Returns(new List<Project> { _project });
+
+        var result = await _testee.GetProjectsAsync(_state1);
+
+        result.Should()
+              .NotBeNull()
+              .And.HaveCount(1)
+              .And.Match(projects => projects.Single().Id.Equals(_project.Id));
+    }
+
+    [TestMethod]
+    public async Task GetProjectsAsync_WhenProjectStateIsNoRecognised_ThrowsArgumentException()
+    {
+        await _testee.Invoking(t => t.GetProjectsAsync(Guid.NewGuid().ToString()))
+                     .Should()
+                     .ThrowAsync<ArgumentException>()
+                     .WithParameterName("projectState");
     }
 
     [TestMethod]

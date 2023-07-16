@@ -34,6 +34,25 @@ internal class ProjectsTableService : IProjectsTableService
         return null;
     }
 
+    public async Task<IReadOnlyCollection<Project>> GetProjectsByStateAsync(string projectState)
+    {
+        var projects = new List<Project>();
+        IEnumerable<string>? selectProps = null;
+
+        var tableClient = _projectsTableService.GetTableClient();
+
+        var results = tableClient.QueryAsync<ProjectTableEntity>($"{nameof(Project.State)} eq '{projectState}'",
+                                                                 select: selectProps,
+                                                                 cancellationToken: CancellationToken.None);
+
+        await foreach (var result in results)
+        {
+            projects.Add(result.ToProject());
+        }
+
+        return projects;
+    }
+
     public async Task StoreProjectAsync(Project project)
     {
         var projectTableEntity = ProjectTableEntity.FromProject(project);

@@ -1,4 +1,7 @@
-﻿using Opsi.Constants.Webhooks;
+﻿using System.Reflection;
+using Microsoft.VisualBasic;
+using Opsi.Constants;
+using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueServices;
 using Opsi.Services.TableServices;
@@ -14,6 +17,16 @@ public class ProjectsService : IProjectsService
     {
         _projectsTableService = projectsTableService;
         _webhookQueueService = QueueService;
+    }
+
+    public async Task<IReadOnlyCollection<Project>> GetProjectsAsync(string projectState)
+    {
+        if (!IsProjectStateRecognised(projectState))
+        {
+            throw new ArgumentException("Unrecognised value", nameof(projectState));
+        }
+
+        return await _projectsTableService.GetProjectsByStateAsync(projectState);
     }
 
     public async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)
@@ -118,5 +131,20 @@ public class ProjectsService : IProjectsService
     private static string GetStateChangeEventText(string eventText, string newState)
     {
         return $"{eventText}:{newState}";
+    }
+
+    private static bool IsProjectStateRecognised(string projectState)
+    {
+        foreach (var memberInfo in typeof(ProjectStates).GetMembers(BindingFlags.Public | BindingFlags.Static))
+        {
+            var memberValue = ((FieldInfo)memberInfo).GetValue(null);
+
+            if (memberValue!.Equals(projectState))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

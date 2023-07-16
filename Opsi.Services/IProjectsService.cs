@@ -4,6 +4,8 @@ namespace Opsi.Services;
 
 public interface IProjectsService
 {
+    Task<IReadOnlyCollection<Project>> GetProjectsAsync(string projectState);
+
     Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId);
 
     Task<bool> IsNewProjectAsync(Guid projectId);
