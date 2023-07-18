@@ -1,4 +1,5 @@
-﻿using Opsi.Pocos;
+﻿using Opsi.Common;
+using Opsi.Pocos;
 
 namespace Opsi.Services.TableServices;
 
@@ -6,7 +7,7 @@ public interface IProjectsTableService
 {
     Task<Project?> GetProjectByIdAsync(Guid projectId);
 
-    Task<IReadOnlyCollection<Project>> GetProjectsByStateAsync(string projectState);
+    Task<PageableResponse<Project>> GetProjectsByStateAsync(string projectState, int pageSize, string? continuationToken = null);
 
     Task StoreProjectAsync(Project project);
 

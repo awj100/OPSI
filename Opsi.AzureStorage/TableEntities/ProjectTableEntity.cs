@@ -9,6 +9,8 @@ public class ProjectTableEntity : ProjectBase, ITableEntity
 {
     public ProjectTableEntity()
     {
+        PartitionKey = GetDefaultPartitionKey();
+        RowKey = GetDefaultRowKey();
     }
 
     public static ProjectTableEntity FromProject(Project project)
@@ -74,17 +76,36 @@ public class ProjectTableEntity : ProjectBase, ITableEntity
 
     public ETag ETag { get; set; } = default!;
 
-    public string PartitionKey { get; set; } = DateTime.UtcNow.ToString("yyyyMMdd");
+    public string PartitionKey { get; set; }
 
-    public string RowKey
-    {
-        get => Id.ToString();
-        set => Id = Guid.Parse(value);
-    }
+    public string RowKey { get; set; }
 
     public DateTimeOffset? Timestamp { get; set; } = default!;
 
     public string? WebhookCustomProps { get; set; }
 
     public string? WebhookUri { get; set; }
+
+    public override string ToString()
+    {
+        return $"{Name} ({Id})";
+    }
+
+    /// <summary>
+    /// The partition key should be a descending, non-unique number so that retrieving multiple projects
+    /// will return the newest project first.
+    /// </summary>
+    private static string GetDefaultPartitionKey()
+    {
+        return (int.MaxValue - Convert.ToInt32(DateTime.UtcNow.ToString("yyyyMMdd"))).ToString();
+    }
+
+    /// <summary>
+    /// The row key should be a descending, unique number so that retrieving multiple projects
+    /// will return the newest project first.
+    /// </summary>
+    private static string GetDefaultRowKey()
+    {
+        return $"{long.MaxValue - DateTime.UtcNow.Ticks}-{Guid.NewGuid()}";
+    }
 }

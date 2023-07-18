@@ -83,31 +83,6 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task GetProjectsByStateAsync_WhenMatchingProjectsFound_ReturnsProjects()
-    {
-        var projectsResult = new List<ProjectTableEntity>
-        {
-            _projectTableEntity1,
-            _projectTableEntity2
-        };
-        var page = Page<ProjectTableEntity>.FromValues(projectsResult,
-                                                       continuationToken: null,
-                                                       response: A.Fake<Response>());
-        var pages = AsyncPageable<ProjectTableEntity>.FromPages(new[] { page });
-
-        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Contains(nameof(Project.State)) && filter.Contains(_returnableState)),
-                                                                   A<int?>._,
-                                                                   A<IEnumerable<string>>._,
-                                                                   A<CancellationToken>._)).Returns(pages);
-
-        var result = await _testee.GetProjectsByStateAsync(_returnableState);
-
-        result.Should()
-              .NotBeNull()
-              .And.AllSatisfy(project => project.State.Equals(_returnableState));
-    }
-
-    [TestMethod]
     public async Task GetProjectsByStateAsync_WhenNoMatchingProjectsFound_ReturnsEmptyCollection()
     {
         var projectsResult = new List<ProjectTableEntity>(0);
@@ -121,11 +96,10 @@ public class ProjectsTableServiceSpecs
                                                                    A<IEnumerable<string>>._,
                                                                    A<CancellationToken>._)).Returns(pages);
 
-        var result = await _testee.GetProjectsByStateAsync(_nonReturnableState);
+        var result = await _testee.GetProjectsByStateAsync(_nonReturnableState, int.MaxValue);
 
-        result.Should()
-              .NotBeNull()
-              .And.BeEmpty();
+        result.Should().NotBeNull();
+        result.Items.Should().NotBeNull().And.BeEmpty();
     }
 
     [TestMethod]

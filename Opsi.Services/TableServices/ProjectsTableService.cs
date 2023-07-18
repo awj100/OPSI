@@ -1,5 +1,6 @@
 ﻿using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
+using Opsi.Common;
 using Opsi.Pocos;
 
 namespace Opsi.Services.TableServices;
@@ -34,23 +35,26 @@ internal class ProjectsTableService : IProjectsTableService
         return null;
     }
 
-    public async Task<IReadOnlyCollection<Project>> GetProjectsByStateAsync(string projectState)
+    public async Task<PageableResponse<Project>> GetProjectsByStateAsync(string projectState, int pageSize, string? continuationToken = null)
     {
-        var projects = new List<Project>();
-        IEnumerable<string>? selectProps = null;
-
         var tableClient = _projectsTableService.GetTableClient();
 
-        var results = tableClient.QueryAsync<ProjectTableEntity>($"{nameof(Project.State)} eq '{projectState}'",
-                                                                 select: selectProps,
-                                                                 cancellationToken: CancellationToken.None);
+        var pageResult = tableClient.QueryAsync<ProjectTableEntity>($"{nameof(Project.State)} eq '{projectState}'",
+                                                                    maxPerPage: pageSize,
+                                                                    cancellationToken: CancellationToken.None);
 
-        await foreach (var result in results)
+        if (pageResult == null)
         {
-            projects.Add(result.ToProject());
+            return new PageableResponse<Project>(new List<Project>(0));
         }
 
-        return projects;
+        await foreach (var page in pageResult.AsPages(continuationToken))
+        {
+            var projects = page.Values.Select(projectTableEntity => projectTableEntity.ToProject()).ToList();
+            return new PageableResponse<Project>(projects, page.ContinuationToken);
+        }
+
+        return new PageableResponse<Project>(new List<Project>(0));
     }
 
     public async Task StoreProjectAsync(Project project)

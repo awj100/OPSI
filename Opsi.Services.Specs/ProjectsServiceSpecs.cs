@@ -1,5 +1,6 @@
 ﻿using FakeItEasy;
 using FluentAssertions;
+using Opsi.Common;
 using Opsi.Constants;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
@@ -11,7 +12,9 @@ namespace Opsi.Services.Specs;
 [TestClass]
 public class ProjectsServiceSpecs
 {
+    private const string _continuationToken = "TEST CONTINUATION TOKEN";
     private const string _name = "TEST NAME";
+    private const int _pageSize = 10;
     private const string _state2 = "TEST STATE 2";
     private const string _username = "TEST USERNAME";
     private const string _webhookCustomProp1Name = nameof(_webhookCustomProp1Name);
@@ -65,22 +68,24 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
-    public async Task GetProjectsAsync_WhenProjectStateIsRecognised_ReturnsResultFromTableService ()
+    public async Task GetProjectsAsync_WhenProjectStateIsRecognised_ReturnsResultFromTableService()
     {
-        A.CallTo(() => _projectsTableService.GetProjectsByStateAsync(_state1)).Returns(new List<Project> { _project });
+        var pageableResponse = new PageableResponse<Project>(new List<Project> { _project }, _continuationToken);
 
-        var result = await _testee.GetProjectsAsync(_state1);
+        A.CallTo(() => _projectsTableService.GetProjectsByStateAsync(_state1, _pageSize, A<string?>._)).Returns(pageableResponse);
 
-        result.Should()
-              .NotBeNull()
-              .And.HaveCount(1)
+        var result = await _testee.GetProjectsAsync(_state1, _pageSize);
+
+        result.Should().NotBeNull();
+        result.Items.Should().NotBeNullOrEmpty();
+        result.Items.Should().HaveCount(1)
               .And.Match(projects => projects.Single().Id.Equals(_project.Id));
     }
 
     [TestMethod]
     public async Task GetProjectsAsync_WhenProjectStateIsNoRecognised_ThrowsArgumentException()
     {
-        await _testee.Invoking(t => t.GetProjectsAsync(Guid.NewGuid().ToString()))
+        await _testee.Invoking(t => t.GetProjectsAsync(Guid.NewGuid().ToString(), _pageSize, _continuationToken))
                      .Should()
                      .ThrowAsync<ArgumentException>()
                      .WithParameterName("projectState");

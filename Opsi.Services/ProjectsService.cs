@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using Microsoft.VisualBasic;
+using Opsi.Common;
 using Opsi.Constants;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
@@ -19,14 +19,14 @@ public class ProjectsService : IProjectsService
         _webhookQueueService = QueueService;
     }
 
-    public async Task<IReadOnlyCollection<Project>> GetProjectsAsync(string projectState)
+    public async Task<PageableResponse<Project>> GetProjectsAsync(string projectState, int pageSize, string? continuationToken = null)
     {
         if (!IsProjectStateRecognised(projectState))
         {
             throw new ArgumentException("Unrecognised value", nameof(projectState));
         }
 
-        return await _projectsTableService.GetProjectsByStateAsync(projectState);
+        return await _projectsTableService.GetProjectsByStateAsync(projectState, pageSize, continuationToken);
     }
 
     public async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)

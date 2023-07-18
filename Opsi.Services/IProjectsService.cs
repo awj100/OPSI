@@ -1,10 +1,11 @@
-﻿using Opsi.Pocos;
+﻿using Opsi.Common;
+using Opsi.Pocos;
 
 namespace Opsi.Services;
 
 public interface IProjectsService
 {
-    Task<IReadOnlyCollection<Project>> GetProjectsAsync(string projectState);
+    Task<PageableResponse<Project>> GetProjectsAsync(string projectState, int pageSize, string? continuationToken = null);
 
     Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId);
 
