@@ -13,9 +13,13 @@ namespace Opsi.Services.Specs.TableServices;
 [TestClass]
 public class ProjectsTableServiceSpecs
 {
+    private const string Name = "TEST NAME";
+    private const string Username = "TEST USERNAME";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private string _nonReturnableState = ProjectStates.Deleted;
     private Project _project;
+    private Guid _project1Id;
+    private Guid _project2Id;
     private ProjectTableEntity _projectTableEntity1;
     private ProjectTableEntity _projectTableEntity2;
     private string _returnableState = ProjectStates.InProgress;
@@ -28,8 +32,10 @@ public class ProjectsTableServiceSpecs
     [TestInitialize]
     public void TestInit()
     {
-        _projectTableEntity1 = new ProjectTableEntity { Id = Guid.NewGuid(), State = _returnableState };
-        _projectTableEntity2 = new ProjectTableEntity { Id = Guid.NewGuid(), State = _returnableState };
+        _project1Id = Guid.NewGuid();
+        _project2Id = Guid.NewGuid();
+        _projectTableEntity1 = new ProjectTableEntity { Id = _project1Id, Name = Name, State = _returnableState, Username = Username };
+        _projectTableEntity2 = new ProjectTableEntity { Id = _project2Id, Name = Name, State = _returnableState, Username = Username };
         _project = _projectTableEntity1.ToProject();
         _tableClient = A.Fake<TableClient>();
         _tableService = A.Fake<ITableService>();
@@ -111,10 +117,62 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task UpdateProjectAsync_PassesProjectToTableService()
+    public async Task UpdateProjectAsync_PassesProjectWithCorrectPartitionKeyToTableService()
     {
+        var projectsResult = new List<ProjectTableEntity> { _projectTableEntity1 };
+        var page = Page<ProjectTableEntity>.FromValues(projectsResult,
+                                                       continuationToken: null,
+                                                       response: A.Fake<Response>());
+        var pages = AsyncPageable<ProjectTableEntity>.FromPages(new[] { page });
+
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Contains(nameof(Project.Id)) && filter.Contains(_projectTableEntity1.Id.ToString())),
+                                                                   A<int?>._,
+                                                                   A<IEnumerable<string>>._,
+                                                                   A<CancellationToken>._)).Returns(pages);
+
         await _testee.UpdateProjectAsync(_project);
 
-        A.CallTo(() => _tableService.UpdateTableEntityAsync(A<ProjectTableEntity>.That.Matches(pte => pte.Id.Equals(_project.Id)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _tableService.UpdateTableEntityAsync(A<ITableEntity>.That.Matches(tableEntity => tableEntity.PartitionKey.Equals(_projectTableEntity1.PartitionKey)))).MustHaveHappenedOnceExactly();
+        }
+
+    [TestMethod]
+    public async Task UpdateProjectAsync_PassesProjectWithCorrectRowKeyToTableService()
+    {
+        var projectsResult = new List<ProjectTableEntity> { _projectTableEntity1 };
+        var page = Page<ProjectTableEntity>.FromValues(projectsResult,
+                                                       continuationToken: null,
+                                                       response: A.Fake<Response>());
+        var pages = AsyncPageable<ProjectTableEntity>.FromPages(new[] { page });
+
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Contains(nameof(Project.Id)) && filter.Contains(_projectTableEntity1.Id.ToString())),
+                                                                   A<int?>._,
+                                                                   A<IEnumerable<string>>._,
+                                                                   A<CancellationToken>._)).Returns(pages);
+
+        await _testee.UpdateProjectAsync(_project);
+
+        A.CallTo(() => _tableService.UpdateTableEntityAsync(A<ITableEntity>.That.Matches(tableEntity => tableEntity.RowKey.Equals(_projectTableEntity1.RowKey)))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectAsync_PassesProjectWithCorrespondingProjectBaseProperties()
+    {
+        var projectsResult = new List<ProjectTableEntity> { _projectTableEntity1 };
+        var page = Page<ProjectTableEntity>.FromValues(projectsResult,
+                                                       continuationToken: null,
+                                                       response: A.Fake<Response>());
+        var pages = AsyncPageable<ProjectTableEntity>.FromPages(new[] { page });
+
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Contains(nameof(Project.Id)) && filter.Contains(_projectTableEntity1.Id.ToString())),
+                                                                   A<int?>._,
+                                                                   A<IEnumerable<string>>._,
+                                                                   A<CancellationToken>._)).Returns(pages);
+
+        await _testee.UpdateProjectAsync(_project);
+
+        A.CallTo(() => _tableService.UpdateTableEntityAsync(A<ProjectTableEntity>.That.Matches(tableEntity => tableEntity.Id.Equals(_project.Id)
+                                                                                                              && tableEntity.Name.Equals(_project.Name)
+                                                                                                              && tableEntity.State.Equals(_project.State)
+                                                                                                              && tableEntity.Username.Equals(_project.Username)))).MustHaveHappenedOnceExactly();
     }
 }

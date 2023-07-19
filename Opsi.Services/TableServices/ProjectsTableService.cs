@@ -1,4 +1,5 @@
-﻿using Opsi.AzureStorage;
+﻿using System.Reflection;
+using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Pocos;
@@ -17,19 +18,11 @@ internal class ProjectsTableService : IProjectsTableService
 
     public async Task<Project?> GetProjectByIdAsync(Guid projectId)
     {
-        const int maxResultsPerPage = 1;
-        IEnumerable<string>? selectProps = null;
+        var projectTableEntity = await GetProjectTableEntityByIdAsync(projectId);
 
-        var tableClient = _projectsTableService.GetTableClient();
-
-        var results = tableClient.QueryAsync<ProjectTableEntity>($"{nameof(Project.Id)} eq guid'{projectId}'",
-                                                                 maxResultsPerPage,
-                                                                 selectProps,
-                                                                 CancellationToken.None);
-
-        await foreach (var result in results)
+        if (projectTableEntity != null)
         {
-            return result.ToProject();
+            return projectTableEntity.ToProject();
         }
 
         return null;
@@ -66,8 +59,33 @@ internal class ProjectsTableService : IProjectsTableService
 
     public async Task UpdateProjectAsync(Project project)
     {
-        var projectTableEntity = ProjectTableEntity.FromProject(project);
+        var projectTableEntity = await GetProjectTableEntityByIdAsync(project.Id) ?? throw new InvalidOperationException($"Cannot update project with ID \"{project.Id}\" - no such project is stored");
+
+        foreach (var propInfo in typeof(ProjectBase).GetProperties(BindingFlags.Public| BindingFlags.Instance))
+        {
+            propInfo.SetValue(projectTableEntity, propInfo.GetValue(project));
+        }
 
         await _projectsTableService.UpdateTableEntityAsync(projectTableEntity);
+    }
+
+    private async Task<ProjectTableEntity?> GetProjectTableEntityByIdAsync(Guid projectId)
+    {
+        const int maxResultsPerPage = 1;
+        IEnumerable<string>? selectProps = null;
+
+        var tableClient = _projectsTableService.GetTableClient();
+
+        var results = tableClient.QueryAsync<ProjectTableEntity>($"{nameof(Project.Id)} eq guid'{projectId}'",
+                                                                 maxResultsPerPage,
+                                                                 selectProps,
+                                                                 CancellationToken.None);
+
+        await foreach (var result in results)
+        {
+            return result;
+        }
+
+        return null;
     }
 }
