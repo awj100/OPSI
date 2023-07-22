@@ -1,14 +1,25 @@
 ﻿namespace Opsi.Common;
 
-public readonly struct PageableResponse<T>
+public struct PageableResponse<T>
 {
-    public PageableResponse(IReadOnlyList<T> items, string? continuationToken = null)
+    public PageableResponse()
+    {
+        ContinuationToken = null;
+        Items = new List<T>();
+    }
+
+    public PageableResponse(List<T> items, string? continuationToken = null)
     {
         ContinuationToken = continuationToken;
         Items = items;
     }
 
-    public string? ContinuationToken { get; }
+    public string? ContinuationToken { get; set; }
 
-    public IReadOnlyList<T> Items { get; }
+    public List<T> Items { get; set; }
+
+    public override readonly string ToString()
+    {
+        return $"{Items.Count} {typeof(T).Name} instances";
+    }
 }

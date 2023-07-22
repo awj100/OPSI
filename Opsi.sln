@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.AzureStorage.Specs", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.Constants", "Opsi.Constants\Opsi.Constants.csproj", "{24722E9A-F1CC-4101-BE7A-A484CB0F8400}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opsi.Functions.Specs", "Opsi.Functions.Specs\Opsi.Functions.Specs.csproj", "{224777BF-CF9C-43DC-A6B5-9C0A5C0964F7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -98,6 +100,10 @@ Global
 		{24722E9A-F1CC-4101-BE7A-A484CB0F8400}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24722E9A-F1CC-4101-BE7A-A484CB0F8400}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24722E9A-F1CC-4101-BE7A-A484CB0F8400}.Release|Any CPU.Build.0 = Release|Any CPU
+		{224777BF-CF9C-43DC-A6B5-9C0A5C0964F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{224777BF-CF9C-43DC-A6B5-9C0A5C0964F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{224777BF-CF9C-43DC-A6B5-9C0A5C0964F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{224777BF-CF9C-43DC-A6B5-9C0A5C0964F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

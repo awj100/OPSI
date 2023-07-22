@@ -3,6 +3,7 @@ using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Opsi.Functions.FormHelpers;
 
+[assembly: InternalsVisibleTo("Opsi.Functions.Specs")]
 [assembly: InternalsVisibleTo("Opsi.Services.Specs")]
 
 namespace Opsi.Functions.DiModules;
@@ -18,6 +19,7 @@ public static class FunctionsDiModule
     {
         services.AddLogging()
                 .AddSingleton<Common.ISettingsProvider, Common.SettingsProvider>()
-                .AddSingleton<IMultipartFormDataParser, MultipartFormDataParser>();
+                .AddSingleton<IMultipartFormDataParser, MultipartFormDataParser>()
+                .AddSingleton<IResponseSerialiser, ResponseSerialiser>();
     }
 }
