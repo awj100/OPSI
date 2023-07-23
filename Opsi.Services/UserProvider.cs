@@ -14,9 +14,8 @@ internal class UserProvider : IUserProvider
 
     private readonly FunctionContext _functionContext;
 
-    public UserProvider(IFunctionContextAccessor accessor)
+    public UserProvider(IFunctionContextAccessor accessor) : this(accessor.FunctionContext)
     {
-        _functionContext = accessor.FunctionContext;
     }
 
     public UserProvider(FunctionContext functionContext)
