@@ -7,15 +7,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.Common;
 using Opsi.Constants;
-using Opsi.Functions.Functions;
+using Opsi.Functions.Functions.Administrator;
 using Opsi.Pocos;
 using Opsi.Services;
 using Opsi.Services.QueueServices;
 
-namespace Opsi.Functions.Specs;
+namespace Opsi.Functions.Specs.Administrator;
 
 [TestClass]
-public class ProjectsHandlerTests
+public class ProjectsHandlerSpecs
 {
     private const int _defaultPageSize = 50;
     private const string _projectState = "InProgress";
@@ -59,7 +59,7 @@ public class ProjectsHandlerTests
     public async Task Run_WhenNoPageSizeSpecified_PassesDefaultPageSizeToProjectsService()
     {
         var request = TestFactory.CreateHttpRequest(_uri);
-        var response = await _testee.Run(request, String.Empty, null, null);
+        var response = await _testee.Run(request, string.Empty, null, null);
 
         A.CallTo(() => _projectsService.GetProjectsAsync(A<string>._, A<int>.That.Matches(pageSize => pageSize.Equals(_defaultPageSize)), A<string>._)).MustHaveHappenedOnceExactly();
     }
@@ -70,7 +70,7 @@ public class ProjectsHandlerTests
         const int specifiedPageSize = 5;
 
         var request = TestFactory.CreateHttpRequest(_uri);
-        var response = await _testee.Run(request, String.Empty, specifiedPageSize, null);
+        var response = await _testee.Run(request, string.Empty, specifiedPageSize, null);
 
         A.CallTo(() => _projectsService.GetProjectsAsync(A<string>._, A<int>.That.Matches(pageSize => pageSize.Equals(specifiedPageSize)), A<string>._)).MustHaveHappenedOnceExactly();
     }
@@ -81,7 +81,7 @@ public class ProjectsHandlerTests
         var continuationToken = Guid.NewGuid().ToString();
 
         var request = TestFactory.CreateHttpRequest(_uri);
-        var response = await _testee.Run(request, String.Empty, null, continuationToken);
+        var response = await _testee.Run(request, string.Empty, null, continuationToken);
 
         A.CallTo(() => _projectsService.GetProjectsAsync(A<string>._, A<int>._, continuationToken)).MustHaveHappenedOnceExactly();
     }

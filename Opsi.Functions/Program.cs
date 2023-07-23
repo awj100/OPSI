@@ -17,6 +17,7 @@ var host = new HostBuilder()
         workerApplication.UseWhenHttpTriggered<HttpResponseExceptionHandling>()
                          .UseWhenNotHttpTriggered<ExceptionHandling>()
                          .UseWhenHttpTriggered<IdentityProvider>()
+                         .UseWhenHttpTriggered<AdministratorEnforcement>()
                          .UseFunctionContextAccessor();
     })
     .ConfigureServices(services =>

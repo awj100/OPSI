@@ -21,4 +21,12 @@
   <ItemGroup>
     <ProjectReference Include="..\Opsi.Functions\Opsi.Functions.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="Administrator\" />
+    <None Remove="Middleware\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Administrator\" />
+    <Folder Include="Middleware\" />
+  </ItemGroup>
 </Project>

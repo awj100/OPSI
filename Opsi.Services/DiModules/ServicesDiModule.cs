@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Constants;
@@ -38,6 +39,7 @@ public static class ServicesDiModule
             .AddSingleton<Func<Stream, IUnzipService>>(serviceProvider => stream => new UnzipService(stream))
             .AddSingleton<IUnzipServiceFactory, UnzipServiceFactory>()
             .AddTransient<IUserProvider, UserProvider>()
+            .AddSingleton<Func<FunctionContext, IUserProvider>>(_ => (FunctionContext functionContext) => new UserProvider(functionContext))
             .AddSingleton<QueueHandlers.IZippedQueueHandler, QueueHandlers.ZippedQueueHandler>()
             .AddSingleton<QueueServices.IWebhookQueueService, QueueServices.WebhookQueueService>()
             .AddSingleton<QueueServices.IErrorQueueService, QueueServices.ErrorQueueService>()

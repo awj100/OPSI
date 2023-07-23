@@ -23,6 +23,7 @@
     <None Remove="Functions\" />
     <None Remove="Functions\QueueHandlers\" />
     <None Remove="Functions\Webhooks\" />
+    <None Remove="Functions\Administrator\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.editorconfig" />
@@ -73,5 +74,6 @@
     <Folder Include="Functions\" />
     <Folder Include="Functions\QueueHandlers\" />
     <Folder Include="Functions\Webhooks\" />
+    <Folder Include="Functions\Administrator\" />
   </ItemGroup>
 </Project>

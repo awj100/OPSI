@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using Functions.Worker.ContextAccessor;
+using Microsoft.Azure.Functions.Worker;
 using Opsi.Common.Exceptions;
 
 namespace Opsi.Services;
@@ -11,40 +12,45 @@ internal class UserProvider : IUserProvider
     private const string ItemNameIsAdministrator = "IsAdministrator";
     private const string ItemNameUsername = "Username";
 
-    private readonly IFunctionContextAccessor _functionContextAccessor;
+    private readonly FunctionContext _functionContext;
 
     public UserProvider(IFunctionContextAccessor accessor)
     {
-        _functionContextAccessor = accessor;
+        _functionContext = accessor.FunctionContext;
+    }
+
+    public UserProvider(FunctionContext functionContext)
+    {
+        _functionContext = functionContext;
     }
 
     public Lazy<AuthenticationHeaderValue> AuthHeader => new(() =>
     {
-        if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameAuthHeaderValue))
+        if (!_functionContext.Items.ContainsKey(ItemNameAuthHeaderValue))
         {
             throw new UnauthenticatedException();
         }
 
-        return (AuthenticationHeaderValue)_functionContextAccessor.FunctionContext.Items[ItemNameAuthHeaderValue];
+        return (AuthenticationHeaderValue)_functionContext.Items[ItemNameAuthHeaderValue];
     });
 
     public Lazy<IReadOnlyCollection<string>> Claims => new(() =>
     {
-        if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameClaims))
+        if (!_functionContext.Items.ContainsKey(ItemNameClaims))
         {
             return new List<string>(0);
         }
 
-        return (IReadOnlyCollection<string>)_functionContextAccessor.FunctionContext.Items[ItemNameClaims];
+        return (IReadOnlyCollection<string>)_functionContext.Items[ItemNameClaims];
     });
 
     public Lazy<bool> IsAdministrator => new(() => {
-        if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameIsAdministrator))
+        if (!_functionContext.Items.ContainsKey(ItemNameIsAdministrator))
         {
             return false;
         }
 
-        var isAdministrator = _functionContextAccessor.FunctionContext.Items[ItemNameIsAdministrator];
+        var isAdministrator = _functionContext.Items[ItemNameIsAdministrator];
         if (isAdministrator is not bool)
         {
             throw new Exception($"The FunctionContext's items collection has been populated with an invalid (non-boolean) value for \"{ItemNameIsAdministrator}\".");
@@ -55,11 +61,11 @@ internal class UserProvider : IUserProvider
 
     public Lazy<string> Username => new(() =>
     {
-        if (!_functionContextAccessor.FunctionContext.Items.ContainsKey(ItemNameUsername))
+        if (!_functionContext.Items.ContainsKey(ItemNameUsername))
         {
             throw new UnauthenticatedException();
         }
 
-        return (string)_functionContextAccessor.FunctionContext.Items[ItemNameUsername];
+        return (string)_functionContext.Items[ItemNameUsername];
     });
 }
