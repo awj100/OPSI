@@ -5,6 +5,8 @@ namespace Opsi.Services;
 
 public interface IProjectsService
 {
+    Task<ProjectWithResources?> GetProjectAsync(Guid projectId);
+
     Task<PageableResponse<Project>> GetProjectsAsync(string projectState, int pageSize, string? continuationToken = null);
 
     Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId);

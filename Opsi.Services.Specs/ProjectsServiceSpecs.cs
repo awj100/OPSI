@@ -1,5 +1,9 @@
 ﻿using FakeItEasy;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Opsi.AzureStorage;
+using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Constants;
 using Opsi.Constants.Webhooks;
@@ -22,10 +26,14 @@ public class ProjectsServiceSpecs
     private const string _webhookCustomProp2Name = nameof(_webhookCustomProp2Name);
     private const int _webhookCustomProp2Value = 2;
     private const string _webhookUri = "https://a.test.url";
+    private readonly Guid _projectId = Guid.NewGuid();
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private Project _project;
     private IProjectsTableService _projectsTableService;
     private readonly string _state1 = ProjectStates.InProgress;
+    private ILoggerFactory _loggerFactory;
+    private IResourcesService _resourcesService;
+    private IUserProvider _userProvider;
     private IWebhookQueueService _webhookQueueService;
     private Dictionary<string, object> _webhookCustomProps;
     private ConsumerWebhookSpecification _webhookSpecs;
@@ -49,7 +57,7 @@ public class ProjectsServiceSpecs
 
         _project = new Project
         {
-            Id = Guid.NewGuid(),
+            Id = _projectId,
             Name = _name,
             State = _state1,
             Username = _username,
@@ -58,13 +66,78 @@ public class ProjectsServiceSpecs
 
         Project? nullProject = null;
 
+        _loggerFactory = new NullLoggerFactory();
         _projectsTableService = A.Fake<IProjectsTableService>();
+        _resourcesService = A.Fake<IResourcesService>();
+        _userProvider = A.Fake<IUserProvider>();
         _webhookQueueService = A.Fake<IWebhookQueueService>();
 
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(_project.Id)).Returns(_project);
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Not.Matches(g => g.Equals(_project.Id)))).Returns(nullProject);
+        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
 
-        _testee = new ProjectsService(_projectsTableService, _webhookQueueService);
+        _testee = new ProjectsService(_projectsTableService,
+                                      _resourcesService,
+                                      _userProvider,
+                                      _webhookQueueService,
+                                      _loggerFactory);
+    }
+
+    [TestMethod]
+    public async Task GetProjectAsync_WhenProjectIdNotRecognised_ReturnsNull()
+    {
+        var response = await _testee.GetProjectAsync(Guid.NewGuid());
+
+        response.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task GetProjectAsync_WhenNoResourcesObtained_ReturnsNull()
+    {
+        A.CallTo(() => _resourcesService.GetResourcesAsync(Guid.NewGuid())).Returns(new List<ResourceTableEntity>(0));
+
+        var response = await _testee.GetProjectAsync(_projectId);
+
+        response.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task GetProjectAsync_WhenUserIsAdministrator_ReturnsProjectWithAllResources()
+    {
+        const bool isAdministrator = true;
+        const string otherUsername = "otherUser@test.com";
+        var resources = GenerateResources().Take(4).ToList();
+        resources.ElementAt(1).Username = otherUsername;
+        resources.ElementAt(3).Username = otherUsername;
+
+        A.CallTo(() => _resourcesService.GetResourcesAsync(_projectId)).Returns(resources);
+        A.CallTo(() => _userProvider.IsAdministrator).Returns(new Lazy<bool>(() => isAdministrator));
+
+        var response = await _testee.GetProjectAsync(_projectId);
+
+        response.Should().NotBeNull();
+        response!.Resources.Should().NotBeNullOrEmpty();
+        response!.Resources.Should().HaveCount(resources.Count);
+    }
+
+    [TestMethod]
+    public async Task GetProjectAsync_WhenUserIsNotAdministrator_ReturnsProjectWithOnlyUserAssignedResources()
+    {
+        const bool isAdministrator = false;
+        const string otherUsername = "otherUser@test.com";
+        var resources = GenerateResources().Take(4).ToList();
+        resources.ElementAt(1).Username = otherUsername;
+        resources.ElementAt(3).Username = otherUsername;
+
+        A.CallTo(() => _resourcesService.GetResourcesAsync(_projectId)).Returns(resources);
+        A.CallTo(() => _userProvider.IsAdministrator).Returns(new Lazy<bool>(() => isAdministrator));
+
+        var response = await _testee.GetProjectAsync(_projectId);
+
+        response.Should().NotBeNull();
+        response!.Resources.Should().NotBeNullOrEmpty();
+        response!.Resources.Should().HaveCount(resources.Count(resource => resource.Username != null && resource.Username.Equals(_username)));
+        response!.Resources.Should().AllSatisfy(resource => resource.Username.Should().Be(_username));
     }
 
     [TestMethod]
@@ -383,5 +456,24 @@ public class ProjectsServiceSpecs
                                                                                                                          && !String.IsNullOrWhiteSpace(cws.Uri)
                                                                                                                          && cws.Uri.Equals(_webhookUri))))
             .MustHaveHappenedOnceExactly();
+    }
+
+    private IEnumerable<ResourceTableEntity> GenerateResources()
+    {
+        var i = 0;
+
+        while (true)
+        {
+            i++;
+
+            yield return new ResourceTableEntity
+            {
+                FullName = $"TEST RESOURCE {i}",
+                ProjectId = _projectId,
+                Username = _username,
+                VersionId = $"VERSION ID {i}",
+                VersionIndex = i
+            };
+        }
     }
 }

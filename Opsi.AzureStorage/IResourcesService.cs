@@ -7,7 +7,7 @@ namespace Opsi.AzureStorage
     {
         Task DeleteResourceAsync(ResourceStorageInfo resourceStorageInfo);
 
-        Task DeleteResourceAsync(Resource resource);
+        Task DeleteResourceAsync(ResourceTableEntity resource);
 
         Task DeleteResourceAsync(Guid projectId, string fullName);
 
@@ -16,7 +16,7 @@ namespace Opsi.AzureStorage
         /// </summary>
         Task<VersionInfo> GetCurrentVersionInfo(Guid projectId, string fullName);
 
-        Task<IReadOnlyCollection<Resource>> GetResourcesAsync(Guid projectId);
+        Task<IReadOnlyCollection<ResourceTableEntity>> GetResourcesAsync(Guid projectId);
 
         Task LockResourceToUser(Guid projectId, string fullName, string username);
 

@@ -1,18 +1,17 @@
 using System.Net;
-using System.Text;
 using System.Text.Json;
 using FakeItEasy;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.Common;
-using Opsi.Constants;
 using Opsi.Functions.Functions.Administrator;
+using Opsi.Functions.Specs;
 using Opsi.Pocos;
 using Opsi.Services;
 using Opsi.Services.QueueServices;
 
-namespace Opsi.Functions.Specs.Administrator;
+namespace Opsi.Functions.Functions.Specs.Administrator;
 
 [TestClass]
 public class ProjectsHandlerSpecs

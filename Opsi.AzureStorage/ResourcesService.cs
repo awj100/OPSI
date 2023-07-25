@@ -21,7 +21,7 @@ internal class ResourcesService : IResourcesService
         await DeleteResourceAsync(resourceStorageInfo.ProjectId, resourceStorageInfo.RestOfPath!);
     }
 
-    public async Task DeleteResourceAsync(Resource resource)
+    public async Task DeleteResourceAsync(ResourceTableEntity resource)
     {
         await DeleteResourceAsync(resource.ProjectId, resource.FullName!);
     }
@@ -34,10 +34,10 @@ internal class ResourcesService : IResourcesService
     public async Task<VersionInfo> GetCurrentVersionInfo(Guid projectId, string fullName)
     {
         var key = projectId.ToString();
-        var resources = new List<Resource>();
+        var resources = new List<ResourceTableEntity>();
         var tableClient = _tableService.GetTableClient();
 
-        var pageableResources = tableClient.QueryAsync<Resource>(resource => resource.PartitionKey == projectId.ToString()
+        var pageableResources = tableClient.QueryAsync<ResourceTableEntity>(resource => resource.PartitionKey == projectId.ToString()
                                                                              && String.Compare(resource.FullName, fullName, StringComparison.OrdinalIgnoreCase) == StringComparisonMatch);
 
         await foreach (var resource in pageableResources)
@@ -73,13 +73,13 @@ internal class ResourcesService : IResourcesService
         }
     }
 
-    public async Task<IReadOnlyCollection<Resource>> GetResourcesAsync(Guid projectId)
+    public async Task<IReadOnlyCollection<ResourceTableEntity>> GetResourcesAsync(Guid projectId)
     {
         var key = projectId.ToString();
-        var resources = new List<Resource>();
+        var resources = new List<ResourceTableEntity>();
 
         var tableClient = _tableService.GetTableClient();
-        var pageableResources = tableClient.QueryAsync<Resource>(x => x.PartitionKey == projectId.ToString());
+        var pageableResources = tableClient.QueryAsync<ResourceTableEntity>(x => x.PartitionKey == projectId.ToString());
 
         await foreach (var resource in pageableResources)
         {
@@ -91,7 +91,7 @@ internal class ResourcesService : IResourcesService
 
     public async Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo)
     {
-        var resource = new Resource
+        var resource = new ResourceTableEntity
         {
             FullName = resourceStorageInfo.RestOfPath,
             LockedTo = resourceStorageInfo.VersionInfo.LockedTo.IsSome ? resourceStorageInfo.VersionInfo.LockedTo.Value : null,
@@ -151,13 +151,13 @@ internal class ResourcesService : IResourcesService
         }
     }
 
-    private static async Task<Resource> GetResourceForLockOrUnlockAsync(TableClient tableClient, Guid projectId, string fullName)
+    private static async Task<ResourceTableEntity> GetResourceForLockOrUnlockAsync(TableClient tableClient, Guid projectId, string fullName)
     {
-        var allResources = new List<Resource>();
+        var allResources = new List<ResourceTableEntity>();
 
         var key = projectId.ToString();
-        var resources = new List<Resource>();
-        var matchingResources = tableClient.QueryAsync<Resource>(resource => resource.PartitionKey == projectId.ToString()
+        var resources = new List<ResourceTableEntity>();
+        var matchingResources = tableClient.QueryAsync<ResourceTableEntity>(resource => resource.PartitionKey == projectId.ToString()
                                                                             && String.Compare(resource.FullName, fullName, StringComparison.OrdinalIgnoreCase) == StringComparisonMatch);
 
         await foreach (var resource in matchingResources)
