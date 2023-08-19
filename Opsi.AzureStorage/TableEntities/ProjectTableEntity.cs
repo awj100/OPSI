@@ -7,37 +7,8 @@ namespace Opsi.AzureStorage.TableEntities;
 
 public class ProjectTableEntity : ProjectBase, ITableEntity
 {
-    public ProjectTableEntity()
-    {
-        PartitionKey = GetDefaultPartitionKey();
-        RowKey = GetDefaultRowKey();
-    }
-
-    public static ProjectTableEntity FromProject(Project project)
-    {
-        var projectTableEntity = new ProjectTableEntity
-        {
-            Id = project.Id,
-            Name = project.Name,
-            State = project.State,
-            Username = project.Username,
-            WebhookUri = project.WebhookSpecification?.Uri
-        };
-
-        if (project.WebhookSpecification?.CustomProps?.Count > 0)
-        {
-            try
-            {
-                projectTableEntity.WebhookCustomProps = JsonSerializer.Serialize(project.WebhookSpecification.CustomProps);
-            }
-            catch (Exception exception)
-            {
-                projectTableEntity.WebhookCustomProps = $"Unable to serialise {nameof(Manifest)}.{nameof(Manifest.WebhookSpecification)}.{nameof(Manifest.WebhookSpecification.CustomProps)}: {exception.Message}";
-            }
-        }
-
-        return projectTableEntity;
-    }
+    private const string PartitionKeyFormatter = "project_{0}";
+    private string? _partitionKey;
 
     public Project ToProject()
     {
@@ -74,11 +45,19 @@ public class ProjectTableEntity : ProjectBase, ITableEntity
         return project;
     }
 
+    public string EntityType { get; set; } = typeof(ProjectTableEntity).Name;
+
+    public int EntityVersion { get; set; } = 1;
+
     public ETag ETag { get; set; } = default!;
 
-    public string PartitionKey { get; set; }
+    public string PartitionKey
+    {
+        get => _partitionKey ??= String.Format(PartitionKeyFormatter, Id);
+        set => _partitionKey = value;
+    }
 
-    public string RowKey { get; set; }
+    public string RowKey { get; set; } = default!;
 
     public DateTimeOffset? Timestamp { get; set; } = default!;
 
@@ -91,21 +70,35 @@ public class ProjectTableEntity : ProjectBase, ITableEntity
         return $"{Name} ({Id})";
     }
 
-    /// <summary>
-    /// The partition key should be a descending, non-unique number so that retrieving multiple projects
-    /// will return the newest project first.
-    /// </summary>
-    private static string GetDefaultPartitionKey()
+    public static ProjectTableEntity FromProject(Project project, string rowKey)
     {
-        return (int.MaxValue - Convert.ToInt32(DateTime.UtcNow.ToString("yyyyMMdd"))).ToString();
+        var projectTableEntity = new ProjectTableEntity
+        {
+            Id = project.Id,
+            Name = project.Name,
+            RowKey = rowKey,
+            State = project.State,
+            Username = project.Username,
+            WebhookUri = project.WebhookSpecification?.Uri
+        };
+
+        if (project.WebhookSpecification?.CustomProps?.Count > 0)
+        {
+            try
+            {
+                projectTableEntity.WebhookCustomProps = JsonSerializer.Serialize(project.WebhookSpecification.CustomProps);
+            }
+            catch (Exception exception)
+            {
+                projectTableEntity.WebhookCustomProps = $"Unable to serialise {nameof(Manifest)}.{nameof(Manifest.WebhookSpecification)}.{nameof(Manifest.WebhookSpecification.CustomProps)}: {exception.Message}";
+            }
+        }
+
+        return projectTableEntity;
     }
 
-    /// <summary>
-    /// The row key should be a descending, unique number so that retrieving multiple projects
-    /// will return the newest project first.
-    /// </summary>
-    private static string GetDefaultRowKey()
+    public static IReadOnlyCollection<ProjectTableEntity> FromProject(Project project, Func<Project, IReadOnlyCollection<string>> projectRowKeyResolvers)
     {
-        return $"{long.MaxValue - DateTime.UtcNow.Ticks}-{Guid.NewGuid()}";
+        return projectRowKeyResolvers(project).Select(rowKey => FromProject(project, rowKey)).ToList();
     }
 }

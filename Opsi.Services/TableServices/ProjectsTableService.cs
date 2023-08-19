@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Opsi.AzureStorage;
+using Opsi.AzureStorage.RowKeys;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Pocos;
@@ -8,12 +9,14 @@ namespace Opsi.Services.TableServices;
 
 internal class ProjectsTableService : IProjectsTableService
 {
-    private const string TableName = "projects";
+    private const string TableName = "resources";
     private readonly ITableService _projectsTableService;
+    private readonly IProjectRowKeyPolicies _rowKeyPolicies;
 
-    public ProjectsTableService(ITableServiceFactory tableServiceFactory)
+    public ProjectsTableService(IProjectRowKeyPolicies rowKeyPolicies, ITableServiceFactory tableServiceFactory)
     {
         _projectsTableService = tableServiceFactory.Create(TableName);
+        _rowKeyPolicies = rowKeyPolicies;
     }
 
     public async Task<Project?> GetProjectByIdAsync(Guid projectId)
@@ -52,9 +55,9 @@ internal class ProjectsTableService : IProjectsTableService
 
     public async Task StoreProjectAsync(Project project)
     {
-        var projectTableEntity = ProjectTableEntity.FromProject(project);
+        var projectTableEntities = ProjectTableEntity.FromProject(project, _rowKeyPolicies.GetRowKeysForCreate);
 
-        await _projectsTableService.StoreTableEntityAsync(projectTableEntity);
+        await _projectsTableService.StoreTableEntitiesAsync(projectTableEntities);
     }
 
     public async Task UpdateProjectAsync(Project project)
@@ -66,7 +69,7 @@ internal class ProjectsTableService : IProjectsTableService
             propInfo.SetValue(projectTableEntity, propInfo.GetValue(project));
         }
 
-        await _projectsTableService.UpdateTableEntityAsync(projectTableEntity);
+        await _projectsTableService.UpdateTableEntitiesAsync(projectTableEntity);
     }
 
     private async Task<ProjectTableEntity?> GetProjectTableEntityByIdAsync(Guid projectId)

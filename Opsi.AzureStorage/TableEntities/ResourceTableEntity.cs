@@ -1,53 +1,64 @@
-﻿using System.Reflection;
-using System.Web;
-using Azure;
+﻿using Azure;
 using Azure.Data.Tables;
-using Newtonsoft.Json.Linq;
 using Opsi.Pocos;
 
 namespace Opsi.AzureStorage.TableEntities;
 
 public class ResourceTableEntity : Resource, ITableEntity
 {
-    private Guid _projectId;
-    private string? _rowKey;
+    private const string PartitionKeyFormatter = "project_{0}";
+    private string? _partitionKey;
+
+    public string EntityType { get; set; } = typeof(ResourceTableEntity).Name;
+
+    public int EntityVersion { get; set; } = 1;
 
     public ETag ETag { get; set; } = default!;
 
-    public string PartitionKey { get; set; } = default!;
-
-    public Guid ProjectId
+    public string PartitionKey
     {
-        get => _projectId;
-        set
-        {
-            _projectId = value;
-            PartitionKey = value.ToString();
-        }
+        get => _partitionKey ??= String.Format(PartitionKeyFormatter, ProjectId);
+        set => _partitionKey = value;
     }
 
-    public string RowKey
-    {
-        get => _rowKey ?? HttpUtility.UrlEncode(FullName ?? String.Empty);
-        set => _rowKey = value;
-    }
+    public string RowKey { get; set; } = default!;
 
     public DateTimeOffset? Timestamp { get; set; } = default!;
 
     public Resource ToResource()
     {
-        var resource = new Resource();
-
-        foreach (var propInfo in resource.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        return new Resource
         {
-            propInfo.SetValue(resource, propInfo.GetValue(this));
-        }
-
-        return resource;
+            FullName = FullName,
+            LockedTo = LockedTo,
+            ProjectId = ProjectId,
+            Username = Username,
+            VersionId = VersionId,
+            VersionIndex = VersionIndex
+        };
     }
 
     public override string ToString()
     {
         return $"{FullName} ({VersionIndex})";
+    }
+
+    public static ResourceTableEntity FromResource(Resource resource, string rowKey)
+    {
+        return new ResourceTableEntity
+        {
+            FullName = resource.FullName,
+            LockedTo = resource.LockedTo,
+            ProjectId = resource.ProjectId,
+            RowKey = rowKey,
+            Username = resource.Username,
+            VersionId = resource.VersionId,
+            VersionIndex = resource.VersionIndex
+        };
+    }
+
+    public static IReadOnlyCollection<ResourceTableEntity> FromResource(Resource resource, Func<Resource, IReadOnlyCollection<string>> resourceRowKeyResolvers)
+    {
+        return resourceRowKeyResolvers(resource).Select(rowKey => FromResource(resource, rowKey)).ToList();
     }
 }

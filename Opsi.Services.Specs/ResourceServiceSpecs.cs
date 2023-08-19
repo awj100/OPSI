@@ -43,7 +43,7 @@ public class ResourceServiceSpecs
         _userProvider = A.Fake<IUserProvider>();
 
         A.CallTo(() => _resourcesService.GetCurrentVersionInfo(A<Guid>.That.Matches(g => g.Equals(_resourceStorageInfo.ProjectId)),
-                                                               A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.FullPath.Value))))
+                                                               A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.RestOfPath))))
             .Returns(_versionInfo);
 
         A.CallTo(() => _projectsService.GetWebhookSpecificationAsync(_projectId)).Returns(new ConsumerWebhookSpecification { Uri = RemoteUriAsString });
@@ -74,7 +74,7 @@ public class ResourceServiceSpecs
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
         A.CallTo(() => _resourcesService.GetCurrentVersionInfo(A<Guid>.That.Matches(g => g.Equals(_resourceStorageInfo.ProjectId)),
-                                                               A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.FullPath.Value))))
+                                                               A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.RestOfPath))))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -84,7 +84,7 @@ public class ResourceServiceSpecs
         _versionInfo.LockedTo = Option<string>.Some($"another_{Username}");
 
         A.CallTo(() => _resourcesService.GetCurrentVersionInfo(A<Guid>.That.Matches(g => g.Equals(_resourceStorageInfo.ProjectId)),
-                                                               A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.FullPath.Value))))
+                                                               A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.RestOfPath))))
             .Returns(_versionInfo);
 
         await _testee.Invoking(y => y.StoreResourceAsync(_resourceStorageInfo))
@@ -98,7 +98,7 @@ public class ResourceServiceSpecs
         _versionInfo.LockedTo = Option<string>.Some(Username);
 
         A.CallTo(() => _resourcesService.GetCurrentVersionInfo(A<Guid>.That.Matches(g => g.Equals(_resourceStorageInfo.ProjectId)),
-                                                               A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.FullPath.Value))))
+                                                               A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.RestOfPath))))
             .Returns(_versionInfo);
 
         await _testee.StoreResourceAsync(_resourceStorageInfo);

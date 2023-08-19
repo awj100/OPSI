@@ -35,5 +35,14 @@ namespace Opsi.AzureStorage.Types
 
             return new VersionInfo(Index + 1, lockTo);
         }
+
+        public override string ToString()
+        {
+            var lockedToInfo = LockedTo.IsSome
+                ? $"Locked to: {LockedTo.Value}"
+                : "(Unlocked)";
+
+            return $"Index {Index}; {lockedToInfo}";
+        }
     }
 }

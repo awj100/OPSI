@@ -17,7 +17,7 @@ public class ErrorStorageService : IErrorStorageService
     {
         var errorTableEntity = new ErrorTableEntity(error);
 
-        await _tableService.StoreTableEntityAsync(errorTableEntity);
+        await _tableService.StoreTableEntitiesAsync(errorTableEntity);
 
         string? parentRowKey = errorTableEntity.RowKey;
         Error? innerError = error.InnerError;
@@ -26,7 +26,7 @@ public class ErrorStorageService : IErrorStorageService
         {
             var innerErrorTableEntity = new ErrorTableEntity(innerError) { ParentRowKey = parentRowKey };
 
-            await _tableService.StoreTableEntityAsync(innerErrorTableEntity);
+            await _tableService.StoreTableEntitiesAsync(innerErrorTableEntity);
 
             innerError = innerError.InnerError;
             parentRowKey = innerErrorTableEntity.RowKey;

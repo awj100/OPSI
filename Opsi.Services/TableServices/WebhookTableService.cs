@@ -42,11 +42,11 @@ public class WebhookTableService : IWebhookTableService
 
         if (internalWebhookMessage.FailureCount > 1)
         {
-            await _tableService.UpdateTableEntityAsync(tableEntity);
+            await _tableService.UpdateTableEntitiesAsync(tableEntity);
         }
         else
         {
-            await _tableService.StoreTableEntityAsync(tableEntity);
+            await _tableService.StoreTableEntitiesAsync(tableEntity);
         }
     }
 }

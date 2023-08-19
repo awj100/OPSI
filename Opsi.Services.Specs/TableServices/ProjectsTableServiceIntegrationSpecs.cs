@@ -1,10 +1,11 @@
 ﻿using FakeItEasy;
 using FluentAssertions;
 using Opsi.AzureStorage;
+using Opsi.AzureStorage.RowKeys;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
-using Opsi.Constants;
 using Opsi.Pocos;
+using Opsi.Services.RowKeys;
 using Opsi.Services.TableServices;
 
 namespace Opsi.Services.Specs.TableServices;
@@ -22,6 +23,7 @@ public class ProjectsTableServiceIntegrationSpecs
     private List<Project> _projects;
     private string _projectState;
     private List<ProjectTableEntity> _projectTableEntities;
+    private IProjectRowKeyPolicies _rowKeyPolicies;
     private ISettingsProvider _settingsProvider;
     private ITableService _tableService;
     private ITableServiceFactory _tableServiceFactory;
@@ -39,6 +41,8 @@ public class ProjectsTableServiceIntegrationSpecs
     {
         _projectState = $"TEST-{Guid.NewGuid()}";
 
+        _rowKeyPolicies = new ProjectRowKeyPolicies();
+
         _settingsProvider = A.Fake<ISettingsProvider>();
         A.CallTo(() => _settingsProvider.GetValue(A<string>.That.Matches(s => s.Equals(StorageConnectionStringName)),
                                                   A<bool>._,
@@ -49,12 +53,12 @@ public class ProjectsTableServiceIntegrationSpecs
 
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
 
-        _testee = new ProjectsTableService(_tableServiceFactory);
+        _testee = new ProjectsTableService(_rowKeyPolicies, _tableServiceFactory);
 
         _projects = GenerateProjects().Take(ProjectCount).ToList();
-        _projectTableEntities = _projects.Select(ProjectTableEntity.FromProject).ToList();
+        _projectTableEntities = _projects.Select(project => ProjectTableEntity.FromProject(project, $"rowKey_{project.State}_{project.Id}")).ToList();
 
-        _projectTableEntities.ForEach(async projectTableEntity => await _tableService.StoreTableEntityAsync(projectTableEntity));
+        _projectTableEntities.ForEach(async projectTableEntity => await _tableService.StoreTableEntitiesAsync(projectTableEntity));
 
         // Ensure all entities have been stored.
         await Task.Delay(10000);

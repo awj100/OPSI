@@ -28,35 +28,65 @@ internal class TableService : StorageServiceBase, ITableService
         return tableServiceClient.GetTableClient(TableName);
     }
 
-    public async Task StoreTableEntityAsync(ITableEntity tableEntity)
+    public async Task<IReadOnlyList<Response>> StoreTableEntitiesAsync(IEnumerable<ITableEntity> tableEntities)
     {
+        return await StoreTableEntitiesAsync(tableEntities.ToArray());
+    }
+
+    public async Task<IReadOnlyList<Response>> StoreTableEntitiesAsync(params ITableEntity[] tableEntities)
+    {
+        if (!tableEntities.Any())
+        {
+            return Enumerable.Empty<Response>().ToList();
+        }
+
         var tableClient = GetTableClient();
 
         try
         {
-            await tableClient.AddEntityAsync(tableEntity);
+            var batch = tableEntities.Select(entity => new TableTransactionAction(TableTransactionActionType.UpsertReplace, entity))
+                                     .ToList();
+
+            var batchResult = await tableClient.SubmitTransactionAsync(batch);
+
+            return batchResult.Value;
         }
         catch (RequestFailedException exception) when (exception.Status == 409)
         {
-            await UpdateTableEntityAsync(tableEntity);
+            return await UpdateTableEntitiesAsync(tableEntities);
         }
         catch (Exception exception)
         {
-            throw new Exception($"Unable to store {tableEntity.GetType().Name}: {exception.Message}");
+            throw new Exception($"Unable to store {tableEntities.First().GetType().Name}: {exception.Message}");
         }
     }
 
-    public async Task UpdateTableEntityAsync(ITableEntity tableEntity)
+    public async Task<IReadOnlyList<Response>> UpdateTableEntitiesAsync(IEnumerable<ITableEntity> tableEntities)
     {
+        return await UpdateTableEntitiesAsync(tableEntities.ToArray());
+    }
+
+    public async Task<IReadOnlyList<Response>> UpdateTableEntitiesAsync(params ITableEntity[] tableEntities)
+    {
+        if (!tableEntities.Any())
+        {
+            return Enumerable.Empty<Response>().ToList();
+        }
+
         var tableClient = GetTableClient();
 
         try
         {
-            await tableClient.UpdateEntityAsync(tableEntity, ETag.All, TableUpdateMode.Replace);
+            var batch = tableEntities.Select(entity => new TableTransactionAction(TableTransactionActionType.UpdateMerge, entity))
+                                     .ToList();
+
+            var batchResult = await tableClient.SubmitTransactionAsync(batch);
+
+            return batchResult.Value;
         }
         catch (Exception exception)
         {
-            throw new Exception($"Unable to update {tableEntity.GetType().Name}: {exception.Message}");
+            throw new Exception($"Unable to update {tableEntities.First().GetType().Name}: {exception.Message}");
         }
     }
 }

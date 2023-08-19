@@ -63,7 +63,7 @@ internal class ResourceService : IResourceService
     {
         try
         {
-            return await _resourcesService.GetCurrentVersionInfo(resourceStorageInfo.ProjectId, resourceStorageInfo.FullPath.Value);
+            return await _resourcesService.GetCurrentVersionInfo(resourceStorageInfo.ProjectId, resourceStorageInfo.RestOfPath);
         }
         catch (Exception ex)
         {

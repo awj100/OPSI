@@ -60,7 +60,7 @@ public class ProjectTableEntitySpecs
     [TestMethod]
     public void FromProject_WhenWebhookSpecificationsIsNull_ReturnsObjectWithExpectedPropertyValues()
     {
-        var projectTableEntity = ProjectTableEntity.FromProject(_project);
+        var projectTableEntity = ProjectTableEntity.FromProject(_project, $"rowKey_{_project.State}_{_project.Id}");
 
         projectTableEntity.Id.Should().Be(_project.Id);
         projectTableEntity.Name.Should().Be(_project.Name);
@@ -75,7 +75,7 @@ public class ProjectTableEntitySpecs
     public void FromProject_WhenWebhookSpecificationsIsNotNull_ReturnsObjectWithExpectedPropertyValues()
     {
         _project.WebhookSpecification = _webhoookSpec;
-        var projectTableEntity = ProjectTableEntity.FromProject(_project);
+        var projectTableEntity = ProjectTableEntity.FromProject(_project, $"rowKey_{_project.State}_{_project.Id}");
 
         projectTableEntity.Id.Should().Be(_project.Id);
         projectTableEntity.Name.Should().Be(_project.Name);

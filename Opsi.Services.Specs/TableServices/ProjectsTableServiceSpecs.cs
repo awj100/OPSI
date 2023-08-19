@@ -3,6 +3,7 @@ using Azure.Data.Tables;
 using FakeItEasy;
 using FluentAssertions;
 using Opsi.AzureStorage;
+using Opsi.AzureStorage.RowKeys;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Constants;
 using Opsi.Pocos;
@@ -23,6 +24,8 @@ public class ProjectsTableServiceSpecs
     private ProjectTableEntity _projectTableEntity1;
     private ProjectTableEntity _projectTableEntity2;
     private string _returnableState = ProjectStates.InProgress;
+    private IProjectRowKeyPolicies _rowKeyPolicies;
+    private IReadOnlyCollection<string> _rowKeys;
     private TableClient _tableClient;
     private ITableService _tableService;
     private ITableServiceFactory _tableServiceFactory;
@@ -34,17 +37,20 @@ public class ProjectsTableServiceSpecs
     {
         _project1Id = Guid.NewGuid();
         _project2Id = Guid.NewGuid();
-        _projectTableEntity1 = new ProjectTableEntity { Id = _project1Id, Name = Name, State = _returnableState, Username = Username };
-        _projectTableEntity2 = new ProjectTableEntity { Id = _project2Id, Name = Name, State = _returnableState, Username = Username };
+        _projectTableEntity1 = new ProjectTableEntity { Id = _project1Id, Name = Name, RowKey = Guid.NewGuid().ToString(), State = _returnableState, Username = Username };
+        _projectTableEntity2 = new ProjectTableEntity { Id = _project2Id, Name = Name, RowKey = Guid.NewGuid().ToString(), State = _returnableState, Username = Username };
         _project = _projectTableEntity1.ToProject();
+        _rowKeyPolicies = A.Fake<IProjectRowKeyPolicies>();
+        _rowKeys = new List<string> { "row_key_1", "row_key_2" };
         _tableClient = A.Fake<TableClient>();
         _tableService = A.Fake<ITableService>();
         _tableServiceFactory = A.Fake<ITableServiceFactory>();
 
+        A.CallTo(() => _rowKeyPolicies.GetRowKeysForCreate(A<Project>._)).Returns(_rowKeys);
         A.CallTo(() => _tableService.GetTableClient()).Returns(_tableClient);
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
 
-        _testee = new ProjectsTableService(_tableServiceFactory);
+        _testee = new ProjectsTableService(_rowKeyPolicies, _tableServiceFactory);
     }
 
     [TestMethod]
@@ -109,11 +115,24 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task StoreProjectAsync_PassesProjectToTableService()
+    public async Task StoreProjectAsync_PassesProjectEntitiesWithSameIdToTableService()
     {
         await _testee.StoreProjectAsync(_project);
 
-        A.CallTo(() => _tableService.StoreTableEntityAsync(A<ProjectTableEntity>.That.Matches(pte => pte.Id.Equals(_project.Id)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IReadOnlyCollection<ProjectTableEntity>>.That.Matches(entities => entities.Select(entity => entity.Id)
+                                                                                                                                         .Distinct()
+                                                                                                                                         .Single()
+                                                                                                                                         .Equals(_project.Id)))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_PassesRowKeyQuantityProjectsToTableService()
+    {
+        var expectedSavedEntityCount = _rowKeys.Count;
+
+        await _testee.StoreProjectAsync(_project);
+
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IReadOnlyCollection<ProjectTableEntity>>.That.Matches(entities => entities.Count == expectedSavedEntityCount))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -132,7 +151,7 @@ public class ProjectsTableServiceSpecs
 
         await _testee.UpdateProjectAsync(_project);
 
-        A.CallTo(() => _tableService.UpdateTableEntityAsync(A<ITableEntity>.That.Matches(tableEntity => tableEntity.PartitionKey.Equals(_projectTableEntity1.PartitionKey)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _tableService.UpdateTableEntitiesAsync(A<ITableEntity>.That.Matches(tableEntity => tableEntity.PartitionKey.Equals(_projectTableEntity1.PartitionKey)))).MustHaveHappenedOnceExactly();
         }
 
     [TestMethod]
@@ -151,7 +170,7 @@ public class ProjectsTableServiceSpecs
 
         await _testee.UpdateProjectAsync(_project);
 
-        A.CallTo(() => _tableService.UpdateTableEntityAsync(A<ITableEntity>.That.Matches(tableEntity => tableEntity.RowKey.Equals(_projectTableEntity1.RowKey)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _tableService.UpdateTableEntitiesAsync(A<ITableEntity>.That.Matches(tableEntity => tableEntity.RowKey.Equals(_projectTableEntity1.RowKey)))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -170,7 +189,7 @@ public class ProjectsTableServiceSpecs
 
         await _testee.UpdateProjectAsync(_project);
 
-        A.CallTo(() => _tableService.UpdateTableEntityAsync(A<ProjectTableEntity>.That.Matches(tableEntity => tableEntity.Id.Equals(_project.Id)
+        A.CallTo(() => _tableService.UpdateTableEntitiesAsync(A<ProjectTableEntity>.That.Matches(tableEntity => tableEntity.Id.Equals(_project.Id)
                                                                                                               && tableEntity.Name.Equals(_project.Name)
                                                                                                               && tableEntity.State.Equals(_project.State)
                                                                                                               && tableEntity.Username.Equals(_project.Username)))).MustHaveHappenedOnceExactly();

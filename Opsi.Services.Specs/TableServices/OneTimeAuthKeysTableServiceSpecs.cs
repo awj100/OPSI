@@ -90,6 +90,6 @@ public class OneTimeAuthKeysTableServiceSpecs
     {
         await _testee.StoreKeyAsync(_entity);
 
-        A.CallTo(() => _tableService.StoreTableEntityAsync(_entity)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(_entity)).MustHaveHappenedOnceExactly();
     }
 }

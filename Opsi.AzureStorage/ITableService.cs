@@ -1,4 +1,5 @@
-﻿using Azure.Data.Tables;
+﻿using Azure;
+using Azure.Data.Tables;
 
 namespace Opsi.AzureStorage;
 
@@ -8,7 +9,11 @@ public interface ITableService
 
     TableClient GetTableClient();
 
-    Task StoreTableEntityAsync(ITableEntity tableEntity);
+    Task<IReadOnlyList<Response>> StoreTableEntitiesAsync(IEnumerable<ITableEntity> tableEntities);
 
-    Task UpdateTableEntityAsync(ITableEntity tableEntity);
+    Task<IReadOnlyList<Response>> StoreTableEntitiesAsync(params ITableEntity[] tableEntities);
+
+    Task<IReadOnlyList<Response>> UpdateTableEntitiesAsync(IEnumerable<ITableEntity> tableEntities);
+
+    Task<IReadOnlyList<Response>> UpdateTableEntitiesAsync(params ITableEntity[] tableEntities);
 }

@@ -101,7 +101,7 @@ public class WebhookTableServiceSpecs
 
         await _testee.StoreAsync(internalWebhookMessage);
 
-        A.CallTo(() => _tableService.StoreTableEntityAsync(A<InternalWebhookMessageTableEntity>.That.Matches(entity => entity.Id.Equals(internalWebhookMessage.Id)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<InternalWebhookMessageTableEntity>.That.Matches(entity => entity.Id.Equals(internalWebhookMessage.Id)))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -112,7 +112,7 @@ public class WebhookTableServiceSpecs
 
         await _testee.StoreAsync(internalWebhookMessage);
 
-        A.CallTo(() => _tableService.UpdateTableEntityAsync(A<InternalWebhookMessageTableEntity>.That.Matches(entity => entity.Id.Equals(internalWebhookMessage.Id)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _tableService.UpdateTableEntitiesAsync(A<InternalWebhookMessageTableEntity>.That.Matches(entity => entity.Id.Equals(internalWebhookMessage.Id)))).MustHaveHappenedOnceExactly();
     }
 
     private IEnumerable<InternalWebhookMessage> GetInternalWebhookMessages()

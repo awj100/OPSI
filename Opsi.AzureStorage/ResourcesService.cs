@@ -1,4 +1,5 @@
 ﻿using Azure.Data.Tables;
+using Opsi.AzureStorage.RowKeys;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.AzureStorage.Types;
 using Opsi.Common.Exceptions;
@@ -9,10 +10,12 @@ internal class ResourcesService : IResourcesService
 {
     private const int StringComparisonMatch = 0;
     private const string TableName = "resources";
+    private readonly IResourceRowKeyPolicies _rowKeyPolicies;
     private readonly ITableService _tableService;
 
-    public ResourcesService(ITableServiceFactory tableServiceFactory)
+    public ResourcesService(IResourceRowKeyPolicies rowKeyPolicies, ITableServiceFactory tableServiceFactory)
     {
+        _rowKeyPolicies = rowKeyPolicies;
         _tableService = tableServiceFactory.Create(TableName);
     }
 
@@ -33,23 +36,28 @@ internal class ResourcesService : IResourcesService
 
     public async Task<VersionInfo> GetCurrentVersionInfo(Guid projectId, string fullName)
     {
-        var key = projectId.ToString();
-        var resources = new List<ResourceTableEntity>();
+        var partitionKey = $"project_{projectId}";
+        var rowKeyPrefix = _rowKeyPolicies.GetRowKeyPrefixForCount(projectId, fullName);
         var tableClient = _tableService.GetTableClient();
 
-        var pageableResources = tableClient.QueryAsync<ResourceTableEntity>(resource => resource.PartitionKey == projectId.ToString()
-                                                                             && String.Compare(resource.FullName, fullName, StringComparison.OrdinalIgnoreCase) == StringComparisonMatch);
+        var queryResults = tableClient.QueryAsync<ResourceTableEntity>($"PartitionKey eq '{partitionKey}' and RowKey ge '{rowKeyPrefix}'",
+            select: new[]
+            {
+                nameof(ResourceTableEntity.VersionIndex),
+                nameof(ResourceTableEntity.LockedTo)
+            });
 
-        await foreach (var resource in pageableResources)
+        var versionInfos = new List<VersionInfo>();
+
+        await foreach (var queryResult in queryResults)
         {
-            resources.Add(resource);
+            versionInfos.Add(new VersionInfo(queryResult.VersionIndex, queryResult.LockedTo));
         }
 
-        var latestVersion = resources.OrderByDescending(resource => resource.VersionIndex).FirstOrDefault();
+        var latestVersionInfo = versionInfos.OrderBy(versionInfo => versionInfo.Index).LastOrDefault();
+        var lockedTo = latestVersionInfo.LockedTo.IsSome ? latestVersionInfo.LockedTo.Value : null;
 
-        return latestVersion != null
-            ? new VersionInfo(latestVersion.VersionIndex, latestVersion.LockedTo)
-            : new VersionInfo(0);
+        return new VersionInfo(latestVersionInfo.Index, lockedTo);
     }
 
     public async Task LockResourceToUser(Guid projectId, string fullName, string username)
@@ -91,17 +99,28 @@ internal class ResourcesService : IResourcesService
 
     public async Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo)
     {
-        var resource = new ResourceTableEntity
-        {
-            FullName = resourceStorageInfo.RestOfPath,
-            LockedTo = resourceStorageInfo.VersionInfo.LockedTo.IsSome ? resourceStorageInfo.VersionInfo.LockedTo.Value : null,
-            ProjectId = resourceStorageInfo.ProjectId,
-            Username = resourceStorageInfo.Username,
-            VersionId = resourceStorageInfo.VersionId,
-            VersionIndex = resourceStorageInfo.VersionInfo.Index
-        };
+        var rowKeys = resourceStorageInfo.VersionInfo.Index == 1
+            ? _rowKeyPolicies.GetRowKeysForCreate(resourceStorageInfo.ProjectId,
+                                                  resourceStorageInfo.RestOfPath,
+                                                  resourceStorageInfo.VersionInfo.Index)
+            : _rowKeyPolicies.GetRowKeysForNewVersion(resourceStorageInfo.ProjectId,
+                                                      resourceStorageInfo.RestOfPath,
+                                                      resourceStorageInfo.VersionInfo.Index);
 
-        await _tableService.StoreTableEntityAsync(resource);
+        var resources = rowKeys
+            .Select(rowKey => new ResourceTableEntity
+            {
+                FullName = resourceStorageInfo.RestOfPath,
+                LockedTo = resourceStorageInfo.VersionInfo.LockedTo.IsSome ? resourceStorageInfo.VersionInfo.LockedTo.Value : null,
+                ProjectId = resourceStorageInfo.ProjectId,
+                RowKey = rowKey,
+                Username = resourceStorageInfo.Username,
+                VersionId = resourceStorageInfo.VersionId,
+                VersionIndex = resourceStorageInfo.VersionInfo.Index
+            })
+            .ToList();
+
+        await _tableService.StoreTableEntitiesAsync(resources);
     }
 
     public async Task UnlockResource(Guid projectId, string fullName)

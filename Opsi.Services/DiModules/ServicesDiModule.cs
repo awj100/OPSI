@@ -2,7 +2,7 @@
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
-using Opsi.AzureStorage.TableEntities;
+using Opsi.AzureStorage.RowKeys;
 using Opsi.Constants;
 using Opsi.Services.Auth.OneTimeAuth;
 using Opsi.Services.QueueHandlers.Dependencies;
@@ -28,6 +28,8 @@ public static class ServicesDiModule
             .AddSingleton<Auth.IAuthService, Auth.AuthService>()
             .AddSingleton(typeof(Auth.OneTimeKeyAuthHandler))
             .AddSingleton(typeof(Auth.ReferenceAuthHandler))
+            .AddSingleton<IProjectRowKeyPolicies, RowKeys.ProjectRowKeyPolicies>()
+            .AddSingleton<IResourceRowKeyPolicies, RowKeys.ResourceRowKeyPolicies>()
             .AddSingleton<IManifestService, ManifestService>()
             .AddSingleton<IOneTimeAuthService, OneTimeAuthService>()
             .AddSingleton<IOneTimeAuthKeyProvider, OneTimeAuthKeyProvider>()

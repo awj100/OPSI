@@ -6,6 +6,8 @@ public class Resource
 
     public string? LockedTo { get; set; } = default;
 
+    public Guid ProjectId { get; set; }
+
     public string? Username { get; set; } = default!;
 
     public string? VersionId { get; set; }

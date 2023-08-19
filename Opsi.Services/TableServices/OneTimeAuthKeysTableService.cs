@@ -44,6 +44,6 @@ internal class OneTimeAuthKeysTableService : IOneTimeAuthKeysTableService
 
     public async Task StoreKeyAsync(OneTimeAuthKeyEntity oneTimeAuthKeyEntity)
     {
-        await _tableService.StoreTableEntityAsync(oneTimeAuthKeyEntity);
+        await _tableService.StoreTableEntitiesAsync(oneTimeAuthKeyEntity);
     }
 }
