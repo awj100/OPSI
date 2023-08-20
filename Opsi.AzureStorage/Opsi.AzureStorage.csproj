@@ -23,12 +23,12 @@
     <None Remove="TableEntities\" />
     <None Remove="Types\" />
     <None Remove="DiModules\" />
-    <None Remove="RowKeys\" />
+    <None Remove="KeyPolicies\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="TableEntities\" />
     <Folder Include="Types\" />
     <Folder Include="DiModules\" />
-    <Folder Include="RowKeys\" />
+    <Folder Include="KeyPolicies\" />
   </ItemGroup>
 </Project>

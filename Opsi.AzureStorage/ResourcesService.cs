@@ -1,5 +1,5 @@
 ﻿using Azure.Data.Tables;
-using Opsi.AzureStorage.RowKeys;
+using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.AzureStorage.Types;
 using Opsi.Common.Exceptions;

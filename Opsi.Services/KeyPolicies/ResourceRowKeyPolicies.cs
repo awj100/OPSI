@@ -1,8 +1,8 @@
 ﻿using System.Text;
 using System.Web;
-using Opsi.AzureStorage.RowKeys;
+using Opsi.AzureStorage.KeyPolicies;
 
-namespace Opsi.Services.RowKeys;
+namespace Opsi.Services.KeyPolicies;
 
 public class ResourceRowKeyPolicies : IResourceRowKeyPolicies
 {

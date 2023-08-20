@@ -3,7 +3,7 @@ using Azure.Data.Tables;
 using FakeItEasy;
 using FluentAssertions;
 using Opsi.AzureStorage;
-using Opsi.AzureStorage.RowKeys;
+using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Constants;
 using Opsi.Pocos;

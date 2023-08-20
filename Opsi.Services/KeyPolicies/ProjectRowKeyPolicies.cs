@@ -1,7 +1,7 @@
-﻿using Opsi.AzureStorage.RowKeys;
+﻿using Opsi.AzureStorage.KeyPolicies;
 using Opsi.Pocos;
 
-namespace Opsi.Services.RowKeys;
+namespace Opsi.Services.KeyPolicies;
 
 public class ProjectRowKeyPolicies : IProjectRowKeyPolicies
 {
@@ -16,7 +16,7 @@ public class ProjectRowKeyPolicies : IProjectRowKeyPolicies
 
     private static string GetRowKeyUniquePart(bool forAscendingKey)
     {
-        return String.Format("{0:D19}", forAscendingKey
+        return string.Format("{0:D19}", forAscendingKey
                                             ? DateTime.UtcNow.Ticks
                                             : DateTime.MaxValue.Ticks - DateTime.UtcNow.Ticks);
     }

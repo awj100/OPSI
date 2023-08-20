@@ -1,6 +1,6 @@
 ﻿using Opsi.Pocos;
 
-namespace Opsi.AzureStorage.RowKeys;
+namespace Opsi.AzureStorage.KeyPolicies;
 
 public interface IProjectRowKeyPolicies
 {

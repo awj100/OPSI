@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using Opsi.AzureStorage;
-using Opsi.AzureStorage.RowKeys;
+using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Pocos;

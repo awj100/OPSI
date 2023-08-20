@@ -1,11 +1,11 @@
 ﻿using FakeItEasy;
 using FluentAssertions;
 using Opsi.AzureStorage;
-using Opsi.AzureStorage.RowKeys;
+using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Pocos;
-using Opsi.Services.RowKeys;
+using Opsi.Services.KeyPolicies;
 using Opsi.Services.TableServices;
 
 namespace Opsi.Services.Specs.TableServices;

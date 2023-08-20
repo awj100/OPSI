@@ -1,4 +1,4 @@
-﻿namespace Opsi.AzureStorage.RowKeys;
+﻿namespace Opsi.AzureStorage.KeyPolicies;
 
 public interface IResourceRowKeyPolicies
 {
