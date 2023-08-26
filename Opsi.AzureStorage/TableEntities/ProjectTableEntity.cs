@@ -1,14 +1,28 @@
 ﻿using System.Text.Json;
 using Azure;
 using Azure.Data.Tables;
+using Opsi.AzureStorage.Types.KeyPolicies;
 using Opsi.Pocos;
 
 namespace Opsi.AzureStorage.TableEntities;
 
 public class ProjectTableEntity : ProjectBase, ITableEntity
 {
-    private const string PartitionKeyFormatter = "project_{0}";
-    private string? _partitionKey;
+    public string EntityType { get; set; } = typeof(ProjectTableEntity).Name;
+
+    public int EntityVersion { get; set; } = 1;
+
+    public ETag ETag { get; set; } = default!;
+
+    public string PartitionKey { get; set; } = default!;
+
+    public string RowKey { get; set; } = default!;
+
+    public DateTimeOffset? Timestamp { get; set; } = default!;
+
+    public string? WebhookCustomProps { get; set; }
+
+    public string? WebhookUri { get; set; }
 
     public Project ToProject()
     {
@@ -45,37 +59,18 @@ public class ProjectTableEntity : ProjectBase, ITableEntity
         return project;
     }
 
-    public string EntityType { get; set; } = typeof(ProjectTableEntity).Name;
-
-    public int EntityVersion { get; set; } = 1;
-
-    public ETag ETag { get; set; } = default!;
-
-    public string PartitionKey
-    {
-        get => _partitionKey ??= String.Format(PartitionKeyFormatter, Id);
-        set => _partitionKey = value;
-    }
-
-    public string RowKey { get; set; } = default!;
-
-    public DateTimeOffset? Timestamp { get; set; } = default!;
-
-    public string? WebhookCustomProps { get; set; }
-
-    public string? WebhookUri { get; set; }
-
     public override string ToString()
     {
         return $"{Name} ({Id})";
     }
 
-    public static ProjectTableEntity FromProject(Project project, string rowKey)
+    public static ProjectTableEntity FromProject(Project project, string partitionKey, string rowKey)
     {
         var projectTableEntity = new ProjectTableEntity
         {
             Id = project.Id,
             Name = project.Name,
+            PartitionKey = partitionKey,
             RowKey = rowKey,
             State = project.State,
             Username = project.Username,
@@ -97,8 +92,10 @@ public class ProjectTableEntity : ProjectBase, ITableEntity
         return projectTableEntity;
     }
 
-    public static IReadOnlyCollection<ProjectTableEntity> FromProject(Project project, Func<Project, IReadOnlyCollection<string>> projectRowKeyResolvers)
+    public static IReadOnlyCollection<ProjectTableEntity> FromProject(Project project, Func<Project, IReadOnlyCollection<KeyPolicy>> keyPolicyResolvers)
     {
-        return projectRowKeyResolvers(project).Select(rowKey => FromProject(project, rowKey)).ToList();
+        return keyPolicyResolvers(project).Select(keyPolicy => FromProject(project,
+                                                                           keyPolicy.PartitionKey,
+                                                                           keyPolicy.RowKey.Value)).ToList();
     }
 }

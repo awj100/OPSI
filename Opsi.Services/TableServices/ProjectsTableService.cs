@@ -11,12 +11,16 @@ internal class ProjectsTableService : IProjectsTableService
 {
     private const string TableName = "resources";
     private readonly ITableService _projectsTableService;
-    private readonly IProjectRowKeyPolicies _rowKeyPolicies;
+    private readonly IProjectKeyPolicies _keyPolicies;
+    private readonly IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
 
-    public ProjectsTableService(IProjectRowKeyPolicies rowKeyPolicies, ITableServiceFactory tableServiceFactory)
+    public ProjectsTableService(IProjectKeyPolicies keyPolicies,
+                                ITableServiceFactory tableServiceFactory,
+                                IKeyPolicyFilterGeneration keyPolicyFilterGeneration)
     {
         _projectsTableService = tableServiceFactory.Create(TableName);
-        _rowKeyPolicies = rowKeyPolicies;
+        _keyPolicies = keyPolicies;
+        _keyPolicyFilterGeneration = keyPolicyFilterGeneration;
     }
 
     public async Task<Project?> GetProjectByIdAsync(Guid projectId)
@@ -34,9 +38,13 @@ internal class ProjectsTableService : IProjectsTableService
     public async Task<PageableResponse<Project>> GetProjectsByStateAsync(string projectState, int pageSize, string? continuationToken = null)
     {
         var tableClient = _projectsTableService.GetTableClient();
+        var keyPolicies = _keyPolicies.GetKeyPoliciesForGetByState(projectState);
+        // TODO: Select only the properties on ProjectTableEntity.
+        IEnumerable<string>? selectProps = null;
 
         var pageResult = tableClient.QueryAsync<ProjectTableEntity>($"{nameof(Project.State)} eq '{projectState}'",
                                                                     maxPerPage: pageSize,
+                                                                    select: selectProps,
                                                                     cancellationToken: CancellationToken.None);
 
         if (pageResult == null)
@@ -55,7 +63,7 @@ internal class ProjectsTableService : IProjectsTableService
 
     public async Task StoreProjectAsync(Project project)
     {
-        var projectTableEntities = ProjectTableEntity.FromProject(project, _rowKeyPolicies.GetRowKeysForCreate);
+        var projectTableEntities = ProjectTableEntity.FromProject(project, _keyPolicies.GetKeyPoliciesForStore);
 
         await _projectsTableService.StoreTableEntitiesAsync(projectTableEntities);
     }
@@ -75,14 +83,18 @@ internal class ProjectsTableService : IProjectsTableService
     private async Task<ProjectTableEntity?> GetProjectTableEntityByIdAsync(Guid projectId)
     {
         const int maxResultsPerPage = 1;
+        // TODO: Select only the properties on ProjectTableEntity.
         IEnumerable<string>? selectProps = null;
+
+        var keyPolicyForGet = _keyPolicies.GetKeyPolicyForGet(projectId);
+        var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
 
         var tableClient = _projectsTableService.GetTableClient();
 
-        var results = tableClient.QueryAsync<ProjectTableEntity>($"{nameof(Project.Id)} eq guid'{projectId}'",
-                                                                 maxResultsPerPage,
-                                                                 selectProps,
-                                                                 CancellationToken.None);
+        var results = tableClient.QueryAsync<ProjectTableEntity>(keyPolicyFilter,
+                                                                 maxPerPage: maxResultsPerPage,
+                                                                 select: selectProps,
+                                                                 cancellationToken: CancellationToken.None);
 
         await foreach (var result in results)
         {

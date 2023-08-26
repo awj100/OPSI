@@ -13,6 +13,7 @@ namespace Opsi.Services.Specs.TableServices;
 //[TestClass]
 public class ProjectsTableServiceIntegrationSpecs
 {
+    private const string PartitionKey = "PARTITION KEY";
     private const int ProjectCount = 2002;
     private const string StorageConnectionStringName = "AzureWebJobsStorage";
     private const string StorageConnectionString = "UseDevelopmentStorage=true";
@@ -20,10 +21,11 @@ public class ProjectsTableServiceIntegrationSpecs
     private const string Username = "user@test.com";
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    private IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
     private List<Project> _projects;
     private string _projectState;
+    private IProjectKeyPolicies _projectKeyPolicies;
     private List<ProjectTableEntity> _projectTableEntities;
-    private IProjectRowKeyPolicies _rowKeyPolicies;
     private ISettingsProvider _settingsProvider;
     private ITableService _tableService;
     private ITableServiceFactory _tableServiceFactory;
@@ -39,10 +41,9 @@ public class ProjectsTableServiceIntegrationSpecs
     [TestInitialize]
     public async Task TestInit()
     {
+        _keyPolicyFilterGeneration = new KeyPolicyFilterGeneration();
         _projectState = $"TEST-{Guid.NewGuid()}";
-
-        _rowKeyPolicies = new ProjectRowKeyPolicies();
-
+        _projectKeyPolicies = new ProjectKeyPolicies();
         _settingsProvider = A.Fake<ISettingsProvider>();
         A.CallTo(() => _settingsProvider.GetValue(A<string>.That.Matches(s => s.Equals(StorageConnectionStringName)),
                                                   A<bool>._,
@@ -53,10 +54,10 @@ public class ProjectsTableServiceIntegrationSpecs
 
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
 
-        _testee = new ProjectsTableService(_rowKeyPolicies, _tableServiceFactory);
+        _testee = new ProjectsTableService(_projectKeyPolicies, _tableServiceFactory, _keyPolicyFilterGeneration);
 
         _projects = GenerateProjects().Take(ProjectCount).ToList();
-        _projectTableEntities = _projects.Select(project => ProjectTableEntity.FromProject(project, $"rowKey_{project.State}_{project.Id}")).ToList();
+        _projectTableEntities = _projects.Select(project => ProjectTableEntity.FromProject(project, PartitionKey, $"rowKey_{project.State}_{project.Id}")).ToList();
 
         _projectTableEntities.ForEach(async projectTableEntity => await _tableService.StoreTableEntitiesAsync(projectTableEntity));
 

@@ -1,25 +1,19 @@
 ﻿using Azure;
 using Azure.Data.Tables;
+using Opsi.AzureStorage.Types.KeyPolicies;
 using Opsi.Pocos;
 
 namespace Opsi.AzureStorage.TableEntities;
 
 public class ResourceTableEntity : Resource, ITableEntity
 {
-    private const string PartitionKeyFormatter = "project_{0}";
-    private string? _partitionKey;
-
     public string EntityType { get; set; } = typeof(ResourceTableEntity).Name;
 
     public int EntityVersion { get; set; } = 1;
 
     public ETag ETag { get; set; } = default!;
 
-    public string PartitionKey
-    {
-        get => _partitionKey ??= String.Format(PartitionKeyFormatter, ProjectId);
-        set => _partitionKey = value;
-    }
+    public string PartitionKey { get; set; } = default!;
 
     public string RowKey { get; set; } = default!;
 
@@ -43,12 +37,13 @@ public class ResourceTableEntity : Resource, ITableEntity
         return $"{FullName} ({VersionIndex})";
     }
 
-    public static ResourceTableEntity FromResource(Resource resource, string rowKey)
+    public static ResourceTableEntity FromResource(Resource resource, string partitionKey, string rowKey)
     {
         return new ResourceTableEntity
         {
             FullName = resource.FullName,
             LockedTo = resource.LockedTo,
+            PartitionKey = partitionKey,
             ProjectId = resource.ProjectId,
             RowKey = rowKey,
             Username = resource.Username,
@@ -57,8 +52,10 @@ public class ResourceTableEntity : Resource, ITableEntity
         };
     }
 
-    public static IReadOnlyCollection<ResourceTableEntity> FromResource(Resource resource, Func<Resource, IReadOnlyCollection<string>> resourceRowKeyResolvers)
+    public static IReadOnlyCollection<ResourceTableEntity> FromResource(Resource resource, Func<Resource, IReadOnlyCollection<KeyPolicy>> keyPolicyResolvers)
     {
-        return resourceRowKeyResolvers(resource).Select(rowKey => FromResource(resource, rowKey)).ToList();
+        return keyPolicyResolvers(resource).Select(keyPolicy => FromResource(resource,
+                                                                             keyPolicy.PartitionKey,
+                                                                             keyPolicy.RowKey.Value)).ToList();
     }
 }

@@ -8,6 +8,7 @@ namespace Opsi.AzureStorage.Specs;
 [TestClass]
 public class ProjectTableEntitySpecs
 {
+    private const string PartitionKey = "PARTITION KEY";
     private const string _name = "TEST PROJECT NAME";
     private const string _state = "TEST STATE";
     private const string _uri = "https://a.test.url";
@@ -60,7 +61,7 @@ public class ProjectTableEntitySpecs
     [TestMethod]
     public void FromProject_WhenWebhookSpecificationsIsNull_ReturnsObjectWithExpectedPropertyValues()
     {
-        var projectTableEntity = ProjectTableEntity.FromProject(_project, $"rowKey_{_project.State}_{_project.Id}");
+        var projectTableEntity = ProjectTableEntity.FromProject(_project, PartitionKey, $"rowKey_{_project.State}_{_project.Id}");
 
         projectTableEntity.Id.Should().Be(_project.Id);
         projectTableEntity.Name.Should().Be(_project.Name);
@@ -75,7 +76,7 @@ public class ProjectTableEntitySpecs
     public void FromProject_WhenWebhookSpecificationsIsNotNull_ReturnsObjectWithExpectedPropertyValues()
     {
         _project.WebhookSpecification = _webhoookSpec;
-        var projectTableEntity = ProjectTableEntity.FromProject(_project, $"rowKey_{_project.State}_{_project.Id}");
+        var projectTableEntity = ProjectTableEntity.FromProject(_project, PartitionKey, $"rowKey_{_project.State}_{_project.Id}");
 
         projectTableEntity.Id.Should().Be(_project.Id);
         projectTableEntity.Name.Should().Be(_project.Name);
