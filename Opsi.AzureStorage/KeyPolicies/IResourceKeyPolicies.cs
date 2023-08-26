@@ -4,11 +4,11 @@ namespace Opsi.AzureStorage.KeyPolicies;
 
 public interface IResourceKeyPolicies
 {
-    KeyPolicy GetKeyPrefixForResourceCount(Guid projectId, string fullName);
+    KeyPolicy GetKeyPolicyForResourceCount(Guid projectId, string fullName);
 
-    IReadOnlyCollection<KeyPolicy> GetKeysForCreate(Guid projectId, string fullName, int versionIndex);
+    IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForNewVersion(Guid projectId, string fullName, int versionIndex);
 
-    IReadOnlyCollection<KeyPolicy> GetKeysForNewVersion(Guid projectId, string fullName, int versionIndex);
+    IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForStore(Guid projectId, string fullName, int versionIndex);
 
-    IReadOnlyCollection<KeyPolicy> GetKeysForUserAssignment(Guid projectId, string fullName, string username);
+    IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForUserAssignment(Guid projectId, string fullName, string username);
 }

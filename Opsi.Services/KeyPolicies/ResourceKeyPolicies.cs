@@ -8,12 +8,21 @@ namespace Opsi.Services.KeyPolicies;
 
 public class ResourceKeyPolicies : IResourceKeyPolicies
 {
-    public KeyPolicy GetKeyPrefixForResourceCount(Guid projectId, string fullName)
+    public KeyPolicy GetKeyPolicyForResourceCount(Guid projectId, string fullName)
     {
-        return new KeyPolicy($"projects_{projectId}", new RowKey(GetRowKeyPrefixForVersioning(projectId, fullName), KeyPolicyQueryOperators.LessThan));
+        return new KeyPolicy($"projects_{projectId}", new RowKey(GetRowKeyPrefixForVersioning(projectId, fullName), KeyPolicyQueryOperators.GreaterThan));
     }
 
-    public IReadOnlyCollection<KeyPolicy> GetKeysForCreate(Guid projectId, string fullName, int versionIndex)
+    public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForNewVersion(Guid projectId, string fullName, int versionIndex)
+    {
+        return new KeyPolicy[]
+        {
+            // This row key is version-specific, and allows determination of the next version.
+            new KeyPolicy($"projects_{projectId}", new RowKey($"{GetRowKeyPrefixForVersioning(projectId, fullName)}{versionIndex}", KeyPolicyQueryOperators.Equal))
+        };
+    }
+
+    public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForStore(Guid projectId, string fullName, int versionIndex)
     {
         var partitionKey = $"projects_{projectId}";
 
@@ -27,16 +36,7 @@ public class ResourceKeyPolicies : IResourceKeyPolicies
         };
     }
 
-    public IReadOnlyCollection<KeyPolicy> GetKeysForNewVersion(Guid projectId, string fullName, int versionIndex)
-    {
-        return new KeyPolicy[]
-        {
-            // This row key is version-specific, and allows determination of the next version.
-            new KeyPolicy($"projects_{projectId}", new RowKey($"{GetRowKeyPrefixForVersioning(projectId, fullName)}{versionIndex}", KeyPolicyQueryOperators.Equal))
-        };
-    }
-
-    public IReadOnlyCollection<KeyPolicy> GetKeysForUserAssignment(Guid projectId, string fullName, string username)
+    public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForUserAssignment(Guid projectId, string fullName, string username)
     {
         var modifiedFulllName = GetNumericallySubstitutedString(fullName);
         var safeFullName = GetFullNameAsRowKey(modifiedFulllName);
@@ -92,6 +92,6 @@ public class ResourceKeyPolicies : IResourceKeyPolicies
         var modifiedFulllName = GetNumericallySubstitutedString(fullName);
         var safeFullName = GetFullNameAsRowKey(modifiedFulllName);
 
-        return $"resourceVersioning_byProject_{projectId}_{safeFullName}_v";
+        return $"versionedResource_byProject_{projectId}_{safeFullName}_v";
     }
 }

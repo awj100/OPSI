@@ -9,10 +9,15 @@ public class ProjectKeyPolicies : IProjectKeyPolicies
 {
     public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForStore(Project project)
     {
-        var keyPolicies = new List<KeyPolicy>();
+        var keyPolicies = new List<KeyPolicy>
+        {
+            GetKeyPolicyForGet(project.Id)
+        };
 
-        keyPolicies.AddRange(GetKeyPoliciesForGetByState(project.State));
-        keyPolicies.Add(GetKeyPolicyForGet(project.Id));
+        foreach (var keyPolicy in GetKeyPoliciesForGetByState(project.State))
+        {
+            keyPolicies.Add(new KeyPolicy(keyPolicy.PartitionKey, new RowKey($"{keyPolicy.RowKey.Value}{project.Id}", KeyPolicyQueryOperators.Equal)));
+        }
 
         return keyPolicies;
     }

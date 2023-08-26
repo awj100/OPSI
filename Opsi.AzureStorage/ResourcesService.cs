@@ -40,7 +40,7 @@ internal class ResourcesService : IResourcesService
 
     public async Task<VersionInfo> GetCurrentVersionInfo(Guid projectId, string fullName)
     {
-        var keyPolicy = _keyPolicies.GetKeyPrefixForResourceCount(projectId, fullName);
+        var keyPolicy = _keyPolicies.GetKeyPolicyForResourceCount(projectId, fullName);
         var tableClient = _tableService.GetTableClient();
         var filter = _keyPolicyFilterGeneration.ToFilter(keyPolicy);
 
@@ -104,10 +104,10 @@ internal class ResourcesService : IResourcesService
     public async Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo)
     {
         var keyPolicies = resourceStorageInfo.VersionInfo.Index == 1
-            ? _keyPolicies.GetKeysForCreate(resourceStorageInfo.ProjectId,
+            ? _keyPolicies.GetKeyPoliciesForStore(resourceStorageInfo.ProjectId,
                                             resourceStorageInfo.RestOfPath,
                                             resourceStorageInfo.VersionInfo.Index)
-            : _keyPolicies.GetKeysForNewVersion(resourceStorageInfo.ProjectId,
+            : _keyPolicies.GetKeyPoliciesForNewVersion(resourceStorageInfo.ProjectId,
                                                 resourceStorageInfo.RestOfPath,
                                                 resourceStorageInfo.VersionInfo.Index);
 
