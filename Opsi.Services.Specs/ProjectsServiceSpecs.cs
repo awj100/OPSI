@@ -3,7 +3,10 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.AzureStorage;
+using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
+using Opsi.AzureStorage.Types;
+using Opsi.AzureStorage.Types.KeyPolicies;
 using Opsi.Common;
 using Opsi.Constants;
 using Opsi.Constants.Webhooks;
@@ -43,6 +46,9 @@ public class ProjectsServiceSpecs
     [TestInitialize]
     public void TestInit()
     {
+        var basicKeyPolicy = new KeyPolicy("TEST PARTITION KEY", new RowKey("TEST ROW KEY", KeyPolicyQueryOperators.Equal));
+        Func<Project, IReadOnlyCollection<KeyPolicy>> basicKeyPolicyResolver = project => new List<KeyPolicy> { basicKeyPolicy };
+
         _webhookCustomProps = new Dictionary<string, object>
         {
             { _webhookCustomProp1Name, _webhookCustomProp1Value },
@@ -74,6 +80,11 @@ public class ProjectsServiceSpecs
 
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(_project.Id)).Returns(Option<Project>.Some(_project));
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Not.Matches(g => g.Equals(_project.Id)))).Returns(nullProject);
+        A.CallTo(() => _projectsTableService.UpdateProjectStateAsync(_project.Id, _state2)).ReturnsLazily(() =>
+        {
+            _project.State = _state2;
+            return Option<ProjectTableEntity>.Some(ProjectTableEntity.FromProject(_project, basicKeyPolicyResolver).First());
+        });
         A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
 
         _testee = new ProjectsService(_projectsTableService,
@@ -371,9 +382,7 @@ public class ProjectsServiceSpecs
     {
         await _testee.UpdateProjectStateAsync(_project.Id, _state2);
 
-        A.CallTo(() => _projectsTableService.UpdateProjectAsync(A<Project>.That.Matches(project => project.Id.Equals(_project.Id)
-                                                                                                   && project.State!.Equals(_state2))))
-            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _projectsTableService.UpdateProjectStateAsync(_project.Id, _state2)).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]

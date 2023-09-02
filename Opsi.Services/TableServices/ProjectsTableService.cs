@@ -81,7 +81,7 @@ internal class ProjectsTableService : IProjectsTableService
 
         foreach (var propInfo in typeof(ProjectBase).GetProperties(BindingFlags.Public| BindingFlags.Instance))
         {
-            propInfo.SetValue(projectTableEntity, propInfo.GetValue(project));
+            propInfo.SetValue(projectTableEntity.Value, propInfo.GetValue(project));
         }
 
         await _projectsTableService.UpdateTableEntitiesAsync(projectTableEntity.Value);

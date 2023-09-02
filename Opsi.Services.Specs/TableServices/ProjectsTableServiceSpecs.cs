@@ -61,7 +61,7 @@ public class ProjectsTableServiceSpecs
         A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(_keyPolicyForGet)).Returns(RowKey1Filter);
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGet(A<Guid>._)).Returns(_keyPolicyForGet);
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForStore(A<Project>._)).Returns(_keyPoliciesForCreate);
-        A.CallTo(() => _tableService.TableClient.Value).Returns(_tableClient);
+        A.CallTo(() => _tableService.TableClient).Returns(new Lazy<TableClient>(() => _tableClient));
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
 
         _testee = new ProjectsTableService(_projectKeyPolicies, _tableServiceFactory, _keyPolicyFilterGeneration);
@@ -81,9 +81,8 @@ public class ProjectsTableServiceSpecs
 
         var result = await _testee.GetProjectByIdAsync(_projectTableEntity1.Id);
 
-        result.Should()
-              .NotBeNull()
-              .And.Match<Project>(m => m.Id.ToString().Equals(_projectTableEntity1.Id.ToString()));
+        result.IsSome.Should().BeTrue();
+        result.Value.Should().Match<Project>(m => m.Id.ToString().Equals(_projectTableEntity1.Id.ToString()));
     }
 
     [TestMethod]
@@ -97,7 +96,7 @@ public class ProjectsTableServiceSpecs
 
         var result = await _testee.GetProjectByIdAsync(_projectTableEntity1.Id);
 
-        result.Should().BeNull();
+        result.IsNone.Should().BeTrue();
     }
 
     [TestMethod]
