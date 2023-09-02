@@ -79,29 +79,6 @@ internal class TableService : StorageServiceBase, ITableService
         await TableClient.Value.SubmitTransactionAsync(transactions);
     }
 
-    public IReadOnlyCollection<BatchedQueryWrapper> GetStoreTableEntitiesBatch(IEnumerable<KeyPolicy> keyPolicies, ITableEntity tableEntity)
-    {
-        if (!keyPolicies.Any())
-        {
-            return new List<BatchedQueryWrapper>(0);
-        }
-
-        if (keyPolicies.Any(keyPolicy => keyPolicy.RowKey.QueryOperator != KeyPolicyQueryOperators.Equal))
-        {
-            throw new InvalidOperationException($"{nameof(KeyPolicy)}.{nameof(KeyPolicy.RowKey)}.{nameof(KeyPolicy.RowKey.QueryOperator)} must be \"{KeyPolicyQueryOperators.Equal}\" when calling {nameof(DeleteTableEntityAsync)}({nameof(KeyPolicy)}).");
-        }
-
-        return keyPolicies.GroupBy(kp => kp.PartitionKey)
-            .Select(partitionKeyGroup => new BatchedQueryWrapper(partitionKeyGroup.Key,
-                                                                keyPolicies.Select(keyPolicy =>
-                                                                {
-                                                                    tableEntity.PartitionKey = keyPolicy.PartitionKey;
-                                                                    tableEntity.RowKey = keyPolicy.RowKey.Value;
-                                                                    return new TableTransactionAction(TableTransactionActionType.Add, tableEntity);
-                                                                }).ToList()))
-            .ToList();
-    }
-
     public async Task<IReadOnlyList<Response>> StoreTableEntitiesAsync(IEnumerable<ITableEntity> tableEntities)
     {
         return await StoreTableEntitiesAsync(tableEntities.ToArray());

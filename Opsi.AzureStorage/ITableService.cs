@@ -1,6 +1,5 @@
 ﻿using Azure;
 using Azure.Data.Tables;
-using Opsi.AzureStorage.Types;
 using Opsi.AzureStorage.Types.KeyPolicies;
 
 namespace Opsi.AzureStorage;
@@ -16,8 +15,6 @@ public interface ITableService
     Task DeleteTableEntityAsync(KeyPolicy keyPolicy);
 
     Task ExecuteQueryBatchAsync(IReadOnlyCollection<TableTransactionAction> transactions);
-
-    IReadOnlyCollection<BatchedQueryWrapper> GetStoreTableEntitiesBatch(IEnumerable<KeyPolicy> keyPolicies, ITableEntity tableEntity);
 
     Task<IReadOnlyList<Response>> StoreTableEntitiesAsync(IEnumerable<ITableEntity> tableEntities);
 
