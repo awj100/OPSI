@@ -11,4 +11,9 @@ public readonly struct KeyPolicy
         PartitionKey = partitionKey;
         RowKey = rowKey;
     }
+
+    public override string ToString()
+    {
+        return $"{PartitionKey} | {RowKey}";
+    }
 }

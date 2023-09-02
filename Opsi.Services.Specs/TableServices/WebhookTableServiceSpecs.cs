@@ -45,7 +45,7 @@ public class WebhookTableServiceSpecs
         _tableService = A.Fake<ITableService>();
         _tableServiceFactory = A.Fake<ITableServiceFactory>();
 
-        A.CallTo(() => _tableService.GetTableClient()).Returns(_tableClient);
+        A.CallTo(() => _tableService.TableClient.Value).Returns(_tableClient);
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
 
         _testee = new WebhookTableService(_tableServiceFactory);

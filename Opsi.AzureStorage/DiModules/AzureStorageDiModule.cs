@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
+using Opsi.AzureStorage.KeyPolicies;
 
 [assembly: InternalsVisibleTo("Opsi.Services.Specs")]
 [assembly: InternalsVisibleTo("Opsi.AzureStorage.Specs")]
@@ -27,8 +28,9 @@ public static class AzureStorageDiModule
             })
             .AddSingleton<Func<string, ITableService>>(provider => tableName =>
             {
+                var keyPolicyFilterGeneration = provider.GetRequiredService<IKeyPolicyFilterGeneration>();
                 var settingsProvider = provider.GetRequiredService<Common.ISettingsProvider>();
-                return new TableService(settingsProvider, tableName);
+                return new TableService(settingsProvider, tableName, keyPolicyFilterGeneration);
             })
             .AddSingleton<IQueueServiceFactory, QueueServiceFactory>()
             .AddSingleton<IResourcesService, ResourcesService>()

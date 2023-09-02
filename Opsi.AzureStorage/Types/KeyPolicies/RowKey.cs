@@ -21,4 +21,9 @@ public readonly struct RowKey
         QueryOperator = queryOperator;
         Value = rowKey;
     }
+
+    public override string ToString()
+    {
+        return $"{Value} | \"{QueryOperator}\"";
+    }
 }

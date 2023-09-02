@@ -5,11 +5,9 @@ namespace Opsi.AzureStorage.KeyPolicies;
 
 public interface IProjectKeyPolicies
 {
+    IReadOnlyCollection<KeyPolicy> GetKeyPoliciesByState(string projectState, Guid? projectId = null);
+
     IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForStore(Project project);
 
     KeyPolicy GetKeyPolicyForGet(Guid projectId);
-
-    IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForGetByState(string projectState);
-
-    IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForStoreByState(string projectState);
 }

@@ -1,31 +1,105 @@
 ﻿using Azure;
 using Azure.Data.Tables;
+using Opsi.AzureStorage.KeyPolicies;
+using Opsi.AzureStorage.TableEntities;
+using Opsi.AzureStorage.Types;
+using Opsi.AzureStorage.Types.KeyPolicies;
 using Opsi.Common;
 
 namespace Opsi.AzureStorage;
 
 internal class TableService : StorageServiceBase, ITableService
 {
+    private readonly IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
+
+    public Lazy<TableClient> TableClient { get; }
+
     public string TableName { get; }
 
-    public TableService(ISettingsProvider settingsProvider, string tableName) : base(settingsProvider)
+    public TableService(ISettingsProvider settingsProvider,
+                        string tableName,
+                        IKeyPolicyFilterGeneration keyPolicyFilterGeneration) : base(settingsProvider)
     {
+        _keyPolicyFilterGeneration = keyPolicyFilterGeneration;
         TableName = tableName;
+
+        TableClient = new Lazy<TableClient>(() =>
+        {
+            var tableServiceClient = new TableServiceClient(StorageConnectionString.Value);
+            return tableServiceClient.GetTableClient(TableName);
+        });
+    }
+
+    public async Task DeleteTableEntitiesAsync(IEnumerable<KeyPolicy> keyPolicies)
+    {
+        // This is based on the maximum number of conditions permitted in a table query filter.
+        // The maximum query conditions is 15 but we will format a string using one common partition key
+        // and up to 14 row keys. Consequently we cannot consider more than 14 row keys, therefore we
+        // cannot permit more than 14 KeyPolicy instances.
+        const int maxKeyPolicies = 14;
+
+        if (!keyPolicies.Any())
+        {
+            return;
+        }
+
+        if (keyPolicies.Any(keyPolicy => keyPolicy.RowKey.QueryOperator != KeyPolicyQueryOperators.Equal))
+        {
+            throw new InvalidOperationException($"{nameof(KeyPolicy)}.{nameof(KeyPolicy.RowKey)}.{nameof(KeyPolicy.RowKey.QueryOperator)} must be \"{KeyPolicyQueryOperators.Equal}\" when calling {nameof(DeleteTableEntityAsync)}({nameof(KeyPolicy)}).");
+        }
+
+        if (keyPolicies.Count() > maxKeyPolicies)
+        {
+            throw new InvalidOperationException($"No more than {maxKeyPolicies} {nameof(KeyPolicy)} instances may be specified.");
+        }
+
+        foreach (var keyPolicy in keyPolicies)
+        {
+            await TableClient.Value.DeleteEntityAsync(keyPolicy.PartitionKey, keyPolicy.RowKey.Value);
+        }
     }
 
     public async Task DeleteTableEntityAsync(string partitionKey, string rowKey)
     {
-        var tableClient = GetTableClient();
-
-        await tableClient.CreateIfNotExistsAsync();
-
-        await tableClient.DeleteEntityAsync(partitionKey, rowKey);
+        await TableClient.Value.DeleteEntityAsync(partitionKey, rowKey);
     }
 
-    public TableClient GetTableClient()
+    public async Task DeleteTableEntityAsync(KeyPolicy keyPolicy)
     {
-        var tableServiceClient = new TableServiceClient(StorageConnectionString.Value);
-        return tableServiceClient.GetTableClient(TableName);
+        if (keyPolicy.RowKey.QueryOperator != KeyPolicyQueryOperators.Equal)
+        {
+            throw new InvalidOperationException($"{nameof(KeyPolicy)}.{nameof(KeyPolicy.RowKey)}.{nameof(KeyPolicy.RowKey.QueryOperator)} must be \"{KeyPolicyQueryOperators.Equal}\" when calling {nameof(DeleteTableEntityAsync)}({nameof(KeyPolicy)}).");
+        }
+
+        await TableClient.Value.DeleteEntityAsync(keyPolicy.PartitionKey, keyPolicy.RowKey.Value);
+    }
+
+    public async Task ExecuteQueryBatchAsync(IReadOnlyCollection<TableTransactionAction> transactions)
+    {
+        await TableClient.Value.SubmitTransactionAsync(transactions);
+    }
+
+    public IReadOnlyCollection<BatchedQueryWrapper> GetStoreTableEntitiesBatch(IEnumerable<KeyPolicy> keyPolicies, ITableEntity tableEntity)
+    {
+        if (!keyPolicies.Any())
+        {
+            return new List<BatchedQueryWrapper>(0);
+        }
+
+        if (keyPolicies.Any(keyPolicy => keyPolicy.RowKey.QueryOperator != KeyPolicyQueryOperators.Equal))
+        {
+            throw new InvalidOperationException($"{nameof(KeyPolicy)}.{nameof(KeyPolicy.RowKey)}.{nameof(KeyPolicy.RowKey.QueryOperator)} must be \"{KeyPolicyQueryOperators.Equal}\" when calling {nameof(DeleteTableEntityAsync)}({nameof(KeyPolicy)}).");
+        }
+
+        return keyPolicies.GroupBy(kp => kp.PartitionKey)
+            .Select(partitionKeyGroup => new BatchedQueryWrapper(partitionKeyGroup.Key,
+                                                                keyPolicies.Select(keyPolicy =>
+                                                                {
+                                                                    tableEntity.PartitionKey = keyPolicy.PartitionKey;
+                                                                    tableEntity.RowKey = keyPolicy.RowKey.Value;
+                                                                    return new TableTransactionAction(TableTransactionActionType.Add, tableEntity);
+                                                                }).ToList()))
+            .ToList();
     }
 
     public async Task<IReadOnlyList<Response>> StoreTableEntitiesAsync(IEnumerable<ITableEntity> tableEntities)
@@ -40,14 +114,12 @@ internal class TableService : StorageServiceBase, ITableService
             return Enumerable.Empty<Response>().ToList();
         }
 
-        var tableClient = GetTableClient();
-
         try
         {
             var batch = tableEntities.Select(entity => new TableTransactionAction(TableTransactionActionType.UpsertReplace, entity))
                                      .ToList();
 
-            var batchResult = await tableClient.SubmitTransactionAsync(batch);
+            var batchResult = await TableClient.Value.SubmitTransactionAsync(batch);
 
             return batchResult.Value;
         }
@@ -73,14 +145,12 @@ internal class TableService : StorageServiceBase, ITableService
             return Enumerable.Empty<Response>().ToList();
         }
 
-        var tableClient = GetTableClient();
-
         try
         {
             var batch = tableEntities.Select(entity => new TableTransactionAction(TableTransactionActionType.UpdateMerge, entity))
                                      .ToList();
 
-            var batchResult = await tableClient.SubmitTransactionAsync(batch);
+            var batchResult = await TableClient.Value.SubmitTransactionAsync(batch);
 
             return batchResult.Value;
         }

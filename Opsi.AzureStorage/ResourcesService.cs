@@ -41,7 +41,7 @@ internal class ResourcesService : IResourcesService
     public async Task<VersionInfo> GetCurrentVersionInfo(Guid projectId, string fullName)
     {
         var keyPolicy = _keyPolicies.GetKeyPolicyForResourceCount(projectId, fullName);
-        var tableClient = _tableService.GetTableClient();
+        var tableClient = _tableService.TableClient.Value;
         var filter = _keyPolicyFilterGeneration.ToFilter(keyPolicy);
 
         var queryResults = tableClient.QueryAsync<ResourceTableEntity>(filter,
@@ -66,7 +66,7 @@ internal class ResourcesService : IResourcesService
 
     public async Task LockResourceToUser(Guid projectId, string fullName, string username)
     {
-        var tableClient = _tableService.GetTableClient();
+        var tableClient = _tableService.TableClient.Value;
 
         var latestResource = await GetResourceForLockOrUnlockAsync(tableClient, projectId, fullName);
 
@@ -90,7 +90,7 @@ internal class ResourcesService : IResourcesService
         var key = projectId.ToString();
         var resources = new List<ResourceTableEntity>();
 
-        var tableClient = _tableService.GetTableClient();
+        var tableClient = _tableService.TableClient.Value;
         var pageableResources = tableClient.QueryAsync<ResourceTableEntity>(x => x.PartitionKey == projectId.ToString());
 
         await foreach (var resource in pageableResources)
@@ -129,7 +129,7 @@ internal class ResourcesService : IResourcesService
 
     public async Task UnlockResource(Guid projectId, string fullName)
     {
-        var tableClient = _tableService.GetTableClient();
+        var tableClient = _tableService.TableClient.Value;
 
         var latestResource = await GetResourceForLockOrUnlockAsync(tableClient, projectId, fullName);
 
@@ -150,7 +150,7 @@ internal class ResourcesService : IResourcesService
 
     public async Task UnlockResourceFromUser(Guid projectId, string fullName, string username)
     {
-        var tableClient = _tableService.GetTableClient();
+        var tableClient = _tableService.TableClient.Value;
 
         var latestResource = await GetResourceForLockOrUnlockAsync(tableClient, projectId, fullName);
 

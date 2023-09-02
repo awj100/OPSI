@@ -64,7 +64,7 @@ public class ProjectsServiceSpecs
             WebhookSpecification = _webhookSpecs
         };
 
-        Project? nullProject = null;
+        Option<Project> nullProject = Option<Project>.None();
 
         _loggerFactory = new NullLoggerFactory();
         _projectsTableService = A.Fake<IProjectsTableService>();
@@ -72,7 +72,7 @@ public class ProjectsServiceSpecs
         _userProvider = A.Fake<IUserProvider>();
         _webhookQueueService = A.Fake<IWebhookQueueService>();
 
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(_project.Id)).Returns(_project);
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(_project.Id)).Returns(Option<Project>.Some(_project));
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Not.Matches(g => g.Equals(_project.Id)))).Returns(nullProject);
         A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
 
@@ -167,7 +167,7 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhook()
     {
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(_project);
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(Option<Project>.Some(_project));
 
         var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
 
@@ -178,7 +178,7 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhookWithExpectedUri()
     {
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(_project);
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(Option<Project>.Some(_project));
 
         var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
 
@@ -188,7 +188,7 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhookWithExpectedCustomProps()
     {
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(_project);
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(Option<Project>.Some(_project));
 
         var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
 
@@ -203,7 +203,7 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetWebhookUriAsync_WhenNoMatchingProjectFound_ReturnsNull()
     {
-        Project? projectQueryResult = null;
+        Option<Project> projectQueryResult = Option<Project>.None();
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(projectQueryResult);
 
         var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
@@ -216,7 +216,7 @@ public class ProjectsServiceSpecs
     {
         var project = new Project { Id = Guid.NewGuid() };
 
-        Project? projectQueryResult = project;
+        Option<Project> projectQueryResult = Option<Project>.Some(project);
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(project.Id)))).Returns(projectQueryResult);
 
         var result = await _testee.GetWebhookSpecificationAsync(project.Id);
@@ -227,7 +227,7 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task IsNewProjectAsync_WhenMatchingProjectFound_ReturnsFalse()
     {
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(_project);
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(Option<Project>.Some(_project));
 
         var result = await _testee.IsNewProjectAsync(_project.Id);
 
@@ -237,7 +237,7 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task IsNewProjectAsync_WhenMatchingProjectFound_ReturnsTrue()
     {
-        Project? projectQueryResult = null;
+        Option<Project> projectQueryResult = Option<Project>.None();
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(projectQueryResult);
 
         var result = await _testee.IsNewProjectAsync(_project.Id);

@@ -17,7 +17,7 @@ internal class OneTimeAuthKeysTableService : IOneTimeAuthKeysTableService
         const int maxResultsPerPage = 1;
         var selectProps = new List<string> { nameof(OneTimeAuthKeyEntity.RowKey) };
 
-        var tableClient = _tableService.GetTableClient();
+        var tableClient = _tableService.TableClient.Value;
 
         var results = tableClient.QueryAsync<OneTimeAuthKeyEntity>($"PartitionKey eq '{username}' and RowKey eq '{key}'",
                                                                    maxResultsPerPage,
@@ -34,7 +34,7 @@ internal class OneTimeAuthKeysTableService : IOneTimeAuthKeysTableService
 
     public async Task DeleteKeyAsync(string partitionKey, string rowKey)
     {
-        var tableClient = _tableService.GetTableClient();
+        var tableClient = _tableService.TableClient.Value;
 
         await tableClient.DeleteEntityAsync(partitionKey,
                                             rowKey,

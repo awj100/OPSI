@@ -49,7 +49,7 @@ public class ProjectsTableServiceIntegrationSpecs
                                                   A<bool>._,
                                                   A<string>._)).Returns(StorageConnectionString);
 
-        _tableService = new TableService(_settingsProvider, TableName);
+        _tableService = new TableService(_settingsProvider, TableName, _keyPolicyFilterGeneration);
         _tableServiceFactory = A.Fake<ITableServiceFactory>();
 
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);

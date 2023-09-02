@@ -61,7 +61,7 @@ public class ProjectsTableServiceSpecs
         A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(_keyPolicyForGet)).Returns(RowKey1Filter);
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGet(A<Guid>._)).Returns(_keyPolicyForGet);
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForStore(A<Project>._)).Returns(_keyPoliciesForCreate);
-        A.CallTo(() => _tableService.GetTableClient()).Returns(_tableClient);
+        A.CallTo(() => _tableService.TableClient.Value).Returns(_tableClient);
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
 
         _testee = new ProjectsTableService(_projectKeyPolicies, _tableServiceFactory, _keyPolicyFilterGeneration);

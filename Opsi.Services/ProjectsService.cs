@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage;
-using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Constants;
 using Opsi.Constants.Webhooks;
@@ -35,7 +34,7 @@ public class ProjectsService : IProjectsService
     public async Task<ProjectWithResources?> GetProjectAsync(Guid projectId)
     {
         var project = await _projectsTableService.GetProjectByIdAsync(projectId);
-        if (project == null)
+        if (project.IsNone)
         {
             _logger.LogWarning($"{nameof(GetProjectAsync)}: Invalid project ID ({projectId}).");
             return null;
@@ -59,7 +58,7 @@ public class ProjectsService : IProjectsService
             return null;
         }
 
-        var projectWithResources = ProjectWithResources.FromProjectBase(project);
+        var projectWithResources = ProjectWithResources.FromProjectBase(project.Value);
 
         projectWithResources.Resources = resourceEntities.Select(resourceEntity => resourceEntity.ToResource()).ToList();
 
@@ -82,19 +81,19 @@ public class ProjectsService : IProjectsService
     {
         var project = await _projectsTableService.GetProjectByIdAsync(projectId);
 
-        if (project == null || String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
+        if (project.IsNone || String.IsNullOrWhiteSpace(project.Value.WebhookSpecification?.Uri))
         {
             return null;
         }
 
-        return project.WebhookSpecification;
+        return project.Value.WebhookSpecification;
     }
 
     public async Task<bool> IsNewProjectAsync(Guid projectId)
     {
         var project = await _projectsTableService.GetProjectByIdAsync(projectId);
 
-        return project == null;
+        return project.IsNone;
     }
 
     public async Task StoreProjectAsync(Project project)
@@ -131,22 +130,14 @@ public class ProjectsService : IProjectsService
 
     public async Task UpdateProjectStateAsync(Guid projectId, string newState)
     {
-        var project = await _projectsTableService.GetProjectByIdAsync(projectId);
-
-        if (project == null)
+        var updatedProjectTableEntity = await _projectsTableService.UpdateProjectStateAsync(projectId, newState);
+        if (updatedProjectTableEntity.IsNone)
         {
+            // Nothing was updated.
             return;
         }
 
-        if (project != null && project.State!.Equals(newState))
-        {
-            return;
-        }
-
-        project!.State = newState;
-
-        await _projectsTableService.UpdateProjectAsync(project);
-
+        var project = updatedProjectTableEntity.Value.ToProject();
         var stateChangeEventText = GetStateChangeEventText(Events.StateChange, newState);
         await QueueWebhookMessageAsync(project.Id,
                                        project.Name!,

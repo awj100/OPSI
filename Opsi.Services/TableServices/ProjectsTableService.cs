@@ -1,7 +1,10 @@
 ﻿using System.Reflection;
+using Azure.Data.Tables;
 using Opsi.AzureStorage;
 using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
+using Opsi.AzureStorage.Types;
+using Opsi.AzureStorage.Types.KeyPolicies;
 using Opsi.Common;
 using Opsi.Pocos;
 
@@ -23,22 +26,22 @@ internal class ProjectsTableService : IProjectsTableService
         _keyPolicyFilterGeneration = keyPolicyFilterGeneration;
     }
 
-    public async Task<Project?> GetProjectByIdAsync(Guid projectId)
+    public async Task<Option<Project>> GetProjectByIdAsync(Guid projectId)
     {
         var projectTableEntity = await GetProjectTableEntityByIdAsync(projectId);
 
-        if (projectTableEntity != null)
+        if (projectTableEntity.IsSome)
         {
-            return projectTableEntity.ToProject();
+            return Option<Project>.Some(projectTableEntity.Value.ToProject());
         }
 
-        return null;
+        return Option<Project>.None();
     }
 
     public async Task<PageableResponse<Project>> GetProjectsByStateAsync(string projectState, int pageSize, string? continuationToken = null)
     {
-        var tableClient = _projectsTableService.GetTableClient();
-        var keyPolicies = _keyPolicies.GetKeyPoliciesForGetByState(projectState);
+        var tableClient = _projectsTableService.TableClient.Value;
+        var keyPolicies = _keyPolicies.GetKeyPoliciesByState(projectState);
         // TODO: Select only the properties on ProjectTableEntity.
         IEnumerable<string>? selectProps = null;
 
@@ -70,17 +73,57 @@ internal class ProjectsTableService : IProjectsTableService
 
     public async Task UpdateProjectAsync(Project project)
     {
-        var projectTableEntity = await GetProjectTableEntityByIdAsync(project.Id) ?? throw new InvalidOperationException($"Cannot update project with ID \"{project.Id}\" - no such project is stored");
+        var projectTableEntity = await GetProjectTableEntityByIdAsync(project.Id);
+
+        if (projectTableEntity.IsNone)
+        {
+            throw new InvalidOperationException($"Cannot update project with ID \"{project.Id}\" - no such project is stored");
+        }
 
         foreach (var propInfo in typeof(ProjectBase).GetProperties(BindingFlags.Public| BindingFlags.Instance))
         {
             propInfo.SetValue(projectTableEntity, propInfo.GetValue(project));
         }
 
-        await _projectsTableService.UpdateTableEntitiesAsync(projectTableEntity);
+        await _projectsTableService.UpdateTableEntitiesAsync(projectTableEntity.Value);
     }
 
-    private async Task<ProjectTableEntity?> GetProjectTableEntityByIdAsync(Guid projectId)
+    public async Task<Option<ProjectTableEntity>> UpdateProjectStateAsync(Guid projectId, string newState)
+    {
+        var projectTableEntity = await GetProjectTableEntityByIdAsync(projectId);
+
+        if (projectTableEntity.IsNone)
+        {
+            throw new ArgumentException($"Cannot update project state: Project with ID \"{projectId}\" could not be found.", nameof(projectId));
+        }
+
+        var previousState = projectTableEntity.Value.State;
+
+        if (previousState.Equals(newState))
+        {
+            return Option<ProjectTableEntity>.None();
+        }
+
+        projectTableEntity.Value.State = newState;
+
+        await _projectsTableService.UpdateTableEntitiesAsync(projectTableEntity.Value);
+
+        var previousKeyPolicies = _keyPolicies.GetKeyPoliciesByState(previousState, projectId);
+        await _projectsTableService.DeleteTableEntitiesAsync(previousKeyPolicies);
+
+        var newKeyPolicies = _keyPolicies.GetKeyPoliciesByState(newState, projectId);
+        foreach (var newKeyPolicy in newKeyPolicies)
+        {
+            projectTableEntity.Value.PartitionKey = newKeyPolicy.PartitionKey;
+            projectTableEntity.Value.RowKey = newKeyPolicy.RowKey.Value;
+
+            await _projectsTableService.StoreTableEntitiesAsync(projectTableEntity.Value);
+        }
+
+        return Option<ProjectTableEntity>.Some(projectTableEntity.Value);
+    }
+
+    private async Task<Option<ProjectTableEntity>> GetProjectTableEntityByIdAsync(Guid projectId)
     {
         const int maxResultsPerPage = 1;
         // TODO: Select only the properties on ProjectTableEntity.
@@ -89,7 +132,7 @@ internal class ProjectsTableService : IProjectsTableService
         var keyPolicyForGet = _keyPolicies.GetKeyPolicyForGet(projectId);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
 
-        var tableClient = _projectsTableService.GetTableClient();
+        var tableClient = _projectsTableService.TableClient.Value;
 
         var results = tableClient.QueryAsync<ProjectTableEntity>(keyPolicyFilter,
                                                                  maxPerPage: maxResultsPerPage,
@@ -98,9 +141,9 @@ internal class ProjectsTableService : IProjectsTableService
 
         await foreach (var result in results)
         {
-            return result;
+            return Option<ProjectTableEntity>.Some(result);
         }
 
-        return null;
+        return Option<ProjectTableEntity>.None();
     }
 }

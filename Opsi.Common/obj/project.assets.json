@@ -1,11 +1,30 @@
 {
   "version": 3,
   "targets": {
-    "net6.0": {}
+    "net6.0": {
+      "Opsi.Constants/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v6.0",
+        "compile": {
+          "bin/placeholder/Opsi.Constants.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Opsi.Constants.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "Opsi.Constants/1.0.0": {
+      "type": "project",
+      "path": "../Opsi.Constants/Opsi.Constants.csproj",
+      "msbuildProject": "../Opsi.Constants/Opsi.Constants.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net6.0": []
+    "net6.0": [
+      "Opsi.Constants >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "/Users/andrew/.nuget/packages/": {}
@@ -31,7 +50,11 @@
       "frameworks": {
         "net6.0": {
           "targetAlias": "net6.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "/Users/andrew/Projects/Opsi/Opsi.Constants/Opsi.Constants.csproj": {
+              "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Constants/Opsi.Constants.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

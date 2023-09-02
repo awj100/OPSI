@@ -7,6 +7,18 @@ namespace Opsi.Services.KeyPolicies;
 
 public class ProjectKeyPolicies : IProjectKeyPolicies
 {
+    public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesByState(string projectState, Guid? projectId = null)
+    {
+        var projectIdAsString = projectId.HasValue ? projectId.ToString() : null;
+        var equalityOperator = projectId.HasValue ? KeyPolicyQueryOperators.Equal : KeyPolicyQueryOperators.GreaterThanOrEqual;
+
+        return new[] {
+            new KeyPolicy($"projects_byState_{projectState}_{KeyOrders.Asc}", new RowKey($"projects_byState_asc_{projectState}_{projectIdAsString}", equalityOperator)),
+
+            new KeyPolicy($"projects_byState_{projectState}_{KeyOrders.Desc}", new RowKey( $"projects_byState_desc_{projectState}_{projectIdAsString}", equalityOperator))
+        };
+    }
+
     public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForStore(Project project)
     {
         var keyPolicies = new List<KeyPolicy>
@@ -14,10 +26,7 @@ public class ProjectKeyPolicies : IProjectKeyPolicies
             GetKeyPolicyForGet(project.Id)
         };
 
-        foreach (var keyPolicy in GetKeyPoliciesForGetByState(project.State))
-        {
-            keyPolicies.Add(new KeyPolicy(keyPolicy.PartitionKey, new RowKey($"{keyPolicy.RowKey.Value}{project.Id}", KeyPolicyQueryOperators.Equal)));
-        }
+        keyPolicies.AddRange(GetKeyPoliciesByState(project.State, project.Id));
 
         return keyPolicies;
     }
@@ -25,37 +34,5 @@ public class ProjectKeyPolicies : IProjectKeyPolicies
     public KeyPolicy GetKeyPolicyForGet(Guid projectId)
     {
         return new KeyPolicy($"projects_byId", new RowKey($"projects_byId_{projectId}", KeyPolicyQueryOperators.Equal));
-    }
-
-    public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForGetByState(string projectState)
-    {
-        return new[] {
-            new KeyPolicy($"projects_byState_{projectState}_{KeyOrders.Asc}", new RowKey($"projects_byState_asc_{projectState}_", KeyPolicyQueryOperators.GreaterThanOrEqual)),
-
-            new KeyPolicy($"projects_byState_{projectState}_{KeyOrders.Desc}", new RowKey( $"projects_byState_desc_{projectState}_", KeyPolicyQueryOperators.LessThanOrEqual))
-        };
-    }
-
-    public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForStoreByState(string projectState)
-    {
-        var getByStatePolicies = GetKeyPoliciesForGetByState(projectState);
-        var storeByStatePolicies = new List<KeyPolicy>(getByStatePolicies.Count);
-
-        foreach (var keyPolicy in getByStatePolicies)
-        {
-            var uniquePart = GetRowKeyUniquePart(forAscendingKey: true);
-            var partitionKey = keyPolicy.PartitionKey;
-
-            storeByStatePolicies.Add(new KeyPolicy(partitionKey, new RowKey($"{keyPolicy.RowKey}{uniquePart}", KeyPolicyQueryOperators.Equal)));
-        }
-
-        return storeByStatePolicies;
-    }
-
-    private static string GetRowKeyUniquePart(bool forAscendingKey)
-    {
-        return string.Format("{0:D19}", forAscendingKey
-                                            ? DateTime.UtcNow.Ticks
-                                            : DateTime.MaxValue.Ticks - DateTime.UtcNow.Ticks);
     }
 }

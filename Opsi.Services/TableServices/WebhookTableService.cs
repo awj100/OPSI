@@ -21,7 +21,7 @@ public class WebhookTableService : IWebhookTableService
         IEnumerable<string>? selectProps = null;
         var results = new List<InternalWebhookMessage>();
 
-        var tableClient = _tableService.GetTableClient();
+        var tableClient = _tableService.TableClient.Value;
 
         var queryResults = tableClient.QueryAsync<InternalWebhookMessageTableEntity>($"{nameof(InternalWebhookMessageTableEntity.IsDelivered)} eq false and {nameof(InternalWebhookMessageTableEntity.FailureCount)} lt {MaxFailureCount}",
                                                                                      maxResultsPerPage,

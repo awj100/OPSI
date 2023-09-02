@@ -1,13 +1,23 @@
 ﻿using Azure;
 using Azure.Data.Tables;
+using Opsi.AzureStorage.Types;
+using Opsi.AzureStorage.Types.KeyPolicies;
 
 namespace Opsi.AzureStorage;
 
 public interface ITableService
 {
+    Lazy<TableClient> TableClient { get; }
+
+    Task DeleteTableEntitiesAsync(IEnumerable<KeyPolicy> keyPolicies);
+
     Task DeleteTableEntityAsync(string partitionKey, string rowKey);
 
-    TableClient GetTableClient();
+    Task DeleteTableEntityAsync(KeyPolicy keyPolicy);
+
+    Task ExecuteQueryBatchAsync(IReadOnlyCollection<TableTransactionAction> transactions);
+
+    IReadOnlyCollection<BatchedQueryWrapper> GetStoreTableEntitiesBatch(IEnumerable<KeyPolicy> keyPolicies, ITableEntity tableEntity);
 
     Task<IReadOnlyList<Response>> StoreTableEntitiesAsync(IEnumerable<ITableEntity> tableEntities);
 

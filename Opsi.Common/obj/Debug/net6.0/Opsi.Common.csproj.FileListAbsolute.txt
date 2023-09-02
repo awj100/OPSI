@@ -10,3 +10,6 @@
 /Users/andrew/Projects/Opsi/Opsi.Common/obj/Debug/net6.0/refint/Opsi.Common.dll
 /Users/andrew/Projects/Opsi/Opsi.Common/obj/Debug/net6.0/Opsi.Common.pdb
 /Users/andrew/Projects/Opsi/Opsi.Common/obj/Debug/net6.0/ref/Opsi.Common.dll
+/Users/andrew/Projects/Opsi/Opsi.Common/bin/Debug/net6.0/Opsi.Constants.dll
+/Users/andrew/Projects/Opsi/Opsi.Common/bin/Debug/net6.0/Opsi.Constants.pdb
+/Users/andrew/Projects/Opsi/Opsi.Common/obj/Debug/net6.0/Opsi.Common.csproj.CopyComplete
