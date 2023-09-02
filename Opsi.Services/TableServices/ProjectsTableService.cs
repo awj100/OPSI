@@ -42,12 +42,11 @@ internal class ProjectsTableService : IProjectsTableService
     {
         var tableClient = _projectsTableService.TableClient.Value;
         var keyPolicies = _keyPolicies.GetKeyPoliciesByState(projectState);
-        // TODO: Select only the properties on ProjectTableEntity.
-        IEnumerable<string>? selectProps = null;
+        var propNamesToSelect = GetPropertyNames<ProjectTableEntity>();
 
         var pageResult = tableClient.QueryAsync<ProjectTableEntity>($"{nameof(Project.State)} eq '{projectState}'",
                                                                     maxPerPage: pageSize,
-                                                                    select: selectProps,
+                                                                    select: propNamesToSelect,
                                                                     cancellationToken: CancellationToken.None);
 
         if (pageResult == null)
@@ -126,8 +125,7 @@ internal class ProjectsTableService : IProjectsTableService
     private async Task<Option<ProjectTableEntity>> GetProjectTableEntityByIdAsync(Guid projectId)
     {
         const int maxResultsPerPage = 1;
-        // TODO: Select only the properties on ProjectTableEntity.
-        IEnumerable<string>? selectProps = null;
+        var propNamesToSelect = GetPropertyNames<ProjectTableEntity>();
 
         var keyPolicyForGet = _keyPolicies.GetKeyPolicyForGet(projectId);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
@@ -136,7 +134,7 @@ internal class ProjectsTableService : IProjectsTableService
 
         var results = tableClient.QueryAsync<ProjectTableEntity>(keyPolicyFilter,
                                                                  maxPerPage: maxResultsPerPage,
-                                                                 select: selectProps,
+                                                                 select: propNamesToSelect,
                                                                  cancellationToken: CancellationToken.None);
 
         await foreach (var result in results)
@@ -145,5 +143,12 @@ internal class ProjectsTableService : IProjectsTableService
         }
 
         return Option<ProjectTableEntity>.None();
+    }
+
+    private static IReadOnlyCollection<string> GetPropertyNames<TType>()
+    {
+        return typeof(TType).GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                            .Select(propInfo => propInfo.Name)
+                            .ToList();
     }
 }
