@@ -1,10 +1,7 @@
 ﻿using System.Reflection;
-using Azure.Data.Tables;
 using Opsi.AzureStorage;
 using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
-using Opsi.AzureStorage.Types;
-using Opsi.AzureStorage.Types.KeyPolicies;
 using Opsi.Common;
 using Opsi.Pocos;
 
@@ -127,7 +124,7 @@ internal class ProjectsTableService : IProjectsTableService
         const int maxResultsPerPage = 1;
         var propNamesToSelect = GetPropertyNames<ProjectTableEntity>();
 
-        var keyPolicyForGet = _keyPolicies.GetKeyPolicyForGet(projectId);
+        var keyPolicyForGet = _keyPolicies.GetKeyPolicyForGetById(projectId);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
 
         var tableClient = _projectsTableService.TableClient.Value;

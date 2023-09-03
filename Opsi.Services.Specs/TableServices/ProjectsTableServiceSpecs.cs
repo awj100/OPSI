@@ -29,6 +29,8 @@ public class ProjectsTableServiceSpecs
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
+    private Func<string, IReadOnlyCollection<KeyPolicy>> _getKeyPoliciesByState;
+    private Func<string, Guid?, IReadOnlyCollection<KeyPolicy>> _getKeyPoliciesByStateAndId;
     private IReadOnlyCollection<KeyPolicy> _keyPoliciesForCreate;
     private KeyPolicy _keyPolicyForGet;
     private Project _project;
@@ -45,6 +47,14 @@ public class ProjectsTableServiceSpecs
     public void TestInit()
     {
         _keyPolicyFilterGeneration = A.Fake<IKeyPolicyFilterGeneration>();
+        _getKeyPoliciesByState = state => new List<KeyPolicy> {
+            new KeyPolicy($"{PartitionKey} {state}", _rowKey1),
+            new KeyPolicy($"{PartitionKey} {state}", _rowKey1)
+        };
+        _getKeyPoliciesByStateAndId = (state, projectId) => new List<KeyPolicy> {
+            new KeyPolicy($"{PartitionKey} {state}", new RowKey($"{_rowKey1.Value} {projectId}", KeyPolicyQueryOperators.Equal)),
+            new KeyPolicy($"{PartitionKey} {state}", new RowKey($"{_rowKey1.Value} {projectId}", KeyPolicyQueryOperators.Equal))
+        };
         _keyPoliciesForCreate = new List<KeyPolicy> {
             new KeyPolicy(PartitionKey, _rowKey1),
             new KeyPolicy(PartitionKey, _rowKey1)
@@ -59,7 +69,9 @@ public class ProjectsTableServiceSpecs
         _tableServiceFactory = A.Fake<ITableServiceFactory>();
 
         A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(_keyPolicyForGet)).Returns(RowKey1Filter);
-        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGet(A<Guid>._)).Returns(_keyPolicyForGet);
+        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesByState(A<string>._, null)).ReturnsLazily((string state) => _getKeyPoliciesByState(state));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesByState(A<string>._, A<Guid?>._)).ReturnsLazily((string state, Guid? projectId) => _getKeyPoliciesByStateAndId(state, projectId));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(A<Guid>._)).Returns(_keyPolicyForGet);
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForStore(A<Project>._)).Returns(_keyPoliciesForCreate);
         A.CallTo(() => _tableService.TableClient).Returns(new Lazy<TableClient>(() => _tableClient));
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
@@ -71,7 +83,7 @@ public class ProjectsTableServiceSpecs
     public async Task GetProjectByIdAsync_WhenMatchingProjectFound_ReturnsProject()
     {
         var pages = GetQueryResponse(_projectTableEntity1);
-        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGet(_projectTableEntity1.Id);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
 
         A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
@@ -139,7 +151,7 @@ public class ProjectsTableServiceSpecs
     public async Task UpdateProjectAsync_PassesProjectWithCorrectPartitionKeyToTableService()
     {
         var pages = GetQueryResponse(_projectTableEntity1);
-        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGet(_projectTableEntity1.Id);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
 
         A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Contains(keyPolicyFilter)),
@@ -156,7 +168,7 @@ public class ProjectsTableServiceSpecs
     public async Task UpdateProjectAsync_PassesProjectWithCorrectRowKeyToTableService()
     {
         var pages = GetQueryResponse(_projectTableEntity1);
-        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGet(_projectTableEntity1.Id);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
 
         A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
@@ -173,7 +185,7 @@ public class ProjectsTableServiceSpecs
     public async Task UpdateProjectAsync_PassesProjectWithCorrespondingProjectBaseProperties()
     {
         var pages = GetQueryResponse(_projectTableEntity1);
-        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGet(_projectTableEntity1.Id);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
 
         A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
@@ -187,6 +199,127 @@ public class ProjectsTableServiceSpecs
                                                                                                               && tableEntity.Name.Equals(_project.Name)
                                                                                                               && tableEntity.State.Equals(_project.State)
                                                                                                               && tableEntity.Username.Equals(_project.Username)))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenProjectIdInvalid_ThrowsArgumentException()
+    {
+        var pages = GetQueryResponse();
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
+        var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
+
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
+                                                                   A<int?>._,
+                                                                   A<IEnumerable<string>>._,
+                                                                   A<CancellationToken>._)).Returns(pages);
+
+        await _testee.Invoking(t => t.UpdateProjectStateAsync(_project1Id, "ANY STATE"))
+                     .Should()
+                     .ThrowAsync<ArgumentException>()
+                     .WithParameterName("projectId");
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenNoChangeInState_ReturnsOptionIsNone()
+    {
+        var pages = GetQueryResponse(_projectTableEntity1);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
+        var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
+
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
+                                                                   A<int?>._,
+                                                                   A<IEnumerable<string>>._,
+                                                                   A<CancellationToken>._)).Returns(pages);
+
+        var result = await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, _projectTableEntity1.State);
+
+        result.IsNone.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_CallsTableServiceWithUpdatedProject()
+    {
+        var newState = _nonReturnableState;
+        var pages = GetQueryResponse(_projectTableEntity1);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
+        var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
+
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
+                                                                   A<int?>._,
+                                                                   A<IEnumerable<string>>._,
+                                                                   A<CancellationToken>._)).Returns(pages);
+
+        await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, newState);
+
+        A.CallTo(() => _tableService.UpdateTableEntitiesAsync(A<ProjectTableEntity>.That.Matches(pte => pte.Id.Equals(_projectTableEntity1.Id) && pte.State.Equals(newState)))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_DeletesPreviousProjectsByStateKeys()
+    {
+        var newState = _nonReturnableState;
+        var deleteKeyPolicies = _getKeyPoliciesByStateAndId(_projectTableEntity1.State, _projectTableEntity1.Id);
+        var pages = GetQueryResponse(_projectTableEntity1);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
+        var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
+
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
+                                                                   A<int?>._,
+                                                                   A<IEnumerable<string>>._,
+                                                                   A<CancellationToken>._)).Returns(pages);
+
+        await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, newState);
+
+        foreach (var deleteKeyPolicy in deleteKeyPolicies)
+        {
+            A.CallTo(() => _tableService.DeleteTableEntitiesAsync(A<IEnumerable<KeyPolicy>>.That.Matches(keyPolicies => keyPolicies.Any(keyPolicy => keyPolicy.PartitionKey.Equals(deleteKeyPolicy.PartitionKey)
+                                                                                                                                                     && keyPolicy.RowKey.Equals(deleteKeyPolicy.RowKey)))))
+             .MustHaveHappenedOnceExactly();
+        }
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_AddsNewProjectsByStateKeys()
+    {
+        var newState = _nonReturnableState;
+        var storeKeyPolicies = _getKeyPoliciesByStateAndId(newState, _projectTableEntity1.Id);
+        var pages = GetQueryResponse(_projectTableEntity1);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
+        var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
+
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
+                                                                   A<int?>._,
+                                                                   A<IEnumerable<string>>._,
+                                                                   A<CancellationToken>._)).Returns(pages);
+
+        await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, newState);
+
+        foreach (var storeKeyPolicy in storeKeyPolicies)
+        {
+            A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<ProjectTableEntity>.That.Matches(projectTableEntity => projectTableEntity.PartitionKey.Equals(storeKeyPolicy.PartitionKey))))
+             .MustHaveHappened();
+
+            A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<ProjectTableEntity>.That.Matches(projectTableEntity => projectTableEntity.RowKey.Equals(storeKeyPolicy.RowKey.Value))))
+             .MustHaveHappened();
+        }
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_ReturnsOptionIsSomeContainingProjectWithUpdatedState()
+    {
+        var newState = _nonReturnableState;
+        var pages = GetQueryResponse(_projectTableEntity1);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
+        var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
+
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
+                                                                   A<int?>._,
+                                                                   A<IEnumerable<string>>._,
+                                                                   A<CancellationToken>._)).Returns(pages);
+
+        var result = await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, newState);
+
+        result.IsSome.Should().BeTrue();
     }
 
     private static AsyncPageable<ProjectTableEntity> GetQueryResponse(params ProjectTableEntity[] projectsResult)
