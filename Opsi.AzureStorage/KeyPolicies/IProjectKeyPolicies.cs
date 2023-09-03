@@ -9,5 +9,5 @@ public interface IProjectKeyPolicies
 
     IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForStore(Project project);
 
-    KeyPolicy GetKeyPolicyForGet(Guid projectId);
+    KeyPolicy GetKeyPolicyForGetById(Guid projectId);
 }

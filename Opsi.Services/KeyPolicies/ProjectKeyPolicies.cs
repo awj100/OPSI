@@ -23,7 +23,7 @@ public class ProjectKeyPolicies : IProjectKeyPolicies
     {
         var keyPolicies = new List<KeyPolicy>
         {
-            GetKeyPolicyForGet(project.Id)
+            GetKeyPolicyForGetById(project.Id)
         };
 
         keyPolicies.AddRange(GetKeyPoliciesByState(project.State, project.Id));
@@ -31,7 +31,7 @@ public class ProjectKeyPolicies : IProjectKeyPolicies
         return keyPolicies;
     }
 
-    public KeyPolicy GetKeyPolicyForGet(Guid projectId)
+    public KeyPolicy GetKeyPolicyForGetById(Guid projectId)
     {
         return new KeyPolicy($"projects_byId", new RowKey($"projects_byId_{projectId}", KeyPolicyQueryOperators.Equal));
     }
