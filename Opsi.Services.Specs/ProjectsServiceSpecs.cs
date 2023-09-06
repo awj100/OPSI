@@ -31,6 +31,7 @@ public class ProjectsServiceSpecs
     private const string _webhookUri = "https://a.test.url";
     private readonly Guid _projectId = Guid.NewGuid();
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    private string _defaultOrderBy = OrderBy.Desc;
     private Project _project;
     private IProjectsTableService _projectsTableService;
     private readonly string _state1 = ProjectStates.InProgress;
@@ -156,9 +157,9 @@ public class ProjectsServiceSpecs
     {
         var pageableResponse = new PageableResponse<Project>(new List<Project> { _project }, _continuationToken);
 
-        A.CallTo(() => _projectsTableService.GetProjectsByStateAsync(_state1, _pageSize, A<string?>._)).Returns(pageableResponse);
+        A.CallTo(() => _projectsTableService.GetProjectsByStateAsync(_state1, _defaultOrderBy, _pageSize, A<string?>._)).Returns(pageableResponse);
 
-        var result = await _testee.GetProjectsAsync(_state1, _pageSize);
+        var result = await _testee.GetProjectsAsync(_state1, _defaultOrderBy, _pageSize);
 
         result.Should().NotBeNull();
         result.Items.Should().NotBeNullOrEmpty();
@@ -169,7 +170,7 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetProjectsAsync_WhenProjectStateIsNoRecognised_ThrowsArgumentException()
     {
-        await _testee.Invoking(t => t.GetProjectsAsync(Guid.NewGuid().ToString(), _pageSize, _continuationToken))
+        await _testee.Invoking(t => t.GetProjectsAsync(Guid.NewGuid().ToString(), _defaultOrderBy, _pageSize, _continuationToken))
                      .Should()
                      .ThrowAsync<ArgumentException>()
                      .WithParameterName("projectState");

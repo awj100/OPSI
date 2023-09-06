@@ -8,7 +8,7 @@ public interface IProjectsTableService
 {
     Task<Option<Project>> GetProjectByIdAsync(Guid projectId);
 
-    Task<PageableResponse<Project>> GetProjectsByStateAsync(string projectState, int pageSize, string? continuationToken = null);
+    Task<PageableResponse<Project>> GetProjectsByStateAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null);
 
     Task StoreProjectAsync(Project project);
 

@@ -4,6 +4,7 @@ using Opsi.AzureStorage;
 using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
+using Opsi.Constants;
 using Opsi.Pocos;
 using Opsi.Services.KeyPolicies;
 using Opsi.Services.TableServices;
@@ -21,6 +22,7 @@ public class ProjectsTableServiceIntegrationSpecs
     private const string Username = "user@test.com";
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    private string _defaultOrderBy = OrderBy.Desc;
     private IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
     private List<Project> _projects;
     private string _projectState;
@@ -77,21 +79,21 @@ public class ProjectsTableServiceIntegrationSpecs
         var expectedFirstName3 = GenerateProjectName(1);
         var expectedLastName3 = GenerateProjectName(0);
 
-        var projectsByState = await _testee.GetProjectsByStateAsync(_projectState, pageSize, null);
+        var projectsByState = await _testee.GetProjectsByStateAsync(_projectState, _defaultOrderBy, pageSize, null);
 
         projectsByState.Items.Count.Should().Be(pageSize);
         projectsByState.ContinuationToken.Should().NotBeNullOrEmpty();
         projectsByState.Items[0].Name.Should().Be(expectedFirstName1);
         projectsByState.Items[projectsByState.Items.Count - 1].Name.Should().Be(expectedLastName1);
 
-        projectsByState = await _testee.GetProjectsByStateAsync(_projectState, pageSize, projectsByState.ContinuationToken);
+        projectsByState = await _testee.GetProjectsByStateAsync(_projectState, _defaultOrderBy, pageSize, projectsByState.ContinuationToken);
 
         projectsByState.Items.Count.Should().Be(pageSize);
         projectsByState.ContinuationToken.Should().NotBeNullOrEmpty();
         projectsByState.Items[0].Name.Should().Be(expectedFirstName2);
         projectsByState.Items[projectsByState.Items.Count - 1].Name.Should().Be(expectedLastName2);
 
-        projectsByState = await _testee.GetProjectsByStateAsync(_projectState, pageSize, projectsByState.ContinuationToken);
+        projectsByState = await _testee.GetProjectsByStateAsync(_projectState, _defaultOrderBy, pageSize, projectsByState.ContinuationToken);
 
         projectsByState.Items.Count.Should().Be(2);
         projectsByState.ContinuationToken.Should().BeNullOrEmpty();

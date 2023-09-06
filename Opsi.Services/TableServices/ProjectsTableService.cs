@@ -35,13 +35,19 @@ internal class ProjectsTableService : IProjectsTableService
         return Option<Project>.None();
     }
 
-    public async Task<PageableResponse<Project>> GetProjectsByStateAsync(string projectState, int pageSize, string? continuationToken = null)
+    public async Task<PageableResponse<Project>> GetProjectsByStateAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null)
     {
         var tableClient = _projectsTableService.TableClient.Value;
         var keyPolicies = _keyPolicies.GetKeyPoliciesByState(projectState);
         var propNamesToSelect = GetPropertyNames<ProjectTableEntity>();
 
-        var pageResult = tableClient.QueryAsync<ProjectTableEntity>($"{nameof(Project.State)} eq '{projectState}'",
+        var keyPolicy = keyPolicies.SingleOrDefault(keyPolicy => keyPolicy.RowKey.Value.Contains(orderBy, StringComparison.OrdinalIgnoreCase));
+        if (String.IsNullOrEmpty(keyPolicy.PartitionKey))
+        {
+            throw new Exception($"No key policy has been declared which matches the specified order-by (\"{orderBy}\").");
+        }
+
+        var pageResult = tableClient.QueryAsync<ProjectTableEntity>($"PartitionKey eq '{keyPolicy.PartitionKey}'",
                                                                     maxPerPage: pageSize,
                                                                     select: propNamesToSelect,
                                                                     cancellationToken: CancellationToken.None);
@@ -86,23 +92,24 @@ internal class ProjectsTableService : IProjectsTableService
 
     public async Task<Option<ProjectTableEntity>> UpdateProjectStateAsync(Guid projectId, string newState)
     {
-        var projectTableEntity = await GetProjectTableEntityByIdAsync(projectId);
+        var optProjectTableEntity = await GetProjectTableEntityByIdAsync(projectId);
 
-        if (projectTableEntity.IsNone)
+        if (optProjectTableEntity.IsNone)
         {
             throw new ArgumentException($"Cannot update project state: Project with ID \"{projectId}\" could not be found.", nameof(projectId));
         }
 
-        var previousState = projectTableEntity.Value.State;
+        var projectTableEntity = optProjectTableEntity.Value;
+        var previousState = projectTableEntity.State;
 
         if (previousState.Equals(newState))
         {
             return Option<ProjectTableEntity>.None();
         }
 
-        projectTableEntity.Value.State = newState;
+        projectTableEntity.State = newState;
 
-        await _projectsTableService.UpdateTableEntitiesAsync(projectTableEntity.Value);
+        await _projectsTableService.UpdateTableEntitiesAsync(projectTableEntity);
 
         var previousKeyPolicies = _keyPolicies.GetKeyPoliciesByState(previousState, projectId);
         await _projectsTableService.DeleteTableEntitiesAsync(previousKeyPolicies);
@@ -110,13 +117,13 @@ internal class ProjectsTableService : IProjectsTableService
         var newKeyPolicies = _keyPolicies.GetKeyPoliciesByState(newState, projectId);
         foreach (var newKeyPolicy in newKeyPolicies)
         {
-            projectTableEntity.Value.PartitionKey = newKeyPolicy.PartitionKey;
-            projectTableEntity.Value.RowKey = newKeyPolicy.RowKey.Value;
+            projectTableEntity.PartitionKey = newKeyPolicy.PartitionKey;
+            projectTableEntity.RowKey = newKeyPolicy.RowKey.Value;
 
-            await _projectsTableService.StoreTableEntitiesAsync(projectTableEntity.Value);
+            await _projectsTableService.StoreTableEntitiesAsync(projectTableEntity);
         }
 
-        return Option<ProjectTableEntity>.Some(projectTableEntity.Value);
+        return Option<ProjectTableEntity>.Some(projectTableEntity);
     }
 
     private async Task<Option<ProjectTableEntity>> GetProjectTableEntityByIdAsync(Guid projectId)

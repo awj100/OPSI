@@ -18,14 +18,12 @@ public class ProjectsTableServiceSpecs
 {
     private const string Name = "TEST NAME";
     private const string PartitionKey = "PARTITION KEY";
-    private const string RowKey1Filter = "ROW KEY 1 FILTER";
-    private const string RowKey1Value = "ROW KEY 1";
-    private const string RowKey2Value = "ROW KEY 2";
+    private const string RowKey1Filter = "ROW KEY 1 FILTER desc";
     private const string Username = "TEST USERNAME";
 
+    private readonly string _defaultOrderBy = OrderBy.Asc;
     private readonly string _nonReturnableState = ProjectStates.Deleted;
     private readonly string _returnableState = ProjectStates.InProgress;
-    private readonly RowKey _rowKey1 = new(RowKey1Value, KeyPolicyQueryOperators.Equal);
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
@@ -37,6 +35,10 @@ public class ProjectsTableServiceSpecs
     private Guid _project1Id;
     private ProjectTableEntity _projectTableEntity1;
     private IProjectKeyPolicies _projectKeyPolicies;
+    private RowKey _rowKey1;
+    private RowKey _rowKey2;
+    private string _rowKey1Value;
+    private string _rowKey2Value;
     private TableClient _tableClient;
     private ITableService _tableService;
     private ITableServiceFactory _tableServiceFactory;
@@ -46,21 +48,26 @@ public class ProjectsTableServiceSpecs
     [TestInitialize]
     public void TestInit()
     {
+        _rowKey1Value = $"ROW KEY 1 {OrderBy.Asc}";
+        _rowKey2Value = $"ROW KEY 2 {OrderBy.Desc}";
+        _rowKey1 = new(_rowKey1Value, KeyPolicyQueryOperators.Equal);
+        _rowKey2 = new(_rowKey2Value, KeyPolicyQueryOperators.Equal);
+
         _keyPolicyFilterGeneration = A.Fake<IKeyPolicyFilterGeneration>();
         _getKeyPoliciesByState = state => new List<KeyPolicy> {
             new KeyPolicy($"{PartitionKey} {state}", _rowKey1),
-            new KeyPolicy($"{PartitionKey} {state}", _rowKey1)
+            new KeyPolicy($"{PartitionKey} {state}", _rowKey2)
         };
         _getKeyPoliciesByStateAndId = (state, projectId) => new List<KeyPolicy> {
             new KeyPolicy($"{PartitionKey} {state}", new RowKey($"{_rowKey1.Value} {projectId}", KeyPolicyQueryOperators.Equal)),
-            new KeyPolicy($"{PartitionKey} {state}", new RowKey($"{_rowKey1.Value} {projectId}", KeyPolicyQueryOperators.Equal))
+            new KeyPolicy($"{PartitionKey} {state}", new RowKey($"{_rowKey2.Value} {projectId}", KeyPolicyQueryOperators.Equal))
         };
         _keyPoliciesForCreate = new List<KeyPolicy> {
             new KeyPolicy(PartitionKey, _rowKey1),
-            new KeyPolicy(PartitionKey, _rowKey1)
+            new KeyPolicy(PartitionKey, _rowKey2)
         };
         _keyPolicyForGet = new KeyPolicy(PartitionKey, _rowKey1);
-        _project1Id = Guid.NewGuid();
+        _project1Id = new Guid("cbd30af3-2ec9-4bc2-b719-296c149f66bb");
         _projectTableEntity1 = new ProjectTableEntity { Id = _project1Id, Name = Name, PartitionKey = PartitionKey, RowKey = Guid.NewGuid().ToString(), State = _returnableState, Username = Username };
         _project = _projectTableEntity1.ToProject();
         _projectKeyPolicies = A.Fake<IProjectKeyPolicies>();
@@ -120,7 +127,7 @@ public class ProjectsTableServiceSpecs
                                                                    A<IEnumerable<string>>._,
                                                                    A<CancellationToken>._)).Returns(pages);
 
-        var result = await _testee.GetProjectsByStateAsync(_nonReturnableState, int.MaxValue);
+        var result = await _testee.GetProjectsByStateAsync(_nonReturnableState, _defaultOrderBy, int.MaxValue);
 
         result.Should().NotBeNull();
         result.Items.Should().NotBeNull().And.BeEmpty();
@@ -292,15 +299,36 @@ public class ProjectsTableServiceSpecs
                                                                    A<IEnumerable<string>>._,
                                                                    A<CancellationToken>._)).Returns(pages);
 
-        await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, newState);
+        var usedKeys = new List<dynamic>();
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<ProjectTableEntity>._)).Invokes(x =>
+        {
+            var projectTableEntitiesArgs = x.GetArgument<ITableEntity[]>(0);
+            if (projectTableEntitiesArgs == null)
+            {
+                return;
+            }
 
+            foreach (var projectTableEntityArg in projectTableEntitiesArgs)
+            {
+                usedKeys.Add(new
+                {
+                    projectTableEntityArg.PartitionKey,
+                    projectTableEntityArg.RowKey
+                });
+            }
+        });
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, newState);
+        
         foreach (var storeKeyPolicy in storeKeyPolicies)
         {
-            A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<ProjectTableEntity>.That.Matches(projectTableEntity => projectTableEntity.PartitionKey.Equals(storeKeyPolicy.PartitionKey))))
-             .MustHaveHappened();
-
-            A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<ProjectTableEntity>.That.Matches(projectTableEntity => projectTableEntity.RowKey.Equals(storeKeyPolicy.RowKey.Value))))
-             .MustHaveHappened();
+            usedKeys.Should().Contain(new
+            {
+                storeKeyPolicy.PartitionKey,
+                RowKey = storeKeyPolicy.RowKey.Value
+            });
         }
     }
 

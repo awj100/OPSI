@@ -2,6 +2,8 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using Opsi.Common;
+using Opsi.Constants;
 using Opsi.Services;
 using Opsi.Services.QueueServices;
 
@@ -12,6 +14,7 @@ public class ProjectsHandler
     private const int defaultPageSize = 50;
     private const string route = "projects/{projectState}";
 
+    private readonly string defaultOrderBy = OrderBy.Asc;
     private readonly IErrorQueueService _errorQueueService;
     private readonly ILogger<ProjectsHandler> _logger;
     private readonly IProjectsService _projectsService;
@@ -34,16 +37,23 @@ public class ProjectsHandler
     [Function(nameof(ProjectsHandler))]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = route)] HttpRequestData req,
                                             string projectState,
-                                            int? optionalPageSize,
+                                            string? orderBy,
+                                            int? pageSize,
                                             string? continuationToken = null)
     {
-        var pageSize = optionalPageSize ?? defaultPageSize;
+        pageSize ??= defaultPageSize;
 
         _logger.LogInformation($"{nameof(ProjectsHandler)}: {nameof(projectState)} = \"{projectState}\".");
 
+        var optOrderBy = orderBy != null ? OrderByExtensions.GetValidOrderBy(orderBy) : Option<string>.Some(defaultOrderBy);
+        if (optOrderBy.IsNone)
+        {
+            return req.BadRequest($"Invalid orderby: \"{orderBy}\".");
+        }
+
         try
         {
-            var pageableProjectsResponse = await _projectsService.GetProjectsAsync(projectState, pageSize, continuationToken);
+            var pageableProjectsResponse = await _projectsService.GetProjectsAsync(projectState, optOrderBy.Value, (int)pageSize, continuationToken);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
 

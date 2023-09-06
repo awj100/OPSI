@@ -67,14 +67,14 @@ public class ProjectsService : IProjectsService
         return projectWithResources;
     }
 
-    public async Task<PageableResponse<Project>> GetProjectsAsync(string projectState, int pageSize, string? continuationToken = null)
+    public async Task<PageableResponse<Project>> GetProjectsAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null)
     {
         if (!IsProjectStateRecognised(projectState))
         {
             throw new ArgumentException("Unrecognised value", nameof(projectState));
         }
 
-        return await _projectsTableService.GetProjectsByStateAsync(projectState, pageSize, continuationToken);
+        return await _projectsTableService.GetProjectsByStateAsync(projectState, orderBy, pageSize, continuationToken);
     }
 
     public async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)
