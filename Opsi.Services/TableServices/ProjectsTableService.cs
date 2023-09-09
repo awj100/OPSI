@@ -111,10 +111,10 @@ internal class ProjectsTableService : IProjectsTableService
 
         await _projectsTableService.UpdateTableEntitiesAsync(projectTableEntity);
 
-        var previousKeyPolicies = _keyPolicies.GetKeyPoliciesByState(previousState, projectId);
+        var previousKeyPolicies = _keyPolicies.GetKeyPoliciesByState(previousState);
         await _projectsTableService.DeleteTableEntitiesAsync(previousKeyPolicies);
 
-        var newKeyPolicies = _keyPolicies.GetKeyPoliciesByState(newState, projectId);
+        var newKeyPolicies = _keyPolicies.GetKeyPoliciesByState(newState);
         foreach (var newKeyPolicy in newKeyPolicies)
         {
             projectTableEntity.PartitionKey = newKeyPolicy.PartitionKey;

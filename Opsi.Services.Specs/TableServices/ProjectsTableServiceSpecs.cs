@@ -28,7 +28,6 @@ public class ProjectsTableServiceSpecs
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
     private Func<string, IReadOnlyCollection<KeyPolicy>> _getKeyPoliciesByState;
-    private Func<string, Guid?, IReadOnlyCollection<KeyPolicy>> _getKeyPoliciesByStateAndId;
     private IReadOnlyCollection<KeyPolicy> _keyPoliciesForCreate;
     private KeyPolicy _keyPolicyForGet;
     private Project _project;
@@ -58,10 +57,6 @@ public class ProjectsTableServiceSpecs
             new KeyPolicy($"{PartitionKey} {state}", _rowKey1),
             new KeyPolicy($"{PartitionKey} {state}", _rowKey2)
         };
-        _getKeyPoliciesByStateAndId = (state, projectId) => new List<KeyPolicy> {
-            new KeyPolicy($"{PartitionKey} {state}", new RowKey($"{_rowKey1.Value} {projectId}", KeyPolicyQueryOperators.Equal)),
-            new KeyPolicy($"{PartitionKey} {state}", new RowKey($"{_rowKey2.Value} {projectId}", KeyPolicyQueryOperators.Equal))
-        };
         _keyPoliciesForCreate = new List<KeyPolicy> {
             new KeyPolicy(PartitionKey, _rowKey1),
             new KeyPolicy(PartitionKey, _rowKey2)
@@ -76,8 +71,7 @@ public class ProjectsTableServiceSpecs
         _tableServiceFactory = A.Fake<ITableServiceFactory>();
 
         A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(_keyPolicyForGet)).Returns(RowKey1Filter);
-        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesByState(A<string>._, null)).ReturnsLazily((string state) => _getKeyPoliciesByState(state));
-        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesByState(A<string>._, A<Guid?>._)).ReturnsLazily((string state, Guid? projectId) => _getKeyPoliciesByStateAndId(state, projectId));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesByState(A<string>._)).ReturnsLazily((string state) => _getKeyPoliciesByState(state));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(A<Guid>._)).Returns(_keyPolicyForGet);
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForStore(A<Project>._)).Returns(_keyPoliciesForCreate);
         A.CallTo(() => _tableService.TableClient).Returns(new Lazy<TableClient>(() => _tableClient));
@@ -265,7 +259,7 @@ public class ProjectsTableServiceSpecs
     public async Task UpdateProjectStateAsync_DeletesPreviousProjectsByStateKeys()
     {
         var newState = _nonReturnableState;
-        var deleteKeyPolicies = _getKeyPoliciesByStateAndId(_projectTableEntity1.State, _projectTableEntity1.Id);
+        var deleteKeyPolicies = _getKeyPoliciesByState(_projectTableEntity1.State);
         var pages = GetQueryResponse(_projectTableEntity1);
         var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
@@ -289,7 +283,7 @@ public class ProjectsTableServiceSpecs
     public async Task UpdateProjectStateAsync_AddsNewProjectsByStateKeys()
     {
         var newState = _nonReturnableState;
-        var storeKeyPolicies = _getKeyPoliciesByStateAndId(newState, _projectTableEntity1.Id);
+        var storeKeyPolicies = _getKeyPoliciesByState(newState);
         var pages = GetQueryResponse(_projectTableEntity1);
         var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);

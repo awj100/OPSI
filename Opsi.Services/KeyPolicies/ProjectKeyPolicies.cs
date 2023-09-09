@@ -7,15 +7,11 @@ namespace Opsi.Services.KeyPolicies;
 
 public class ProjectKeyPolicies : IProjectKeyPolicies
 {
-    public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesByState(string projectState, Guid? projectId = null)
+    public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesByState(string projectState)
     {
-        var projectIdAsString = projectId.HasValue ? projectId.ToString() : null;
-        var equalityOperator = projectId.HasValue ? KeyPolicyQueryOperators.Equal : KeyPolicyQueryOperators.GreaterThanOrEqual;
-
         return new[] {
-            new KeyPolicy($"projects_byState_{projectState}_{KeyOrders.Asc}", new RowKey($"projects_byState_asc_{projectState}_{projectIdAsString}", equalityOperator)),
-
-            new KeyPolicy($"projects_byState_{projectState}_{KeyOrders.Desc}", new RowKey( $"projects_byState_desc_{projectState}_{projectIdAsString}", equalityOperator))
+            GetKeyPolicyByState(projectState, KeyOrders.Asc),
+            GetKeyPolicyByState(projectState, KeyOrders.Desc)
         };
     }
 
@@ -26,13 +22,27 @@ public class ProjectKeyPolicies : IProjectKeyPolicies
             GetKeyPolicyForGetById(project.Id)
         };
 
-        keyPolicies.AddRange(GetKeyPoliciesByState(project.State, project.Id));
+        keyPolicies.AddRange(GetKeyPoliciesByState(project.State));
 
         return keyPolicies;
+    }
+
+    public KeyPolicy GetKeyPolicyByState(string projectState, string keyOrder)
+    {
+        var uniquePart = GetUniqueOrderPart(keyOrder == KeyOrders.Asc);
+
+        return new KeyPolicy($"projects_byState_{projectState}_{keyOrder}", new RowKey($"projects_byState_{keyOrder}_{uniquePart}", KeyPolicyQueryOperators.Equal));
     }
 
     public KeyPolicy GetKeyPolicyForGetById(Guid projectId)
     {
         return new KeyPolicy($"projects_byId", new RowKey($"projects_byId_{projectId}", KeyPolicyQueryOperators.Equal));
+    }
+
+    private static string GetUniqueOrderPart(bool forAscendingKey)
+    {
+        return string.Format("{0:D19}", forAscendingKey
+                                            ? HiResDateTime.UtcNowTicks
+                                            : DateTime.MaxValue.Ticks - HiResDateTime.UtcNowTicks);
     }
 }
