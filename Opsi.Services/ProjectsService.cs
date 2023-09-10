@@ -67,7 +67,7 @@ public class ProjectsService : IProjectsService
         return projectWithResources;
     }
 
-    public async Task<PageableResponse<Project>> GetProjectsAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null)
+    public async Task<PageableResponse<OrderedProject>> GetProjectsAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null)
     {
         if (!IsProjectStateRecognised(projectState))
         {

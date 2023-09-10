@@ -32,6 +32,7 @@ public class ProjectsTableServiceSpecs
     private KeyPolicy _keyPolicyForGet;
     private Project _project;
     private Guid _project1Id;
+    private IReadOnlyCollection<OrderedProjectTableEntity> _orderedProjectTableEntities;
     private ProjectTableEntity _projectTableEntity1;
     private IProjectKeyPolicies _projectKeyPolicies;
     private RowKey _rowKey1;
@@ -62,6 +63,13 @@ public class ProjectsTableServiceSpecs
             new KeyPolicy(PartitionKey, _rowKey2)
         };
         _keyPolicyForGet = new KeyPolicy(PartitionKey, _rowKey1);
+        _orderedProjectTableEntities = _getKeyPoliciesByState(_returnableState).Select(keyPolicy => new OrderedProjectTableEntity
+        {
+            Id = _project1Id,
+            Name = Name,
+            PartitionKey = keyPolicy.PartitionKey,
+            RowKey = keyPolicy.RowKey.Value
+        }).ToList();
         _project1Id = new Guid("cbd30af3-2ec9-4bc2-b719-296c149f66bb");
         _projectTableEntity1 = new ProjectTableEntity { Id = _project1Id, Name = Name, PartitionKey = PartitionKey, RowKey = Guid.NewGuid().ToString(), State = _returnableState, Username = Username };
         _project = _projectTableEntity1.ToProject();
@@ -101,7 +109,7 @@ public class ProjectsTableServiceSpecs
     [TestMethod]
     public async Task GetProjectByIdAsync_WhenNoMatchingProjectFound_ReturnsNull()
     {
-        var pages = GetQueryResponse();
+        var pages = GetQueryResponse<ProjectTableEntity>();
         A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>._,
                                                                    A<int?>._,
                                                                    A<IEnumerable<string>>._,
@@ -115,7 +123,7 @@ public class ProjectsTableServiceSpecs
     [TestMethod]
     public async Task GetProjectsByStateAsync_WhenNoMatchingProjectsFound_ReturnsEmptyCollection()
     {
-        var pages = GetQueryResponse();
+        var pages = GetQueryResponse<ProjectTableEntity>();
         A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>._,
                                                                    A<int?>._,
                                                                    A<IEnumerable<string>>._,
@@ -128,24 +136,154 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task StoreProjectAsync_PassesProjectEntitiesWithSameIdToTableService()
+    public async Task StoreProjectAsync_WhenPassingTableEntitiesToTableService_QuantityOfTableEntitiesMatchesByIdKeyPolicy()
     {
+        var tableEntities = new List<ITableEntity>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IEnumerable<ITableEntity>>._)).Invokes(x =>
+        {
+            tableEntities.AddRange(x.GetArgument<IEnumerable<ITableEntity>>(0));
+        });
+#pragma warning restore CS8604 // Possible null reference argument.
+
         await _testee.StoreProjectAsync(_project);
 
-        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IReadOnlyCollection<ProjectTableEntity>>.That.Matches(entities => entities.Select(entity => entity.Id)
-                                                                                                                                         .Distinct()
-                                                                                                                                         .Single()
-                                                                                                                                         .Equals(_project.Id)))).MustHaveHappenedOnceExactly();
+        const int expectedProjectTableEntities = 1;
+
+        tableEntities.Count(tableEntity => tableEntity is ProjectTableEntity)
+                     .Should()
+                     .Be(expectedProjectTableEntities);
     }
 
     [TestMethod]
-    public async Task StoreProjectAsync_PassesRowKeyQuantityProjectsToTableService()
+    public async Task StoreProjectAsync_WhenPassingTableEntitiesToTableService_PartitionKeyOfTableEntitiesMatchesByIdKeyPolicy()
     {
-        var expectedSavedEntityCount = _keyPoliciesForCreate.Count;
+        var tableEntities = new List<ITableEntity>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IEnumerable<ITableEntity>>._)).Invokes(x =>
+        {
+            tableEntities.AddRange(x.GetArgument<IEnumerable<ITableEntity>>(0));
+        });
+#pragma warning restore CS8604 // Possible null reference argument.
 
         await _testee.StoreProjectAsync(_project);
 
-        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IReadOnlyCollection<ProjectTableEntity>>.That.Matches(entities => entities.Count == expectedSavedEntityCount))).MustHaveHappenedOnceExactly();
+        tableEntities.Single(tableEntity => tableEntity is ProjectTableEntity).PartitionKey
+                     .Should()
+                     .Be(_keyPolicyForGet.PartitionKey);
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenPassingTableEntitiesToTableService_RowKeyOfTableEntitiesMatchesByIdKeyPolicy()
+    {
+        var tableEntities = new List<ITableEntity>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IEnumerable<ITableEntity>>._)).Invokes(x =>
+        {
+            tableEntities.AddRange(x.GetArgument<IEnumerable<ITableEntity>>(0));
+        });
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.StoreProjectAsync(_project);
+
+        tableEntities.Single(tableEntity => tableEntity is ProjectTableEntity).RowKey
+                     .Should()
+                     .Be(_keyPolicyForGet.RowKey.Value);
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenPassingTableEntitiesToTableService_QuantityOfTableEntitiesMatchesByStateKeyPolicy()
+    {
+        var tableEntities = new List<ITableEntity>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IEnumerable<ITableEntity>>._)).Invokes(x =>
+        {
+            tableEntities.AddRange(x.GetArgument<IEnumerable<ITableEntity>>(0));
+        });
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.StoreProjectAsync(_project);
+
+        var expectedOrderedProjectTableEntities = _getKeyPoliciesByState("random state").Count;
+
+        tableEntities.Count(tableEntity => tableEntity is OrderedProjectTableEntity)
+                     .Should()
+                     .Be(expectedOrderedProjectTableEntities);
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenPassingTableEntitiesToTableService_PartitionKeyOfTableEntitiesMatchesByStateKeyPolicy()
+    {
+        var tableEntities = new List<ITableEntity>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IEnumerable<ITableEntity>>._)).Invokes(x =>
+        {
+            tableEntities.AddRange(x.GetArgument<IEnumerable<ITableEntity>>(0));
+        });
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.StoreProjectAsync(_project);
+
+        foreach (var keyPolicy in _getKeyPoliciesByState(_project.State))
+        {
+            tableEntities.Where(tableEntity => tableEntity is OrderedProjectTableEntity)
+                         .FirstOrDefault(orderedProjectTableEntity => orderedProjectTableEntity.PartitionKey.Equals(keyPolicy.PartitionKey))
+                         .Should()
+                         .NotBeNull();
+        }
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenPassingTableEntitiesToTableService_RowKeyOfTableEntitiesMatchesByStateKeyPolicy()
+    {
+        var tableEntities = new List<ITableEntity>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IEnumerable<ITableEntity>>._)).Invokes(x =>
+        {
+            tableEntities.AddRange(x.GetArgument<IEnumerable<ITableEntity>>(0));
+        });
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.StoreProjectAsync(_project);
+
+        foreach (var keyPolicy in _getKeyPoliciesByState(_project.State))
+        {
+            tableEntities.Where(tableEntity => tableEntity is OrderedProjectTableEntity)
+                         .SingleOrDefault(orderedProjectTableEntity => orderedProjectTableEntity.RowKey.Equals(keyPolicy.RowKey.Value))
+                         .Should()
+                         .NotBeNull();
+        }
+    }
+
+    [TestMethod]
+    public async Task StoreProjectAsync_WhenPassingTableEntitiesToTableService_PassesCorrectProjectId()
+    {
+        var tableEntities = new List<ITableEntity>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IEnumerable<ITableEntity>>._)).Invokes(x =>
+        {
+            tableEntities.AddRange(x.GetArgument<IEnumerable<ITableEntity>>(0));
+        });
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.StoreProjectAsync(_project);
+
+        tableEntities.Where(tableEntity => tableEntity is ProjectTableEntity)
+                     .Cast<ProjectTableEntity>()
+                     .Should()
+                     .AllSatisfy(projectTableEntity => projectTableEntity.Id.Equals(_project.Id));
+
+        tableEntities.Where(tableEntity => tableEntity is OrderedProjectTableEntity)
+                     .Cast<OrderedProjectTableEntity>()
+                     .Should()
+                     .AllSatisfy(projectTableEntity => projectTableEntity.Id.Equals(_project.Id));
     }
 
     [TestMethod]
@@ -205,7 +343,7 @@ public class ProjectsTableServiceSpecs
     [TestMethod]
     public async Task UpdateProjectStateAsync_WhenProjectIdInvalid_ThrowsArgumentException()
     {
-        var pages = GetQueryResponse();
+        var pages = GetQueryResponse<ProjectTableEntity>();
         var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
 
@@ -256,26 +394,35 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task UpdateProjectStateAsync_DeletesPreviousProjectsByStateKeys()
+    public async Task UpdateProjectStateAsync_DeletesPreviousEntitiesByStatePartitionKeys()
     {
+        var previousState = _projectTableEntity1.State;
         var newState = _nonReturnableState;
-        var deleteKeyPolicies = _getKeyPoliciesByState(_projectTableEntity1.State);
-        var pages = GetQueryResponse(_projectTableEntity1);
-        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
-        var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
+        var KeyPoliciesByState = _getKeyPoliciesByState(_projectTableEntity1.State);
 
-        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
+        // Fake the return value when getting the entity by ID.
+        var pages1 = GetQueryResponse(_projectTableEntity1);
+        var keyPolicyForGetById = _projectKeyPolicies.GetKeyPolicyForGetById(_projectTableEntity1.Id);
+        var keyPolicyFilterForGetById = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGetById);
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilterForGetById)),
                                                                    A<int?>._,
                                                                    A<IEnumerable<string>>._,
-                                                                   A<CancellationToken>._)).Returns(pages);
+                                                                   A<CancellationToken>._)).Returns(pages1);
+
+        // Fake the return value when getting the entities by previous-state keys.
+        var pages2 = GetQueryResponse(_orderedProjectTableEntities.ToArray());
+        A.CallTo(() => _tableClient.QueryAsync<OrderedProjectTableEntity>(A<string>._,
+                                                                          A<int?>._,
+                                                                          A<IEnumerable<string>>._,
+                                                                          A<CancellationToken>._)).Returns(pages2);
 
         await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, newState);
 
-        foreach (var deleteKeyPolicy in deleteKeyPolicies)
+        foreach (var keyPolicyByState in KeyPoliciesByState)
         {
-            A.CallTo(() => _tableService.DeleteTableEntitiesAsync(A<IEnumerable<KeyPolicy>>.That.Matches(keyPolicies => keyPolicies.Any(keyPolicy => keyPolicy.PartitionKey.Equals(deleteKeyPolicy.PartitionKey)
-                                                                                                                                                     && keyPolicy.RowKey.Equals(deleteKeyPolicy.RowKey)))))
-             .MustHaveHappenedOnceExactly();
+            A.CallTo(() => _tableService.DeleteTableEntityAsync(A<string>.That.Matches(partitionKey => partitionKey.Equals(keyPolicyByState.PartitionKey)),
+                                                                A<string>._))
+             .MustHaveHappened();
         }
     }
 
@@ -294,25 +441,23 @@ public class ProjectsTableServiceSpecs
                                                                    A<CancellationToken>._)).Returns(pages);
 
         var usedKeys = new List<dynamic>();
-#pragma warning disable CS8604 // Possible null reference argument.
-        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<ProjectTableEntity>._)).Invokes(x =>
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<OrderedProjectTableEntity>._)).Invokes(x =>
         {
-            var projectTableEntitiesArgs = x.GetArgument<ITableEntity[]>(0);
-            if (projectTableEntitiesArgs == null)
+            var orderedProjectTableEntitiesArgs = x.GetArgument<ITableEntity[]>(0);
+            if (orderedProjectTableEntitiesArgs == null)
             {
                 return;
             }
 
-            foreach (var projectTableEntityArg in projectTableEntitiesArgs)
+            foreach (var orderedProjectTableEntityArg in orderedProjectTableEntitiesArgs)
             {
                 usedKeys.Add(new
                 {
-                    projectTableEntityArg.PartitionKey,
-                    projectTableEntityArg.RowKey
+                    orderedProjectTableEntityArg.PartitionKey,
+                    orderedProjectTableEntityArg.RowKey
                 });
             }
         });
-#pragma warning restore CS8604 // Possible null reference argument.
 
         await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, newState);
         
@@ -344,11 +489,11 @@ public class ProjectsTableServiceSpecs
         result.IsSome.Should().BeTrue();
     }
 
-    private static AsyncPageable<ProjectTableEntity> GetQueryResponse(params ProjectTableEntity[] projectsResult)
+    private static AsyncPageable<TTableEntity> GetQueryResponse<TTableEntity>(params TTableEntity[] projectsResult) where TTableEntity : ITableEntity
     {
-        var page = Page<ProjectTableEntity>.FromValues(projectsResult,
-                                                       continuationToken: null,
-                                                       response: A.Fake<Response>());
-        return AsyncPageable<ProjectTableEntity>.FromPages(new[] { page });
+        var page = Page<TTableEntity>.FromValues(projectsResult,
+                                                 continuationToken: null,
+                                                 response: A.Fake<Response>());
+        return AsyncPageable<TTableEntity>.FromPages(new[] { page });
     }
 }

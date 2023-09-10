@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Azure.Data.Tables;
 using Opsi.AzureStorage;
 using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
@@ -35,11 +36,11 @@ internal class ProjectsTableService : IProjectsTableService
         return Option<Project>.None();
     }
 
-    public async Task<PageableResponse<Project>> GetProjectsByStateAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null)
+    public async Task<PageableResponse<OrderedProject>> GetProjectsByStateAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null)
     {
         var tableClient = _projectsTableService.TableClient.Value;
         var keyPolicies = _keyPolicies.GetKeyPoliciesByState(projectState);
-        var propNamesToSelect = GetPropertyNames<ProjectTableEntity>();
+        var propNamesToSelect = GetPropertyNames<OrderedProjectTableEntity>();
 
         var keyPolicy = keyPolicies.SingleOrDefault(keyPolicy => keyPolicy.RowKey.Value.Contains(orderBy, StringComparison.OrdinalIgnoreCase));
         if (String.IsNullOrEmpty(keyPolicy.PartitionKey))
@@ -47,30 +48,36 @@ internal class ProjectsTableService : IProjectsTableService
             throw new Exception($"No key policy has been declared which matches the specified order-by (\"{orderBy}\").");
         }
 
-        var pageResult = tableClient.QueryAsync<ProjectTableEntity>($"PartitionKey eq '{keyPolicy.PartitionKey}'",
-                                                                    maxPerPage: pageSize,
-                                                                    select: propNamesToSelect,
-                                                                    cancellationToken: CancellationToken.None);
+        var pageResult = tableClient.QueryAsync<OrderedProjectTableEntity>($"PartitionKey eq '{keyPolicy.PartitionKey}'",
+                                                                           maxPerPage: pageSize,
+                                                                           select: propNamesToSelect,
+                                                                           cancellationToken: CancellationToken.None);
 
         if (pageResult == null)
         {
-            return new PageableResponse<Project>(new List<Project>(0));
+            return new PageableResponse<OrderedProject>(new List<OrderedProject>(0));
         }
 
         await foreach (var page in pageResult.AsPages(continuationToken))
         {
-            var projects = page.Values.Select(projectTableEntity => projectTableEntity.ToProject()).ToList();
-            return new PageableResponse<Project>(projects, page.ContinuationToken);
+            var orderedProjects = page.Values.Select(orderedProjectTableEntity => orderedProjectTableEntity.ToOrderedProject()).ToList();
+            return new PageableResponse<OrderedProject>(orderedProjects, page.ContinuationToken);
         }
 
-        return new PageableResponse<Project>(new List<Project>(0));
+        return new PageableResponse<OrderedProject>(new List<OrderedProject>(0));
     }
 
     public async Task StoreProjectAsync(Project project)
     {
-        var projectTableEntities = ProjectTableEntity.FromProject(project, _keyPolicies.GetKeyPoliciesForStore);
+        var tableEntities = new List<ITableEntity>();
 
-        await _projectsTableService.StoreTableEntitiesAsync(projectTableEntities);
+        var byIdKeyPolicy = _keyPolicies.GetKeyPolicyForGetById(project.Id);
+        tableEntities.Add(ProjectTableEntity.FromProject(project, byIdKeyPolicy.PartitionKey, byIdKeyPolicy.RowKey.Value));
+
+        var byStateKeyPolicies = _keyPolicies.GetKeyPoliciesByState(project.State);
+        tableEntities.AddRange(byStateKeyPolicies.Select(getByStateKeyPolicy => OrderedProjectTableEntity.FromProject(project, getByStateKeyPolicy.PartitionKey, getByStateKeyPolicy.RowKey.Value)).ToList());
+
+        await _projectsTableService.StoreTableEntitiesAsync(tableEntities);
     }
 
     public async Task UpdateProjectAsync(Project project)
@@ -111,16 +118,27 @@ internal class ProjectsTableService : IProjectsTableService
 
         await _projectsTableService.UpdateTableEntitiesAsync(projectTableEntity);
 
-        var previousKeyPolicies = _keyPolicies.GetKeyPoliciesByState(previousState);
-        await _projectsTableService.DeleteTableEntitiesAsync(previousKeyPolicies);
+        // Delete the previous-state entities
+        // - This entity represent an instance of OrderedProjectTableEntity.
+        // - We can only obtain these by PartitionKey and Id. (The RowKey does not speficy any project-specific information.)
+        // - Consequently we must obtain the entities in order to know PartitionKey and RowKey, then delete them.
+        var previousStateTableEntities = await GetProjectTableEntityByStateAndIdAsync(previousState, projectId);
+        foreach (var previousStateTableEntity in previousStateTableEntities)
+        {
+            await _projectsTableService.DeleteTableEntityAsync(previousStateTableEntity.PartitionKey, previousStateTableEntity.RowKey);
+        }
 
+        // Add the new-state entities.
+        // These entities represents instances of OrderedProjectTableEntity.
         var newKeyPolicies = _keyPolicies.GetKeyPoliciesByState(newState);
         foreach (var newKeyPolicy in newKeyPolicies)
         {
             projectTableEntity.PartitionKey = newKeyPolicy.PartitionKey;
             projectTableEntity.RowKey = newKeyPolicy.RowKey.Value;
 
-            await _projectsTableService.StoreTableEntitiesAsync(projectTableEntity);
+            var orderedProjectTableEntity = OrderedProjectTableEntity.FromProjectTableEntity(projectTableEntity);
+
+            await _projectsTableService.StoreTableEntitiesAsync(orderedProjectTableEntity);
         }
 
         return Option<ProjectTableEntity>.Some(projectTableEntity);
@@ -147,6 +165,32 @@ internal class ProjectsTableService : IProjectsTableService
         }
 
         return Option<ProjectTableEntity>.None();
+    }
+
+    private async Task<IReadOnlyCollection<OrderedProjectTableEntity>> GetProjectTableEntityByStateAndIdAsync(string state, Guid projectId)
+    {
+        var propNamesToSelect = GetPropertyNames<OrderedProjectTableEntity>();
+
+        var keyPoliciesForGetByState = _keyPolicies.GetKeyPoliciesByState(state);
+        var keyPolicyFilters = keyPoliciesForGetByState.Select(keyPolicy => $"PartitionKey eq '{keyPolicy.PartitionKey}' and Id eq guid'{projectId}'");
+        var concatenatedFilters = keyPolicyFilters.Aggregate((a, b) => $"({a}) or ({b})");
+        var maxResultsPerPage = keyPoliciesForGetByState.Count;
+
+        var tableClient = _projectsTableService.TableClient.Value;
+
+        var results = tableClient.QueryAsync<OrderedProjectTableEntity>(concatenatedFilters,
+                                                                        maxPerPage: maxResultsPerPage,
+                                                                        select: propNamesToSelect,
+                                                                        cancellationToken: CancellationToken.None);
+
+        var orderedProjectTableEntities = new List<OrderedProjectTableEntity>(keyPoliciesForGetByState.Count);
+
+        await foreach (var result in results)
+        {
+            orderedProjectTableEntities.Add(result);
+        }
+
+        return orderedProjectTableEntities;
     }
 
     private static IReadOnlyCollection<string> GetPropertyNames<TType>()

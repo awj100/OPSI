@@ -137,8 +137,8 @@ public class ProjectsHandlerSpecs
     public async Task Run_ReturnsOk()
     {
         var continuationToken = Guid.NewGuid().ToString();
-        var projects = GenerateProjects().Take(2).ToList();
-        var pageableProjectsResponse = new PageableResponse<Project>(projects, continuationToken);
+        var orderedProjects = GenerateOrderedProjects().Take(2).ToList();
+        var pageableProjectsResponse = new PageableResponse<OrderedProject>(orderedProjects, continuationToken);
 
         var request = TestFactory.CreateHttpRequest(_uri);
         A.CallTo(() => _projectsService.GetProjectsAsync(_projectState, _validOrderBy, _defaultPageSize, null)).Returns(pageableProjectsResponse);
@@ -152,8 +152,8 @@ public class ProjectsHandlerSpecs
     public async Task Run_ReturnsPageableResponseWithExpectedContinuationToken()
     {
         var continuationToken = Guid.NewGuid().ToString();
-        var projects = GenerateProjects().Take(2).ToList();
-        var pageableProjectsResponse = new PageableResponse<Project>(projects, continuationToken);
+        var orderedProjects = GenerateOrderedProjects().Take(2).ToList();
+        var pageableProjectsResponse = new PageableResponse<OrderedProject>(orderedProjects, continuationToken);
 
         var request = TestFactory.CreateHttpRequest(_uri);
         A.CallTo(() => _projectsService.GetProjectsAsync(A<string>._, A<string>._, A<int>._, A<string?>._)).Returns(pageableProjectsResponse);
@@ -169,8 +169,8 @@ public class ProjectsHandlerSpecs
     public async Task Run_ReturnsPageableResponseWithExpectedProjects()
     {
         var continuationToken = Guid.NewGuid().ToString();
-        var projects = GenerateProjects().Take(2).ToList();
-        var pageableProjectsResponse = new PageableResponse<Project>(projects, continuationToken);
+        var orderedProjects = GenerateOrderedProjects().Take(2).ToList();
+        var pageableProjectsResponse = new PageableResponse<OrderedProject>(orderedProjects, continuationToken);
 
         var request = TestFactory.CreateHttpRequest(_uri);
         A.CallTo(() => _projectsService.GetProjectsAsync(A<string>._, A<string>._, A<int>._, A<string?>._)).Returns(pageableProjectsResponse);
@@ -179,10 +179,24 @@ public class ProjectsHandlerSpecs
 
         var responsePageableResponse = await ParseBodyAsAsync<PageableResponse<Project>>(response.Body);
         responsePageableResponse.Items.Should().NotBeNullOrEmpty();
-        responsePageableResponse.Items.Should().HaveCount(projects.Count);
-        foreach (var project in projects)
+        responsePageableResponse.Items.Should().HaveCount(orderedProjects.Count);
+        foreach (var orderedProject in orderedProjects)
         {
-            responsePageableResponse!.Items.SingleOrDefault(responseProject => responseProject.Id.Equals(project.Id)).Should().NotBeNull();
+            responsePageableResponse!.Items.SingleOrDefault(responseProject => responseProject.Id.Equals(orderedProject.Id)).Should().NotBeNull();
+        }
+    }
+
+    private static IEnumerable<OrderedProject> GenerateOrderedProjects()
+    {
+        var i = 0;
+
+        while (true)
+        {
+            yield return new OrderedProject
+            {
+                Id = Guid.NewGuid(),
+                Name = $"Project_{i++}"
+            };
         }
     }
 

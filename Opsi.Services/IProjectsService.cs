@@ -7,7 +7,7 @@ public interface IProjectsService
 {
     Task<ProjectWithResources?> GetProjectAsync(Guid projectId);
 
-    Task<PageableResponse<Project>> GetProjectsAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null);
+    Task<PageableResponse<OrderedProject>> GetProjectsAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null);
 
     Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId);
 

@@ -32,6 +32,7 @@ public class ProjectsServiceSpecs
     private readonly Guid _projectId = Guid.NewGuid();
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private string _defaultOrderBy = OrderBy.Desc;
+    private OrderedProject _orderedProject;
     private Project _project;
     private IProjectsTableService _projectsTableService;
     private readonly string _state1 = ProjectStates.InProgress;
@@ -60,6 +61,12 @@ public class ProjectsServiceSpecs
         {
             CustomProps = _webhookCustomProps,
             Uri = _webhookUri
+        };
+
+        _orderedProject = new OrderedProject
+        {
+            Id = _projectId,
+            Name = _name
         };
 
         _project = new Project
@@ -155,7 +162,7 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetProjectsAsync_WhenProjectStateIsRecognised_ReturnsResultFromTableService()
     {
-        var pageableResponse = new PageableResponse<Project>(new List<Project> { _project }, _continuationToken);
+        var pageableResponse = new PageableResponse<OrderedProject>(new List<OrderedProject> { _orderedProject }, _continuationToken);
 
         A.CallTo(() => _projectsTableService.GetProjectsByStateAsync(_state1, _defaultOrderBy, _pageSize, A<string?>._)).Returns(pageableResponse);
 
