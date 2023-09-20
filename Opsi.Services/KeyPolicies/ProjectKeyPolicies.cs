@@ -1,7 +1,6 @@
 ﻿using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.Types;
 using Opsi.AzureStorage.Types.KeyPolicies;
-using Opsi.Pocos;
 
 namespace Opsi.Services.KeyPolicies;
 
@@ -13,18 +12,6 @@ public class ProjectKeyPolicies : IProjectKeyPolicies
             GetKeyPolicyByState(projectState, KeyOrders.Asc),
             GetKeyPolicyByState(projectState, KeyOrders.Desc)
         };
-    }
-
-    public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForStore(Project project)
-    {
-        var keyPolicies = new List<KeyPolicy>
-        {
-            GetKeyPolicyForGetById(project.Id)
-        };
-
-        keyPolicies.AddRange(GetKeyPoliciesByState(project.State));
-
-        return keyPolicies;
     }
 
     public KeyPolicy GetKeyPolicyByState(string projectState, string keyOrder)

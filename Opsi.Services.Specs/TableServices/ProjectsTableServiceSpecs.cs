@@ -81,7 +81,6 @@ public class ProjectsTableServiceSpecs
         A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(_keyPolicyForGet)).Returns(RowKey1Filter);
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesByState(A<string>._)).ReturnsLazily((string state) => _getKeyPoliciesByState(state));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(A<Guid>._)).Returns(_keyPolicyForGet);
-        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForStore(A<Project>._)).Returns(_keyPoliciesForCreate);
         A.CallTo(() => _tableService.TableClient).Returns(new Lazy<TableClient>(() => _tableClient));
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
 
