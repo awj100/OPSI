@@ -41,7 +41,7 @@ public class ResourceKeyPolicies : KeyPoliciesBase, IResourceKeyPolicies
 
         return new KeyPolicy[]
         {
-            new KeyPolicy($"assignments_{assigneeUsername}", new RowKey($"assignment_byProjectAndResource_{projectId}_{safeFullName}", KeyPolicyQueryOperators.Equal))
+            new KeyPolicy($"assignedResources_{assigneeUsername}", new RowKey($"assignment_byProjectAndResource_{projectId}_{safeFullName}", KeyPolicyQueryOperators.Equal))
         };
     }
 

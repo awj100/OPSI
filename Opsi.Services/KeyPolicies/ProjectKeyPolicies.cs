@@ -42,6 +42,6 @@ public class ProjectKeyPolicies : KeyPoliciesBase, IProjectKeyPolicies
 
     public KeyPolicy GetKeyPolicyByUserForUserAssignment(Guid projectId, string assigneeUsername)
     {
-        return new KeyPolicy($"assignments_{assigneeUsername}", new RowKey($"assignment_byUserAndProject_{assigneeUsername}_{projectId}", KeyPolicyQueryOperators.Equal));
+        return new KeyPolicy($"assignedProjects_{assigneeUsername}", new RowKey($"assignment_byUserAndProject_{assigneeUsername}_{projectId}", KeyPolicyQueryOperators.Equal));
     }
 }
