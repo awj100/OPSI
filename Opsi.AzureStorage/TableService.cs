@@ -53,7 +53,7 @@ internal class TableService : StorageServiceBase, ITableService
 
         foreach (var keyPolicy in keyPolicies)
         {
-            await TableClient.Value.DeleteEntityAsync(keyPolicy.PartitionKey, keyPolicy.RowKey.Value);
+            await DeleteTableEntityAsync(keyPolicy.PartitionKey, keyPolicy.RowKey.Value);
         }
     }
 
@@ -69,7 +69,7 @@ internal class TableService : StorageServiceBase, ITableService
             throw new InvalidOperationException($"{nameof(KeyPolicy)}.{nameof(KeyPolicy.RowKey)}.{nameof(KeyPolicy.RowKey.QueryOperator)} must be \"{KeyPolicyQueryOperators.Equal}\" when calling {nameof(DeleteTableEntityAsync)}({nameof(KeyPolicy)}).");
         }
 
-        await TableClient.Value.DeleteEntityAsync(keyPolicy.PartitionKey, keyPolicy.RowKey.Value);
+        await DeleteTableEntityAsync(keyPolicy.PartitionKey, keyPolicy.RowKey.Value);
     }
 
     public async Task ExecuteQueryBatchAsync(IReadOnlyCollection<TableTransactionAction> transactions)

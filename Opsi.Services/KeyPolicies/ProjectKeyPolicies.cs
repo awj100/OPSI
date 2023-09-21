@@ -18,8 +18,8 @@ public class ProjectKeyPolicies : KeyPoliciesBase, IProjectKeyPolicies
     {
         return new[] {
             GetKeyPolicyByProjectForUserAssignment(projectId, assigneeUsername),
-            GetKeyPolicyByUserForUserAssignment(projectId, assigneeUsername, KeyOrders.Asc),
-            GetKeyPolicyByUserForUserAssignment(projectId, assigneeUsername, KeyOrders.Desc)
+            GetKeyPolicyByUserForUserAssignment(projectId, assigneeUsername),
+            GetKeyPolicyByUserForUserAssignment(projectId, assigneeUsername)
         };
     }
 
@@ -40,10 +40,8 @@ public class ProjectKeyPolicies : KeyPoliciesBase, IProjectKeyPolicies
         return new KeyPolicy($"projects_{projectId}", new RowKey($"assignment_byProjectAndUser_{projectId}_{assigneeUsername}", KeyPolicyQueryOperators.Equal));
     }
 
-    public KeyPolicy GetKeyPolicyByUserForUserAssignment(Guid projectId, string assigneeUsername, string keyOrder)
+    public KeyPolicy GetKeyPolicyByUserForUserAssignment(Guid projectId, string assigneeUsername)
     {
-        var uniqueOrderPart = GetUniqueOrderPart(keyOrder == KeyOrders.Asc);
-
-        return new KeyPolicy($"assignments_{assigneeUsername}", new RowKey($"assignment_byUserAndProject_{keyOrder}_{uniqueOrderPart}_{assigneeUsername}_{projectId}", KeyPolicyQueryOperators.Equal));
+        return new KeyPolicy($"assignments_{assigneeUsername}", new RowKey($"assignment_byUserAndProject_{assigneeUsername}_{projectId}", KeyPolicyQueryOperators.Equal));
     }
 }

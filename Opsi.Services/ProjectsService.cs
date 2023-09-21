@@ -128,6 +128,38 @@ public class ProjectsService : IProjectsService
         return project.IsNone;
     }
 
+    public async Task RevokeUserAsync(UserAssignment userAssignment)
+    {
+        var optProject = await _projectsTableService.GetProjectByIdAsync(userAssignment.ProjectId);
+        if (optProject.IsNone)
+        {
+            throw new ArgumentException("Invalid project ID");
+        }
+        var project = optProject.Value;
+
+        userAssignment.ProjectName = optProject.Value.Name;
+
+        await _projectsTableService.RevokeUserAsync(userAssignment);
+
+        if (!String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
+        {
+            const string propNameAssignedUsername = "revokedUsername";
+            const string propNameResourceFullName = "resourceFullName";
+
+            // Add the username of the revoked user to the custom props.
+            var additionalProps = project.WebhookSpecification.CustomProps ?? new Dictionary<string, object>();
+            additionalProps.Add(propNameAssignedUsername, userAssignment.AssigneeUsername);
+            additionalProps.Add(propNameResourceFullName, userAssignment.ResourceFullName);
+
+            await QueueWebhookMessageAsync(project.Id,
+                                           project.Name,
+                                           project.WebhookSpecification.Uri,
+                                           additionalProps,
+                                           userAssignment.AssignedByUsername,
+                                           Events.UserRevoked);
+        }
+    }
+
     public async Task StoreProjectAsync(Project project)
     {
 #pragma warning disable CA2208 // Instantiate argument exceptions correctly

@@ -14,5 +14,5 @@ public interface IProjectKeyPolicies
 
     KeyPolicy GetKeyPolicyByProjectForUserAssignment(Guid projectId, string assigneeUsername);
 
-    KeyPolicy GetKeyPolicyByUserForUserAssignment(Guid projectId, string assigneeUsername, string keyOrder);
+    KeyPolicy GetKeyPolicyByUserForUserAssignment(Guid projectId, string assigneeUsername);
 }

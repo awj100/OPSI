@@ -109,7 +109,7 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task AssignUser_UsesProjectKeyPoliciesIntendedForUserAssignment()
+    public async Task AssignUserAsync_UsesProjectKeyPoliciesIntendedForUserAssignment()
     {
         var userAssignment = new UserAssignment
         {
@@ -129,7 +129,7 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task AssignUser_UsesResourceKeyPoliciesIntendedForUserAssignment()
+    public async Task AssignUserAsync_UsesResourceKeyPoliciesIntendedForUserAssignment()
     {
         var userAssignment = new UserAssignment
         {
@@ -150,7 +150,7 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task AssignUser_StoresNumberOfEntriesMatchingKeyPolicyCount()
+    public async Task AssignUserAsync_StoresNumberOfEntriesMatchingKeyPolicyCount()
     {
         var userAssignment = new UserAssignment
         {
@@ -177,7 +177,7 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task AssignUser_PasesCorrectUserAssignmentsToTableStorage()
+    public async Task AssignUserAsync_PasesCorrectUserAssignmentsToTableStorage()
     {
         var userAssignment = new UserAssignment
         {
@@ -205,7 +205,7 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task AssignUser_PasesCorrectKeysToTableStorage()
+    public async Task AssignUserAsync_PasesCorrectKeysToTableStorage()
     {
         var userAssignment = new UserAssignment
         {
@@ -283,6 +283,108 @@ public class ProjectsTableServiceSpecs
 
         result.Should().NotBeNull();
         result.Items.Should().NotBeNull().And.BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_UsesProjectKeyPoliciesIntendedForUserAssignment()
+    {
+        var userAssignment = new UserAssignment
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername,
+            ProjectId = _project1Id,
+            ProjectName = _project.Name,
+            ResourceFullName = ResourceFullName
+        };
+
+        await _testee.RevokeUserAsync(userAssignment);
+
+        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)),
+                                                                           A<string>.That.Matches(s => s.Equals(AssigneeUsername))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_UsesResourceKeyPoliciesIntendedForUserAssignment()
+    {
+        var userAssignment = new UserAssignment
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername,
+            ProjectId = _project1Id,
+            ProjectName = _project.Name,
+            ResourceFullName = ResourceFullName
+        };
+
+        await _testee.RevokeUserAsync(userAssignment);
+
+        A.CallTo(() => _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)),
+                                                                            A<string>.That.Matches(s => s.Equals(ResourceFullName)),
+                                                                            A<string>.That.Matches(s => s.Equals(AssigneeUsername))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_DeletesNumberOfEntriesMatchingKeyPolicyCount()
+    {
+        var userAssignment = new UserAssignment
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername,
+            ProjectId = _project1Id,
+            ProjectName = _project.Name,
+            ResourceFullName = ResourceFullName
+        };
+
+        var keyPolicyArgs = new List<KeyPolicy>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.DeleteTableEntitiesAsync(A<IEnumerable<KeyPolicy>>._)).Invokes(x => keyPolicyArgs.AddRange(x.GetArgument<IEnumerable<KeyPolicy>>(0)));
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.RevokeUserAsync(userAssignment);
+
+        keyPolicyArgs
+            .Count
+            .Should()
+            .Be(_projectKeyPoliciesForUserAssignment.Count + _resourceKeyPoliciesForUserAssignment.Count);
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_PasesCorrectKeysToTableStorage()
+    {
+        var userAssignment = new UserAssignment
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername,
+            ProjectId = _project1Id,
+            ProjectName = _project.Name,
+            ResourceFullName = ResourceFullName
+        };
+
+        var keyPolicyArgs = new List<KeyPolicy>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.DeleteTableEntitiesAsync(A<IEnumerable<KeyPolicy>>._)).Invokes(x => keyPolicyArgs.AddRange(x.GetArgument<IEnumerable<KeyPolicy>>(0)));
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.RevokeUserAsync(userAssignment);
+
+        foreach (var projectKeyPolicy in _projectKeyPoliciesForUserAssignment)
+        {
+            keyPolicyArgs.Should().Contain(keyPolicyArg => keyPolicyArg.PartitionKey.Equals(projectKeyPolicy.PartitionKey)
+                                                           && keyPolicyArg.RowKey.Value.Equals(projectKeyPolicy.RowKey.Value));
+        }
+
+        foreach (var resourceKeyPolicy in _resourceKeyPoliciesForUserAssignment)
+        {
+            keyPolicyArgs.Should().Contain(keyPolicyArg => keyPolicyArg.PartitionKey.Equals(resourceKeyPolicy.PartitionKey)
+                                                           && keyPolicyArg.RowKey.Value.Equals(resourceKeyPolicy.RowKey.Value));
+        }
     }
 
     [TestMethod]

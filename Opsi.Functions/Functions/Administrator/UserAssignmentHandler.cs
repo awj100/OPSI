@@ -12,7 +12,7 @@ namespace Opsi.Functions.Functions.Administrator;
 
 public class UserAssignmentHandler
 {
-    private const string route = "assignment";
+    private const string route = "users/{assigneeUsername}/projects/{projectId:guid}/resource/{*resourceFullName}";
 
     private readonly IErrorQueueService _errorQueueService;
     private readonly ILogger<UserAssignmentHandler> _logger;
@@ -31,23 +31,27 @@ public class UserAssignmentHandler
     }
 
     [Function(nameof(UserAssignmentHandler))]
-    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = route)] HttpRequestData req)
+    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", "PUT", Route = route)] HttpRequestData req,
+                                            string assigneeUsername,
+                                            Guid projectId,
+                                            string resourceFullName)
     {
         _logger.LogInformation(nameof(UserAssignmentHandler));
 
         try
         {
-            var optUserAssignment = await GetUserAssignmentAsync(req);
-            if (optUserAssignment.IsNone)
+            var userAssignment = GetUserAssignment(assigneeUsername, projectId, resourceFullName);
+
+            if (req.Method == HttpMethod.Put.Method)
             {
-                return req.BadRequest($"Could not parse a valid UserAssignment from the request body.");
+                await _projectsService.AssignUserAsync(userAssignment);
+
+                return req.CreateResponse(HttpStatusCode.Accepted);
             }
 
-            await _projectsService.AssignUserAsync(optUserAssignment.Value);
+            await _projectsService.RevokeUserAsync(userAssignment);
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-
-            return response;
+            return req.CreateResponse(HttpStatusCode.NoContent);
         }
         catch (ArgumentException exception)
         {
@@ -60,22 +64,16 @@ public class UserAssignmentHandler
         }
     }
 
-    private async Task<Option<UserAssignment>> GetUserAssignmentAsync(HttpRequestData request)
+    private UserAssignment GetUserAssignment(string assigneeUsername, Guid projectId, string resourceFullName)
     {
-        string requestBody = String.Empty;
-        using (StreamReader streamReader = new(request.Body))
-        requestBody = await streamReader.ReadToEndAsync();
-        var userAssignment = JsonConvert.DeserializeObject<UserAssignment>(requestBody);
-
-        if (userAssignment == null)
+        return new UserAssignment
         {
-            return Option<UserAssignment>.None();
-        }
-
-        userAssignment.AssignedByUsername = _userProvider.Username.Value;
-        userAssignment.AssignedOnUtc = DateTime.UtcNow;
-
-        return Option<UserAssignment>.Some(userAssignment);
+            AssignedByUsername = _userProvider.Username.Value,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = assigneeUsername,
+            ProjectId = projectId,
+            ResourceFullName = resourceFullName
+        };
     }
 }
 

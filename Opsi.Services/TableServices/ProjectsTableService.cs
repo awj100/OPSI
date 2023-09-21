@@ -85,6 +85,18 @@ internal class ProjectsTableService : IProjectsTableService
         return new PageableResponse<OrderedProject>(new List<OrderedProject>(0));
     }
 
+    public async Task RevokeUserAsync(UserAssignment userAssignment)
+    {
+        var projectKeyPolicies = _projectKeyPolicies.GetKeyPoliciesForUserAssignment(userAssignment.ProjectId, userAssignment.AssigneeUsername);
+        var resourceKeyPolicies = _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(userAssignment.ProjectId, userAssignment.ResourceFullName, userAssignment.AssigneeUsername);
+
+        var keyPolicies = new List<KeyPolicy>(projectKeyPolicies.Count + resourceKeyPolicies.Count);
+        keyPolicies.AddRange(projectKeyPolicies);
+        keyPolicies.AddRange(resourceKeyPolicies);
+
+        await _projectsTableService.DeleteTableEntitiesAsync(keyPolicies);
+    }
+
     public async Task StoreProjectAsync(Project project)
     {
         var tableEntities = new List<ITableEntity>();

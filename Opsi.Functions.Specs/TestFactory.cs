@@ -10,16 +10,16 @@ namespace Opsi.Functions.Specs;
 
 public class TestFactory
 {
-    public static HttpRequestData CreateHttpRequest(string uri)
+    private const string MethodGet = "get";
+
+    public static HttpRequestData CreateHttpRequest(string uri, string method = MethodGet)
     {
         var body = new MemoryStream();
         var context = A.Fake<FunctionContext>();
-        var request = new FakeHttpRequestData(context, new Uri(uri), body);
-
-        return request;
+        return new FakeHttpRequestData(context, new Uri(uri), method, body);
     }
 
-    public static async Task<HttpRequestData> CreateHttpRequestAsync(string uri, object objectToPostOrPut)
+    public static async Task<HttpRequestData> CreateHttpRequestAsync(string uri, string method, object objectToPostOrPut)
     {
         var serialisedContent = JsonConvert.SerializeObject(objectToPostOrPut);
         
@@ -29,7 +29,7 @@ public class TestFactory
         body.Seek(0, SeekOrigin.Begin);
 
         var context = A.Fake<FunctionContext>();
-        var request = new FakeHttpRequestData(context, new Uri(uri), body);
+        var request = new FakeHttpRequestData(context, new Uri(uri), method, body);
 
         return request;
     }

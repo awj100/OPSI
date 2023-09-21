@@ -15,6 +15,8 @@ public interface IProjectsService
 
     Task<bool> IsNewProjectAsync(Guid projectId);
 
+    Task RevokeUserAsync(UserAssignment userAssignment);
+
     Task StoreProjectAsync(Project project);
 
     Task UpdateProjectStateAsync(Guid projectId, string newState);

@@ -12,6 +12,8 @@ public interface IProjectsTableService
 
     Task<PageableResponse<OrderedProject>> GetProjectsByStateAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null);
 
+    Task RevokeUserAsync(UserAssignment userAssignment);
+
     Task StoreProjectAsync(Project project);
 
     Task UpdateProjectAsync(Project project);

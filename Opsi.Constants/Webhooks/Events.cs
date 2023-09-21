@@ -10,4 +10,5 @@ public static class Events
     public static readonly string Unlocked = nameof(Unlocked);
     public static readonly string Uploaded = nameof(Uploaded);
     public static readonly string UserAssigned = nameof(UserAssigned);
+    public static readonly string UserRevoked = nameof(UserRevoked);
 }

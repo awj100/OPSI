@@ -386,6 +386,112 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
+    public async Task RevokeUserAsync_WhenNoProjectWithCorrespondingIdIsFound_ThrowsArgumentException()
+    {
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.None());
+
+        await _testee.Invoking(t => t.RevokeUserAsync(_userAssignment)).Should().ThrowAsync<ArgumentException>();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_PassesUserAssignmentWithProjectNameFromRetrievedProject()
+    {
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
+
+        await _testee.RevokeUserAsync(_userAssignment);
+
+        A.CallTo(() => _projectsTableService.RevokeUserAsync(A<UserAssignment>.That.Matches(ua => ua.ProjectName.Equals(_project.Name))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectProjectId()
+    {
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
+
+        await _testee.RevokeUserAsync(_userAssignment);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.ProjectId.Equals(_project.Id)), A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectProjectName()
+    {
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
+
+        await _testee.RevokeUserAsync(_userAssignment);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Name.Equals(_project.Name)), A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectEvent()
+    {
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
+
+        await _testee.RevokeUserAsync(_userAssignment);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Event.Equals(Events.UserRevoked)), A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    /*[TestMethod]
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectLevel()
+    {
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
+
+        await _testee.RevokeUserAsync(_userAssignment);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Level.Equals(Levels.)), A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }*/
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectUsername()
+    {
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
+
+        await _testee.RevokeUserAsync(_userAssignment);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Username.Equals(_userAssignment.AssignedByUsername)), A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithAssigneeUsernameInCustomProps()
+    {
+        const string propNameAssignedUsername = "revokedUsername";
+
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
+
+        await _testee.RevokeUserAsync(_userAssignment);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
+            A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
+                                                                && cws.CustomProps.ContainsKey(propNameAssignedUsername)
+                                                                && cws.CustomProps[propNameAssignedUsername].Equals(_assigneeUsername))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithResourceFullNameInCustomProps()
+    {
+        const string propNameResourceFullName = "resourceFullName";
+
+        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
+
+        await _testee.RevokeUserAsync(_userAssignment);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
+            A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
+                                                                && cws.CustomProps.ContainsKey(propNameResourceFullName)
+                                                                && cws.CustomProps[propNameResourceFullName].Equals(_resourceFullName))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
     public async Task StoreProjectAsync_PassesProjectToTableService()
     {
         await _testee.StoreProjectAsync(_project);
