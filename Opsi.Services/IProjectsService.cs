@@ -5,6 +5,8 @@ namespace Opsi.Services;
 
 public interface IProjectsService
 {
+    Task AssignUserAsync(UserAssignment userAssignment);
+
     Task<ProjectWithResources?> GetProjectAsync(Guid projectId);
 
     Task<PageableResponse<OrderedProject>> GetProjectsAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null);

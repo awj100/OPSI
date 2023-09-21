@@ -1,8 +1,6 @@
 ﻿using Azure;
 using Azure.Data.Tables;
 using Opsi.AzureStorage.KeyPolicies;
-using Opsi.AzureStorage.TableEntities;
-using Opsi.AzureStorage.Types;
 using Opsi.AzureStorage.Types.KeyPolicies;
 using Opsi.Common;
 

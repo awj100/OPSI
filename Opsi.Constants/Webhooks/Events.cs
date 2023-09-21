@@ -9,4 +9,5 @@ public static class Events
     public static readonly string StoreFailure = nameof(StoreFailure);
     public static readonly string Unlocked = nameof(Unlocked);
     public static readonly string Uploaded = nameof(Uploaded);
+    public static readonly string UserAssigned = nameof(UserAssigned);
 }

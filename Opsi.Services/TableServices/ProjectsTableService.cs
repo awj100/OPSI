@@ -3,6 +3,7 @@ using Azure.Data.Tables;
 using Opsi.AzureStorage;
 using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
+using Opsi.AzureStorage.Types.KeyPolicies;
 using Opsi.Common;
 using Opsi.Pocos;
 
@@ -12,16 +13,33 @@ internal class ProjectsTableService : IProjectsTableService
 {
     private const string TableName = "resources";
     private readonly ITableService _projectsTableService;
-    private readonly IProjectKeyPolicies _keyPolicies;
+    private readonly IProjectKeyPolicies _projectKeyPolicies;
+    private readonly IResourceKeyPolicies _resourceKeyPolicies;
     private readonly IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
 
-    public ProjectsTableService(IProjectKeyPolicies keyPolicies,
+    public ProjectsTableService(IProjectKeyPolicies projectKeyPolicies,
+                                IResourceKeyPolicies resourceKeyPolicies,
                                 ITableServiceFactory tableServiceFactory,
                                 IKeyPolicyFilterGeneration keyPolicyFilterGeneration)
     {
-        _projectsTableService = tableServiceFactory.Create(TableName);
-        _keyPolicies = keyPolicies;
         _keyPolicyFilterGeneration = keyPolicyFilterGeneration;
+        _projectKeyPolicies = projectKeyPolicies;
+        _projectsTableService = tableServiceFactory.Create(TableName);
+        _resourceKeyPolicies = resourceKeyPolicies;
+    }
+
+    public async Task AssignUserAsync(UserAssignment userAssignment)
+    {
+        var projectKeyPolicies = _projectKeyPolicies.GetKeyPoliciesForUserAssignment(userAssignment.ProjectId, userAssignment.AssigneeUsername);
+        var resourceKeyPolicies = _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(userAssignment.ProjectId, userAssignment.ResourceFullName, userAssignment.AssigneeUsername);
+
+        var keyPolicies = new List<KeyPolicy>(projectKeyPolicies.Count + resourceKeyPolicies.Count);
+        keyPolicies.AddRange(projectKeyPolicies);
+        keyPolicies.AddRange(resourceKeyPolicies);
+
+        var tableEntities = UserAssignmentTableEntity.FromUserAssignment(userAssignment, keyPolicies);
+
+        await _projectsTableService.StoreTableEntitiesAsync(tableEntities);
     }
 
     public async Task<Option<Project>> GetProjectByIdAsync(Guid projectId)
@@ -39,7 +57,7 @@ internal class ProjectsTableService : IProjectsTableService
     public async Task<PageableResponse<OrderedProject>> GetProjectsByStateAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null)
     {
         var tableClient = _projectsTableService.TableClient.Value;
-        var keyPolicies = _keyPolicies.GetKeyPoliciesByState(projectState);
+        var keyPolicies = _projectKeyPolicies.GetKeyPoliciesByState(projectState);
         var propNamesToSelect = GetPropertyNames<OrderedProjectTableEntity>();
 
         var keyPolicy = keyPolicies.SingleOrDefault(keyPolicy => keyPolicy.RowKey.Value.Contains(orderBy, StringComparison.OrdinalIgnoreCase));
@@ -71,10 +89,10 @@ internal class ProjectsTableService : IProjectsTableService
     {
         var tableEntities = new List<ITableEntity>();
 
-        var byIdKeyPolicy = _keyPolicies.GetKeyPolicyForGetById(project.Id);
+        var byIdKeyPolicy = _projectKeyPolicies.GetKeyPolicyForGetById(project.Id);
         tableEntities.Add(ProjectTableEntity.FromProject(project, byIdKeyPolicy.PartitionKey, byIdKeyPolicy.RowKey.Value));
 
-        var byStateKeyPolicies = _keyPolicies.GetKeyPoliciesByState(project.State);
+        var byStateKeyPolicies = _projectKeyPolicies.GetKeyPoliciesByState(project.State);
         tableEntities.AddRange(byStateKeyPolicies.Select(getByStateKeyPolicy => OrderedProjectTableEntity.FromProject(project, getByStateKeyPolicy.PartitionKey, getByStateKeyPolicy.RowKey.Value)).ToList());
 
         await _projectsTableService.StoreTableEntitiesAsync(tableEntities);
@@ -130,7 +148,7 @@ internal class ProjectsTableService : IProjectsTableService
 
         // Add the new-state entities.
         // These entities represents instances of OrderedProjectTableEntity.
-        var newKeyPolicies = _keyPolicies.GetKeyPoliciesByState(newState);
+        var newKeyPolicies = _projectKeyPolicies.GetKeyPoliciesByState(newState);
         foreach (var newKeyPolicy in newKeyPolicies)
         {
             projectTableEntity.PartitionKey = newKeyPolicy.PartitionKey;
@@ -149,7 +167,7 @@ internal class ProjectsTableService : IProjectsTableService
         const int maxResultsPerPage = 1;
         var propNamesToSelect = GetPropertyNames<ProjectTableEntity>();
 
-        var keyPolicyForGet = _keyPolicies.GetKeyPolicyForGetById(projectId);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(projectId);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
 
         var tableClient = _projectsTableService.TableClient.Value;
@@ -171,7 +189,7 @@ internal class ProjectsTableService : IProjectsTableService
     {
         var propNamesToSelect = GetPropertyNames<OrderedProjectTableEntity>();
 
-        var keyPoliciesForGetByState = _keyPolicies.GetKeyPoliciesByState(state);
+        var keyPoliciesForGetByState = _projectKeyPolicies.GetKeyPoliciesByState(state);
         var keyPolicyFilters = keyPoliciesForGetByState.Select(keyPolicy => $"PartitionKey eq '{keyPolicy.PartitionKey}' and Id eq guid'{projectId}'");
         var concatenatedFilters = keyPolicyFilters.Aggregate((a, b) => $"({a}) or ({b})");
         var maxResultsPerPage = keyPoliciesForGetByState.Count;

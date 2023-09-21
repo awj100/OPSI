@@ -6,6 +6,8 @@ namespace Opsi.Services.TableServices;
 
 public interface IProjectsTableService
 {
+    Task AssignUserAsync(UserAssignment userAssignment);
+
     Task<Option<Project>> GetProjectByIdAsync(Guid projectId);
 
     Task<PageableResponse<OrderedProject>> GetProjectsByStateAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null);

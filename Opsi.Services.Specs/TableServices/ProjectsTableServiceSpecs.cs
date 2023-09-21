@@ -16,8 +16,10 @@ namespace Opsi.Services.Specs.TableServices;
 [TestClass]
 public class ProjectsTableServiceSpecs
 {
+    private const string AssigneeUsername = "TEST ASSIGNEE USERNAME";
     private const string Name = "TEST NAME";
     private const string PartitionKey = "PARTITION KEY";
+    private const string ResourceFullName = "TEST RESOURCE FULL NAME";
     private const string RowKey1Filter = "ROW KEY 1 FILTER desc";
     private const string Username = "TEST USERNAME";
 
@@ -30,11 +32,14 @@ public class ProjectsTableServiceSpecs
     private Func<string, IReadOnlyCollection<KeyPolicy>> _getKeyPoliciesByState;
     private IReadOnlyCollection<KeyPolicy> _keyPoliciesForCreate;
     private KeyPolicy _keyPolicyForGet;
+    private IReadOnlyCollection<KeyPolicy> _projectKeyPoliciesForUserAssignment;
+    private IReadOnlyCollection<KeyPolicy> _resourceKeyPoliciesForUserAssignment;
     private Project _project;
     private Guid _project1Id;
     private IReadOnlyCollection<OrderedProjectTableEntity> _orderedProjectTableEntities;
     private ProjectTableEntity _projectTableEntity1;
     private IProjectKeyPolicies _projectKeyPolicies;
+    private IResourceKeyPolicies _resourceKeyPolicies;
     private RowKey _rowKey1;
     private RowKey _rowKey2;
     private string _rowKey1Value;
@@ -63,6 +68,16 @@ public class ProjectsTableServiceSpecs
             new KeyPolicy(PartitionKey, _rowKey2)
         };
         _keyPolicyForGet = new KeyPolicy(PartitionKey, _rowKey1);
+        _projectKeyPoliciesForUserAssignment = new List<KeyPolicy>
+        {
+            new KeyPolicy("USER ASSIGNMENT PARTITION KEY", new RowKey("USER ASSIGNMENT ROW KEY 1", KeyPolicyQueryOperators.Equal)),
+            new KeyPolicy("USER ASSIGNMENT PARTITION KEY", new RowKey("USER ASSIGNMENT ROW KEY 2", KeyPolicyQueryOperators.Equal))
+        };
+        _resourceKeyPoliciesForUserAssignment = new List<KeyPolicy>
+        {
+            new KeyPolicy("USER ASSIGNMENT PARTITION KEY", new RowKey("USER ASSIGNMENT ROW KEY 3", KeyPolicyQueryOperators.Equal))
+        };
+
         _orderedProjectTableEntities = _getKeyPoliciesByState(_returnableState).Select(keyPolicy => new OrderedProjectTableEntity
         {
             Id = _project1Id,
@@ -74,6 +89,7 @@ public class ProjectsTableServiceSpecs
         _projectTableEntity1 = new ProjectTableEntity { Id = _project1Id, Name = Name, PartitionKey = PartitionKey, RowKey = Guid.NewGuid().ToString(), State = _returnableState, Username = Username };
         _project = _projectTableEntity1.ToProject();
         _projectKeyPolicies = A.Fake<IProjectKeyPolicies>();
+        _resourceKeyPolicies = A.Fake<IResourceKeyPolicies>();
         _tableClient = A.Fake<TableClient>();
         _tableService = A.Fake<ITableService>();
         _tableServiceFactory = A.Fake<ITableServiceFactory>();
@@ -81,10 +97,145 @@ public class ProjectsTableServiceSpecs
         A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(_keyPolicyForGet)).Returns(RowKey1Filter);
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesByState(A<string>._)).ReturnsLazily((string state) => _getKeyPoliciesByState(state));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(A<Guid>._)).Returns(_keyPolicyForGet);
+        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)), A<string>.That.Matches(s => s.Equals(AssigneeUsername)))).Returns(_projectKeyPoliciesForUserAssignment);
+        A.CallTo(() => _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)), A<string>.That.Matches(s => s.Equals(ResourceFullName)), A<string>.That.Matches(s => s.Equals(AssigneeUsername)))).Returns(_resourceKeyPoliciesForUserAssignment);
         A.CallTo(() => _tableService.TableClient).Returns(new Lazy<TableClient>(() => _tableClient));
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
 
-        _testee = new ProjectsTableService(_projectKeyPolicies, _tableServiceFactory, _keyPolicyFilterGeneration);
+        _testee = new ProjectsTableService(_projectKeyPolicies,
+                                           _resourceKeyPolicies,
+                                           _tableServiceFactory,
+                                           _keyPolicyFilterGeneration);
+    }
+
+    [TestMethod]
+    public async Task AssignUser_UsesProjectKeyPoliciesIntendedForUserAssignment()
+    {
+        var userAssignment = new UserAssignment
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername,
+            ProjectId = _project1Id,
+            ProjectName = _project.Name,
+            ResourceFullName = ResourceFullName
+        };
+
+        await _testee.AssignUserAsync(userAssignment);
+
+        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)),
+                                                                           A<string>.That.Matches(s => s.Equals(AssigneeUsername))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUser_UsesResourceKeyPoliciesIntendedForUserAssignment()
+    {
+        var userAssignment = new UserAssignment
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername,
+            ProjectId = _project1Id,
+            ProjectName = _project.Name,
+            ResourceFullName = ResourceFullName
+        };
+
+        await _testee.AssignUserAsync(userAssignment);
+
+        A.CallTo(() => _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)),
+                                                                            A<string>.That.Matches(s => s.Equals(ResourceFullName)),
+                                                                            A<string>.That.Matches(s => s.Equals(AssigneeUsername))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUser_StoresNumberOfEntriesMatchingKeyPolicyCount()
+    {
+        var userAssignment = new UserAssignment
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername,
+            ProjectId = _project1Id,
+            ProjectName = _project.Name,
+            ResourceFullName = ResourceFullName
+        };
+
+        var tableEntitiesArgs = new List<ITableEntity>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IReadOnlyCollection<UserAssignmentTableEntity>>._)).Invokes(x => tableEntitiesArgs.AddRange(x.GetArgument<IReadOnlyCollection<UserAssignmentTableEntity>>(0)));
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.AssignUserAsync(userAssignment);
+
+        tableEntitiesArgs
+            .Count
+            .Should()
+            .Be(_projectKeyPoliciesForUserAssignment.Count + _resourceKeyPoliciesForUserAssignment.Count);
+    }
+
+    [TestMethod]
+    public async Task AssignUser_PasesCorrectUserAssignmentsToTableStorage()
+    {
+        var userAssignment = new UserAssignment
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername,
+            ProjectId = _project1Id,
+            ProjectName = _project.Name,
+            ResourceFullName = ResourceFullName
+        };
+
+        var tableEntitiesArgs = new List<UserAssignmentTableEntity>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IReadOnlyCollection<UserAssignmentTableEntity>>._)).Invokes(x => tableEntitiesArgs.AddRange(x.GetArgument<IReadOnlyCollection<UserAssignmentTableEntity>>(0)));
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.AssignUserAsync(userAssignment);
+
+        tableEntitiesArgs.Should().AllSatisfy(userAssignment => userAssignment.AssignedByUsername.Equals(userAssignment.AssignedByUsername));
+        tableEntitiesArgs.Should().AllSatisfy(userAssignment => userAssignment.AssignedOnUtc.Equals(userAssignment.AssignedOnUtc));
+        tableEntitiesArgs.Should().AllSatisfy(userAssignment => userAssignment.AssigneeUsername.Equals(userAssignment.AssigneeUsername));
+        tableEntitiesArgs.Should().AllSatisfy(userAssignment => userAssignment.ProjectId.Equals(userAssignment.ProjectId));
+        tableEntitiesArgs.Should().AllSatisfy(userAssignment => userAssignment.ProjectName.Equals(userAssignment.ProjectName));
+    }
+
+    [TestMethod]
+    public async Task AssignUser_PasesCorrectKeysToTableStorage()
+    {
+        var userAssignment = new UserAssignment
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername,
+            ProjectId = _project1Id,
+            ProjectName = _project.Name,
+            ResourceFullName = ResourceFullName
+        };
+
+        var tableEntitiesArgs = new List<UserAssignmentTableEntity>();
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        A.CallTo(() => _tableService.StoreTableEntitiesAsync(A<IReadOnlyCollection<UserAssignmentTableEntity>>._)).Invokes(x => tableEntitiesArgs.AddRange(x.GetArgument<IReadOnlyCollection<UserAssignmentTableEntity>>(0)));
+#pragma warning restore CS8604 // Possible null reference argument.
+
+        await _testee.AssignUserAsync(userAssignment);
+
+        foreach (var keyPolicy in _projectKeyPoliciesForUserAssignment)
+        {
+            tableEntitiesArgs.Should().Contain(userAssignment => userAssignment.PartitionKey.Equals(keyPolicy.PartitionKey)
+                                                                 && userAssignment.RowKey.Equals(keyPolicy.RowKey.Value));
+        }
+
+        foreach (var keyPolicy in _resourceKeyPoliciesForUserAssignment)
+        {
+            tableEntitiesArgs.Should().Contain(userAssignment => userAssignment.PartitionKey.Equals(keyPolicy.PartitionKey)
+                                                                 && userAssignment.RowKey.Equals(keyPolicy.RowKey.Value));
+        }
     }
 
     [TestMethod]
