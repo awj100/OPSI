@@ -8,6 +8,8 @@ public interface IProjectsTableService
 {
     Task AssignUserAsync(UserAssignment userAssignment);
 
+    Task<IReadOnlyCollection<UserAssignmentTableEntity>> GetAssignedProjectsAsync(string assigneeUsername);
+
     Task<Option<Project>> GetProjectByIdAsync(Guid projectId);
 
     Task<PageableResponse<OrderedProject>> GetProjectsByStateAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null);

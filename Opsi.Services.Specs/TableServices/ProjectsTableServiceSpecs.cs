@@ -239,6 +239,83 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
+    public async Task GetAssignedProjectsAsync_WhenNoProjectsFoundForAssignee_ReturnsEmptyList()
+    {
+        var projectId = Guid.NewGuid();
+        const string assigneeUsername = "TEST ASSIGNEE USERNAME";
+
+        var pages = GetQueryResponse<UserAssignmentTableEntity>();
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(projectId, assigneeUsername);
+        var keyPolicyFilter = $"PartitionKey eq '{keyPolicyForGet.PartitionKey}'";
+
+        A.CallTo(() => _tableClient.QueryAsync<UserAssignmentTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
+                                                                          A<int?>._,
+                                                                          A<IEnumerable<string>>._,
+                                                                          A<CancellationToken>._)).Returns(pages);
+
+        var result = await _testee.GetAssignedProjectsAsync(assigneeUsername);
+
+        result.Should()
+            .NotBeNull()
+            .And.BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectsAsync_WhenProjectsFoundForAssignee_ReturnsList()
+    {
+        var projectId1 = Guid.NewGuid();
+        var projectId2 = Guid.NewGuid();
+        const string assignedByUsername1 = "TEST ASSIGNED BY USERNAME 1";
+        const string assignedByUsername2 = "TEST ASSIGNED BY USERNAME 2";
+        const string assigneeUsername = "TEST ASSIGNEE USERNAME";
+        const string partitionKey = "TEST PARTITION KEY";
+        const string rowKey1 = "TEST ROW KEY 1";
+        const string rowKey2 = "TEST ROW KEY 2";
+        const string projectName1 = "TEST PROJECT NAME 1";
+        const string projectName2 = "TEST PROJECT NAME 2";
+        const string resourceFullName1 = "TEST RESOURCE FULL NAME 1";
+        const string resourceFullName2 = "TEST RESOURCE FULL NAME 2";
+
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(A<Guid>._, assigneeUsername)).Returns(new KeyPolicy(PartitionKey, new RowKey("WHATEVER", KeyPolicyQueryOperators.Equal)));
+
+        var userAssignments = new[]
+        {
+            UserAssignmentTableEntity.FromUserAssignment(new UserAssignment
+                                                         {
+                                                             AssignedByUsername = assignedByUsername1,
+                                                             AssignedOnUtc = DateTime.UtcNow,
+                                                             AssigneeUsername = assigneeUsername,
+                                                             ProjectId = projectId1,
+                                                             ProjectName = projectName1,
+                                                             ResourceFullName = resourceFullName1
+                                                         }, new KeyPolicy(partitionKey, new RowKey(rowKey1, KeyPolicyQueryOperators.Equal))),
+            UserAssignmentTableEntity.FromUserAssignment(new UserAssignment
+                                                         {
+                                                             AssignedByUsername = assignedByUsername2,
+                                                             AssignedOnUtc = DateTime.UtcNow,
+                                                             AssigneeUsername = assigneeUsername,
+                                                             ProjectId = projectId2,
+                                                             ProjectName = projectName2,
+                                                             ResourceFullName = resourceFullName2
+                                                         }, new KeyPolicy(partitionKey, new RowKey(rowKey2, KeyPolicyQueryOperators.Equal)))
+        };
+
+        var pages = GetQueryResponse(userAssignments);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(projectId1, assigneeUsername);
+        
+        A.CallTo(() => _tableClient.QueryAsync<UserAssignmentTableEntity>(A<string>.That.Matches(filter => filter.Equals($"PartitionKey eq '{keyPolicyForGet.PartitionKey}'")),
+                                                                          A<int?>._,
+                                                                          A<IEnumerable<string>>._,
+                                                                          A<CancellationToken>._)).Returns(pages);
+
+        var result = await _testee.GetAssignedProjectsAsync(assigneeUsername);
+
+        result.Should()
+            .NotBeNull()
+            .And.HaveCount(userAssignments.Length);
+    }
+
+    [TestMethod]
     public async Task GetProjectByIdAsync_WhenMatchingProjectFound_ReturnsProject()
     {
         var pages = GetQueryResponse(_projectTableEntity1);

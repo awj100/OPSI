@@ -42,6 +42,30 @@ internal class ProjectsTableService : IProjectsTableService
         await _projectsTableService.StoreTableEntitiesAsync(tableEntities);
     }
 
+    public async Task<IReadOnlyCollection<UserAssignmentTableEntity>> GetAssignedProjectsAsync(string assigneeUsername)
+    {
+        const int maxResultsPerPage = 500;
+        var propNamesToSelect = GetPropertyNames<UserAssignmentTableEntity>();
+        var dummyProjectId = Guid.NewGuid();    // We will use only the partition key, and this project ID is required for a row key which we will neglect.
+
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(dummyProjectId, assigneeUsername);
+
+        var tableClient = _projectsTableService.TableClient.Value;
+
+        var results = tableClient.QueryAsync<UserAssignmentTableEntity>($"PartitionKey eq '{keyPolicyForGet.PartitionKey}'",
+                                                                        maxPerPage: maxResultsPerPage,
+                                                                        select: propNamesToSelect,
+                                                                        cancellationToken: CancellationToken.None);
+
+        var userAssignmentTableEntities = new List<UserAssignmentTableEntity>();
+        await foreach (var userAssignmentTableEntity in results)
+        {
+            userAssignmentTableEntities.Add(userAssignmentTableEntity);
+        }
+
+        return userAssignmentTableEntities;
+    }
+
     public async Task<Option<Project>> GetProjectByIdAsync(Guid projectId)
     {
         var projectTableEntity = await GetProjectTableEntityByIdAsync(projectId);

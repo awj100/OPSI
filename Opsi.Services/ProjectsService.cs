@@ -63,6 +63,13 @@ public class ProjectsService : IProjectsService
         }
     }
 
+    public async Task<IReadOnlyCollection<UserAssignment>> GetAssignedProjectsAsync(string assigneeUsername)
+    {
+        var userAssignmentTableEntities = await _projectsTableService.GetAssignedProjectsAsync(assigneeUsername);
+
+        return userAssignmentTableEntities.Select(te => te.ToUserAssignment()).ToList();
+    }
+
     public async Task<ProjectWithResources?> GetProjectAsync(Guid projectId)
     {
         var project = await _projectsTableService.GetProjectByIdAsync(projectId);

@@ -224,6 +224,78 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
+    public async Task GetAssignedProjectsAsync_WhenNoUserAssignmentsFound_ReturnsEmptyList()
+    {
+        const string assigneeUsername = "TEST ASSIGNEE USERNAME";
+        var userAssignmentTableEntities = new List<UserAssignmentTableEntity>(0);
+
+        A.CallTo(() => _projectsTableService.GetAssignedProjectsAsync(assigneeUsername)).Returns(userAssignmentTableEntities);
+
+        var result = await _testee.GetAssignedProjectsAsync(assigneeUsername);
+
+        result.Should()
+            .NotBeNull().And
+            .BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectsAsync_WhenUserAssignmentsFound_ReturnsMappedUserAssignmentsFromTableService()
+    {
+        var projectId1 = Guid.NewGuid();
+        var projectId2 = Guid.NewGuid();
+        const string assignedByUsername1 = "TEST ASSIGNED BY USERNAME 1";
+        const string assignedByUsername2 = "TEST ASSIGNED BY USERNAME 2";
+        const string assigneeUsername = "TEST ASSIGNEE USERNAME";
+        const string partitionKey = "TEST PARTITION KEY";
+        const string rowKey1 = "TEST ROW KEY 1";
+        const string rowKey2 = "TEST ROW KEY 2";
+        const string projectName1 = "TEST PROJECT NAME 1";
+        const string projectName2 = "TEST PROJECT NAME 2";
+        const string resourceFullName1 = "TEST RESOURCE FULL NAME 1";
+        const string resourceFullName2 = "TEST RESOURCE FULL NAME 2";
+
+        var userAssignmentTableEntities = new List<UserAssignmentTableEntity>
+        {
+            UserAssignmentTableEntity.FromUserAssignment(new UserAssignment
+                                                         {
+                                                             AssignedByUsername = assignedByUsername1,
+                                                             AssignedOnUtc = DateTime.UtcNow,
+                                                             AssigneeUsername = assigneeUsername,
+                                                             ProjectId = projectId1,
+                                                             ProjectName = projectName1,
+                                                             ResourceFullName = resourceFullName1
+                                                         }, new KeyPolicy(partitionKey, new RowKey(rowKey1, KeyPolicyQueryOperators.Equal))),
+            UserAssignmentTableEntity.FromUserAssignment(new UserAssignment
+                                                         {
+                                                             AssignedByUsername = assignedByUsername2,
+                                                             AssignedOnUtc = DateTime.UtcNow,
+                                                             AssigneeUsername = assigneeUsername,
+                                                             ProjectId = projectId2,
+                                                             ProjectName = projectName2,
+                                                             ResourceFullName = resourceFullName2
+                                                         }, new KeyPolicy(partitionKey, new RowKey(rowKey2, KeyPolicyQueryOperators.Equal)))
+        };
+
+        A.CallTo(() => _projectsTableService.GetAssignedProjectsAsync(assigneeUsername)).Returns(userAssignmentTableEntities);
+
+        var result = await _testee.GetAssignedProjectsAsync(assigneeUsername);
+
+        result.Should()
+            .NotBeNullOrEmpty().And
+            .HaveCount(userAssignmentTableEntities.Count);
+
+        foreach (var userAssignmentTableEntity in userAssignmentTableEntities)
+        {
+            result.Should().Contain(ua => ua.AssignedByUsername.Equals(userAssignmentTableEntity.AssignedByUsername)
+                                          && ua.AssignedOnUtc.Equals(userAssignmentTableEntity.AssignedOnUtc)
+                                          && ua.AssigneeUsername.Equals(userAssignmentTableEntity.AssigneeUsername)
+                                          && ua.ProjectId.Equals(userAssignmentTableEntity.ProjectId)
+                                          && ua.ProjectName.Equals(userAssignmentTableEntity.ProjectName)
+                                          && ua.ResourceFullName.Equals(userAssignmentTableEntity.ResourceFullName));
+        }
+    }
+
+    [TestMethod]
     public async Task GetProjectAsync_WhenProjectIdNotRecognised_ReturnsNull()
     {
         var response = await _testee.GetProjectAsync(Guid.NewGuid());
