@@ -14,9 +14,9 @@ public class UserAssignmentHandlerSpecs
 {
     private const string _assignedByUsernameValid = "VALID ASSIGNED BY USERNAME";
     private const string _assigneeUsername = "TEST ASSIGNEE USERNAME";
-    private const string _methodDelete = "delete";
-    private const string _methodPut = "put";
     private const string _resourceFullName = "TEST RESOURCE FULL NAME";
+    private readonly string _methodDelete = HttpMethod.Delete.Method;
+    private readonly string _methodPut = HttpMethod.Put.Method;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private Guid _projectId;
     private IErrorQueueService _errorQueueService;
