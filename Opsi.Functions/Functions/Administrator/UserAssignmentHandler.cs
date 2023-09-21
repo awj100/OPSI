@@ -12,7 +12,7 @@ namespace Opsi.Functions.Functions.Administrator;
 
 public class UserAssignmentHandler
 {
-    private const string route = "assignments";
+    private const string route = "assignment";
 
     private readonly IErrorQueueService _errorQueueService;
     private readonly ILogger<UserAssignmentHandler> _logger;

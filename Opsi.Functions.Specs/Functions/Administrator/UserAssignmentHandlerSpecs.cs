@@ -37,7 +37,7 @@ public class UserAssignmentHandlerSpecs
         _errorQueueService = A.Fake<IErrorQueueService>();
         _loggerFactory = new NullLoggerFactory();
         _projectsService = A.Fake<IProjectsService>();
-        _uri = "/assignments";
+        _uri = "/assignment";
         _userProvider = A.Fake<IUserProvider>();
         _userAssignment = new UserAssignment
         {
