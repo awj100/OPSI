@@ -2,8 +2,6 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Opsi.Common;
 using Opsi.Pocos;
 using Opsi.Services;
 using Opsi.Services.QueueServices;
@@ -12,7 +10,7 @@ namespace Opsi.Functions.Functions.Administrator;
 
 public class UserAssignmentHandler
 {
-    private const string route = "users/{assigneeUsername}/projects/{projectId:guid}/resource/{*resourceFullName}";
+    private const string route = "admin/users/{assigneeUsername}/projects/{projectId:guid}/resource/{*resourceFullName}";
 
     private readonly IErrorQueueService _errorQueueService;
     private readonly ILogger<UserAssignmentHandler> _logger;

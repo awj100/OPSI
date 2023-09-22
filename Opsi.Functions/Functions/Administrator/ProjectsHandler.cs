@@ -12,7 +12,7 @@ namespace Opsi.Functions.Functions.Administrator;
 public class ProjectsHandler
 {
     private const int defaultPageSize = 50;
-    private const string route = "projects/{projectState}";
+    private const string route = "admin/projects/{projectState}";
 
     private readonly string defaultOrderBy = OrderBy.Asc;
     private readonly IErrorQueueService _errorQueueService;

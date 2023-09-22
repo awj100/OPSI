@@ -10,6 +10,8 @@ namespace Opsi.Functions.Functions.Administrator;
 
 public class ProjectUploadHandler
 {
+    private const string route = "admin/projects/upload";
+
     private readonly IErrorQueueService _errorService;
     private readonly ILogger<ProjectUploadHandler> _logger;
     private readonly IMultipartFormDataParser _multipartFormDataParser;
@@ -27,7 +29,7 @@ public class ProjectUploadHandler
     }
 
     [Function(nameof(ProjectUploadHandler))]
-    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "post", Route = "projects/upload")] HttpRequestData req)
+    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "post", Route = route)] HttpRequestData req)
     {
         _logger.LogInformation(nameof(ProjectUploadHandler));
 
