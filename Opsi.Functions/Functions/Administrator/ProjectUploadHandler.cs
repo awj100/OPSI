@@ -10,7 +10,7 @@ namespace Opsi.Functions.Functions.Administrator;
 
 public class ProjectUploadHandler
 {
-    private const string route = "admin/projects/upload";
+    private const string route = "_admin/projects/upload";
 
     private readonly IErrorQueueService _errorService;
     private readonly ILogger<ProjectUploadHandler> _logger;

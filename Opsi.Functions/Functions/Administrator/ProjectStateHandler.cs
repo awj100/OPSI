@@ -10,7 +10,7 @@ namespace Opsi.Functions.Functions.Administrator;
 
 public class ProjectStateHandler
 {
-    private const string route = "admin/projects/{projectId:guid}/{newProjectState}";
+    private const string route = "_admin/projects/{projectId:guid}/{newProjectState}";
 
     private readonly IErrorQueueService _errorQueueService;
     private readonly ILogger<ProjectsHandler> _logger;

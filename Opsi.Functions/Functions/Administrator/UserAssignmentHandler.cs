@@ -10,7 +10,7 @@ namespace Opsi.Functions.Functions.Administrator;
 
 public class UserAssignmentHandler
 {
-    private const string route = "admin/users/{assigneeUsername}/projects/{projectId:guid}/resource/{*resourceFullName}";
+    private const string route = "_admin/users/{assigneeUsername}/projects/{projectId:guid}/resource/{*resourceFullName}";
 
     private readonly IErrorQueueService _errorQueueService;
     private readonly ILogger<UserAssignmentHandler> _logger;
