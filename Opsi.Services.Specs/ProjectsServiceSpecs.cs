@@ -314,6 +314,25 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenUserAssignmentAndProjectTableEntitiesReturnedButProjectIsNotInProgress_ThrowsProjectStateException()
+    {
+        _projectTableEntity.State = ProjectStates.Completed;
+
+        var tableEntities = new List<ITableEntity>
+        {
+            _projectTableEntity,
+            _resourceTableEntity,
+            _userAssignmentTableEntity
+        };
+
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername)).Returns(tableEntities);
+
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername))
+                     .Should()
+                     .ThrowAsync<ProjectStateException>();
+    }
+
+    [TestMethod]
     public async Task GetAssignedProjectAsync_WhenUserAssignmentAndProjectTableEntitiesReturned_ReturnsProjectWithResources()
     {
         var tableEntities = new List<ITableEntity>

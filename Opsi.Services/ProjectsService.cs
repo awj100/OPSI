@@ -89,6 +89,11 @@ public class ProjectsService : IProjectsService
         var project = projectTableEntity.ToProject();
         var projectWithResources = ProjectWithResources.FromProjectBase(project);
 
+        if (!project.State.Equals(ProjectStates.InProgress, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ProjectStateException();
+        }
+
         projectWithResources.Resources = tableEntities.Where(entity => entity.GetType() == typeof(ResourceTableEntity))
                                                                 .Cast<ResourceTableEntity>()
                                                                 .Select(resourceTablEntity => resourceTablEntity.ToResource())

@@ -17,6 +17,7 @@ namespace Opsi.Functions.Specs.Functions;
 public class AssignedProjectHandlerSpecs
 {
     private const string _assignedUsername = "user@test.com";
+    private readonly Guid _completedProjectId = Guid.NewGuid();
     private readonly Guid _invalidProjectId = Guid.NewGuid();
     private const string _projectName = "TEST PROJECT NAME";
     private const string _projectState = "TEST PROJECT STATE";
@@ -53,6 +54,7 @@ public class AssignedProjectHandlerSpecs
         _responseSerialiser = A.Fake<IResponseSerialiser>();
         _userProvider = A.Fake<IUserProvider>();
 
+        A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_completedProjectId)), A<string>.That.Matches(s => s.Equals(_assignedUsername)))).ThrowsAsync(new ProjectStateException());
         A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_validProjectId)), A<string>.That.Matches(s => s.Equals(_assignedUsername)))).Returns(_projectWithResources);
         A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_invalidProjectId)), A<string>.That.Matches(s => s.Equals(_assignedUsername)))).ThrowsAsync(new ProjectNotFoundException());
         A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_validProjectId)), A<string>.That.Matches(s => s.Equals(_unassignedUsername)))).ThrowsAsync(new UnassignedToProjectException());
@@ -94,6 +96,17 @@ public class AssignedProjectHandlerSpecs
         var request = TestFactory.CreateHttpRequest(url);
 
         var response = await _testee.Run(request, _invalidProjectId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [TestMethod]
+    public async Task Run_WhenProjectIdIsRecognisedAndUserIsAssignedButProjectIsNotInProgress_ReturnsBadRequest()
+    {
+        var url = $"/projects/{_completedProjectId}";
+        var request = TestFactory.CreateHttpRequest(url);
+
+        var response = await _testee.Run(request, _completedProjectId);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

@@ -57,6 +57,11 @@ public class AssignedProjectHandler
             _logger.LogWarning($"Returning 400 (Bad Request) for project \"{projectId}\".");
             return req.CreateResponse(HttpStatusCode.BadRequest);
         }
+        catch (ProjectStateException)
+        {
+            _logger.LogWarning($"Returning 400 (Bad Request) for project \"{projectId}\".");
+            return req.CreateResponse(HttpStatusCode.BadRequest);
+        }
         catch (Exception exception)
         {
             await _errorQueueService.ReportAsync(exception);
