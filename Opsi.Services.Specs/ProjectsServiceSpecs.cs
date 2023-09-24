@@ -1,4 +1,6 @@
-﻿using FakeItEasy;
+﻿using System.Collections.Concurrent;
+using Azure.Data.Tables;
+using FakeItEasy;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -8,6 +10,7 @@ using Opsi.AzureStorage.TableEntities;
 using Opsi.AzureStorage.Types;
 using Opsi.AzureStorage.Types.KeyPolicies;
 using Opsi.Common;
+using Opsi.Common.Exceptions;
 using Opsi.Constants;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
@@ -38,12 +41,15 @@ public class ProjectsServiceSpecs
     private string _defaultOrderBy = OrderBy.Desc;
     private OrderedProject _orderedProject;
     private Project _project;
+    private ProjectTableEntity _projectTableEntity;
     private IProjectsTableService _projectsTableService;
     private readonly string _state1 = ProjectStates.InProgress;
     private ILoggerFactory _loggerFactory;
     private IResourcesService _resourcesService;
+    private ResourceTableEntity _resourceTableEntity;
     private UserAssignment _userAssignment;
     private IUserProvider _userProvider;
+    private UserAssignmentTableEntity _userAssignmentTableEntity;
     private IWebhookQueueService _webhookQueueService;
     private Dictionary<string, object> _webhookCustomProps;
     private ConsumerWebhookSpecification _webhookSpecs;
@@ -91,6 +97,46 @@ public class ProjectsServiceSpecs
             State = _state1,
             Username = _username,
             WebhookSpecification = _webhookSpecs
+        };
+
+        _projectTableEntity = new ProjectTableEntity
+        {
+            EntityType = typeof(ProjectTableEntity).Name,
+            EntityVersion = 1,
+            Id = _projectId,
+            Name = _projectName,
+            PartitionKey = "TEST PARTITION KEY",
+            RowKey = "TEST ROW KEY",
+            State = _state1,
+            Username = _username
+        };
+
+        _resourceTableEntity = new ResourceTableEntity
+        {
+            EntityType = typeof(ResourceTableEntity).Name,
+            EntityVersion = 1,
+            FullName = _resourceFullName,
+            LockedTo = "TEST LOCKED TO",
+            PartitionKey = "TEST PARTITION KEY",
+            ProjectId = _projectId,
+            RowKey = "TEST ROW KEY",
+            Username = _username,
+            VersionId = "TEST VERSION ID",
+            VersionIndex = 3
+        };
+
+        _userAssignmentTableEntity = new UserAssignmentTableEntity
+        {
+            AssignedByUsername = _username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = _assigneeUsername,
+            EntityType = typeof(UserAssignmentTableEntity).Name,
+            EntityVersion = 1,
+            PartitionKey = "TEST PARTITION KEY",
+            ProjectId = _projectId,
+            ProjectName = _projectName,
+            RowKey = "TEST ROW KEY",
+            ResourceFullName = _resourceFullName
         };
 
         Option<Project> nullProject = Option<Project>.None();
@@ -221,6 +267,71 @@ public class ProjectsServiceSpecs
                                                                 && cws.CustomProps.ContainsKey(propNameResourceFullName)
                                                                 && cws.CustomProps[propNameResourceFullName].Equals(_resourceFullName))))
          .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenNoTableEntitiesAreReturned_ThrowsProjectNotFoundException()
+    {
+        var tableEntities = new List<ITableEntity>(0);
+
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername)).Returns(tableEntities);
+
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername))
+                     .Should()
+                     .ThrowAsync<ProjectNotFoundException>();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenNoUserAssignmentTableEntityIsReturned_ThrowsUnassignedToProjectException()
+    {
+        var tableEntities = new List<ITableEntity>
+        {
+            _projectTableEntity,
+            _resourceTableEntity
+        };
+
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername)).Returns(tableEntities);
+
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername))
+                     .Should()
+                     .ThrowAsync<UnassignedToProjectException>();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenNoProjectTableEntityReturned_ThrowsProjectNotFoundException()
+    {
+        var tableEntities = new List<ITableEntity>
+        {
+            _resourceTableEntity,
+            _userAssignmentTableEntity
+        };
+
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername)).Returns(tableEntities);
+
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername))
+                     .Should()
+                     .ThrowAsync<ProjectNotFoundException>();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenUserAssignmentAndProjectTableEntitiesReturned_ReturnsProjectWithResources()
+    {
+        var tableEntities = new List<ITableEntity>
+        {
+            _projectTableEntity,
+            _resourceTableEntity,
+            _userAssignmentTableEntity
+        };
+
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername)).Returns(tableEntities);
+
+        var result = await _testee.GetAssignedProjectAsync(_projectId, _assigneeUsername);
+
+        result.Should().NotBeNull();
+        result.Name.Should().Be(_projectName);
+        result.Id.Should().Be(_projectId);
+        result.Resources.Should().NotBeNullOrEmpty().And.HaveCount(1);
+        result.Resources.Single().FullName.Should().Be(_resourceFullName);
     }
 
     [TestMethod]

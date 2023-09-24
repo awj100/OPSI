@@ -10,6 +10,8 @@ public class UserAssignmentTableEntity : UserAssignment, ITableEntity
 {
     public string EntityType { get; set; } = typeof(UserAssignmentTableEntity).Name;
 
+    public int EntityVersion { get; set; } = 1;
+
     public ETag ETag { get; set; }
 
     public string PartitionKey { get; set; } = default!;

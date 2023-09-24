@@ -1,4 +1,5 @@
-﻿using Opsi.AzureStorage.TableEntities;
+﻿using Azure.Data.Tables;
+using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Pocos;
 
@@ -11,6 +12,8 @@ public interface IProjectsTableService
     Task<IReadOnlyCollection<UserAssignmentTableEntity>> GetAssignedProjectsAsync(string assigneeUsername);
 
     Task<Option<Project>> GetProjectByIdAsync(Guid projectId);
+
+    Task<IReadOnlyCollection<ITableEntity>> GetProjectEntitiesAsync(Guid projectId, string assigneeUsername);
 
     Task<PageableResponse<OrderedProject>> GetProjectsByStateAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null);
 

@@ -1,7 +1,9 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage;
+using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
+using Opsi.Common.Exceptions;
 using Opsi.Constants;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
@@ -61,6 +63,39 @@ public class ProjectsService : IProjectsService
                                            userAssignment.AssignedByUsername,
                                            Events.UserAssigned);
         }
+    }
+
+    public async Task<ProjectWithResources> GetAssignedProjectAsync(Guid projectId, string assigneeUsername)
+    {
+        var tableEntities = await _projectsTableService.GetProjectEntitiesAsync(projectId, assigneeUsername);
+
+        if (!tableEntities.Any())
+        {
+            // No project with the specified ID.
+            throw new ProjectNotFoundException();
+        }
+
+        if (!tableEntities.Any(entity => entity.GetType() == typeof(UserAssignmentTableEntity)))
+        {
+            // The specified assignee has not been assigned to this project.
+            throw new UnassignedToProjectException();
+        }
+
+        if (tableEntities.SingleOrDefault(entity => entity.GetType() == typeof(ProjectTableEntity)) is not ProjectTableEntity projectTableEntity)
+        {
+            throw new ProjectNotFoundException();
+        }
+
+        var project = projectTableEntity.ToProject();
+        var projectWithResources = ProjectWithResources.FromProjectBase(project);
+
+        projectWithResources.Resources = tableEntities.Where(entity => entity.GetType() == typeof(ResourceTableEntity))
+                                                                .Cast<ResourceTableEntity>()
+                                                                .Select(resourceTablEntity => resourceTablEntity.ToResource())
+                                                                .DistinctBy(resource => resource.FullName)
+                                                                .ToList();
+
+        return projectWithResources;
     }
 
     public async Task<IReadOnlyCollection<UserAssignment>> GetAssignedProjectsAsync(string assigneeUsername)

@@ -11,21 +11,25 @@ namespace Opsi.Services.TableServices;
 
 internal class ProjectsTableService : IProjectsTableService
 {
+    private const string PropNameEntityType = "EntityType";
     private const string TableName = "resources";
     private readonly ITableService _projectsTableService;
     private readonly IProjectKeyPolicies _projectKeyPolicies;
     private readonly IResourceKeyPolicies _resourceKeyPolicies;
     private readonly IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
+    private readonly ITableEntityUtilities _tableEntityUtilities;
 
     public ProjectsTableService(IProjectKeyPolicies projectKeyPolicies,
                                 IResourceKeyPolicies resourceKeyPolicies,
                                 ITableServiceFactory tableServiceFactory,
-                                IKeyPolicyFilterGeneration keyPolicyFilterGeneration)
+                                IKeyPolicyFilterGeneration keyPolicyFilterGeneration,
+                                ITableEntityUtilities tableEntityUtilities)
     {
         _keyPolicyFilterGeneration = keyPolicyFilterGeneration;
         _projectKeyPolicies = projectKeyPolicies;
         _projectsTableService = tableServiceFactory.Create(TableName);
         _resourceKeyPolicies = resourceKeyPolicies;
+        _tableEntityUtilities = tableEntityUtilities;
     }
 
     public async Task AssignUserAsync(UserAssignment userAssignment)
@@ -45,7 +49,7 @@ internal class ProjectsTableService : IProjectsTableService
     public async Task<IReadOnlyCollection<UserAssignmentTableEntity>> GetAssignedProjectsAsync(string assigneeUsername)
     {
         const int maxResultsPerPage = 500;
-        var propNamesToSelect = GetPropertyNames<UserAssignmentTableEntity>();
+        var propNamesToSelect = _tableEntityUtilities.GetPropertyNames<UserAssignmentTableEntity>();
         var dummyProjectId = Guid.NewGuid();    // We will use only the partition key, and this project ID is required for a row key which we will neglect.
 
         var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(dummyProjectId, assigneeUsername);
@@ -78,11 +82,54 @@ internal class ProjectsTableService : IProjectsTableService
         return Option<Project>.None();
     }
 
+    public async Task<IReadOnlyCollection<ITableEntity>> GetProjectEntitiesAsync(Guid projectId, string assigneeUsername)
+    {
+        const int maxResultsPerPage = 500;
+
+        var keyPolicyForProjectAssignment = _projectKeyPolicies.GetKeyPolicyByProjectForUserAssignment(projectId, assigneeUsername);
+        var keyPolicyForGetById = _projectKeyPolicies.GetKeyPolicyForGetById(projectId);
+        var keyPolicyForResources = _resourceKeyPolicies.GetKeyPolicyForResourceCount(projectId, "dummy-full-name"); // We'll use only the partition key, which requires only the project ID.
+
+        var filterProjectAssignment = _keyPolicyFilterGeneration.ToFilter(keyPolicyForProjectAssignment);
+        var filterGetById = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGetById);
+        var filterForResources = _keyPolicyFilterGeneration.ToPartitionKeyFilter(keyPolicyForResources);
+
+        var filter = $"({filterProjectAssignment}) or ({filterGetById}) or ({filterForResources})";
+
+        var propNamesToSelect = new List<string>();
+        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<ProjectTableEntity>());
+        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<ResourceTableEntity>());
+        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<UserAssignmentTableEntity>());
+
+        var tableClient = _projectsTableService.TableClient.Value;
+
+        var tableEntityResults = tableClient.QueryAsync<TableEntity>(filter,
+                                                                     maxPerPage: maxResultsPerPage,
+                                                                     select: propNamesToSelect,
+                                                                     cancellationToken: CancellationToken.None);
+
+        var tableEntities = new List<TableEntity>();
+
+        await foreach (var tableEntity in tableEntityResults)
+        {
+            tableEntities.Add(tableEntity);
+        }
+
+        var expectedEntityTypes = new List<Type>
+        {
+            typeof(ProjectTableEntity),
+            typeof(ResourceTableEntity),
+            typeof(UserAssignmentTableEntity)
+        };
+
+        return RetrieveTableEntitiesAsTypes(tableEntities, expectedEntityTypes);
+    }
+
     public async Task<PageableResponse<OrderedProject>> GetProjectsByStateAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null)
     {
         var tableClient = _projectsTableService.TableClient.Value;
         var keyPolicies = _projectKeyPolicies.GetKeyPoliciesByState(projectState);
-        var propNamesToSelect = GetPropertyNames<OrderedProjectTableEntity>();
+        var propNamesToSelect = _tableEntityUtilities.GetPropertyNames<OrderedProjectTableEntity>();
 
         var keyPolicy = keyPolicies.SingleOrDefault(keyPolicy => keyPolicy.RowKey.Value.Contains(orderBy, StringComparison.OrdinalIgnoreCase));
         if (String.IsNullOrEmpty(keyPolicy.PartitionKey))
@@ -201,7 +248,7 @@ internal class ProjectsTableService : IProjectsTableService
     private async Task<Option<ProjectTableEntity>> GetProjectTableEntityByIdAsync(Guid projectId)
     {
         const int maxResultsPerPage = 1;
-        var propNamesToSelect = GetPropertyNames<ProjectTableEntity>();
+        var propNamesToSelect = _tableEntityUtilities.GetPropertyNames<ProjectTableEntity>();
 
         var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyForGetById(projectId);
         var keyPolicyFilter = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGet);
@@ -223,7 +270,7 @@ internal class ProjectsTableService : IProjectsTableService
 
     private async Task<IReadOnlyCollection<OrderedProjectTableEntity>> GetProjectTableEntityByStateAndIdAsync(string state, Guid projectId)
     {
-        var propNamesToSelect = GetPropertyNames<OrderedProjectTableEntity>();
+        var propNamesToSelect = _tableEntityUtilities.GetPropertyNames<OrderedProjectTableEntity>();
 
         var keyPoliciesForGetByState = _projectKeyPolicies.GetKeyPoliciesByState(state);
         var keyPolicyFilters = keyPoliciesForGetByState.Select(keyPolicy => $"PartitionKey eq '{keyPolicy.PartitionKey}' and Id eq guid'{projectId}'");
@@ -247,10 +294,40 @@ internal class ProjectsTableService : IProjectsTableService
         return orderedProjectTableEntities;
     }
 
-    private static IReadOnlyCollection<string> GetPropertyNames<TType>()
+    private IReadOnlyCollection<ITableEntity> RetrieveTableEntitiesAsTypes(IReadOnlyCollection<TableEntity> tableEntities, List<Type> expectedTypes)
     {
-        return typeof(TType).GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                            .Select(propInfo => propInfo.Name)
-                            .ToList();
+        var expectedTypeNames = expectedTypes.Select(type => type.Name).ToList();
+        var ignorablePropertyNames = _tableEntityUtilities.GetPropertyNames<ITableEntity>();
+        var requestedTableEntities = new List<ITableEntity>();
+
+        foreach (var tableEntity in tableEntities)
+        {
+            var entityTypeName = tableEntity.GetString(PropNameEntityType);
+
+            Type? typeForConversion = null;
+            foreach (var expectedType in expectedTypes)
+            {
+                if (!entityTypeName.Equals(expectedType.Name) || !expectedType.IsAssignableTo(typeof(ITableEntity)))
+                {
+                    continue;
+                }
+
+                typeForConversion = expectedType;
+            }
+
+            if (typeForConversion == null)
+            {
+                continue;
+            }
+
+            var instance = _tableEntityUtilities.ParseTableEntityAsType(typeForConversion, tableEntity, ignorablePropertyNames);
+
+            if (instance != null)
+            {
+                requestedTableEntities.Add(instance);
+            }
+        }
+
+        return requestedTableEntities;
     }
 }

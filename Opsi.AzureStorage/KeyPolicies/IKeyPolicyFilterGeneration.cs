@@ -5,4 +5,6 @@ namespace Opsi.AzureStorage.KeyPolicies;
 public interface IKeyPolicyFilterGeneration
 {
     string ToFilter(KeyPolicy keyPolicy);
+
+    string ToPartitionKeyFilter(KeyPolicy keyPolicy);
 }

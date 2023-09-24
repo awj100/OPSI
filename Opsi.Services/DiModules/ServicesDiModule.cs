@@ -46,6 +46,7 @@ public static class ServicesDiModule
             .AddSingleton<QueueServices.IErrorQueueService, QueueServices.ErrorQueueService>()
             .AddSingleton<TableServices.IOneTimeAuthKeysTableService, TableServices.OneTimeAuthKeysTableService>()
             .AddSingleton<TableServices.IProjectsTableService, TableServices.ProjectsTableService>()
+            .AddSingleton<TableServices.ITableEntityUtilities, TableServices.TableEntityUtilities>()
             .AddSingleton<TableServices.IWebhookTableService, TableServices.WebhookTableService>()
             .AddSingleton<Webhooks.IWebhookDispatcher, Webhooks.WebhookDispatcher>()
             .AddSingleton<Webhooks.IWebhookService, Webhooks.WebhookService>();

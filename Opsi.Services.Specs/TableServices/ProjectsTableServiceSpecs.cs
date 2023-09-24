@@ -38,6 +38,7 @@ public class ProjectsTableServiceSpecs
     private Guid _project1Id;
     private IReadOnlyCollection<OrderedProjectTableEntity> _orderedProjectTableEntities;
     private ProjectTableEntity _projectTableEntity1;
+    private ResourceTableEntity _resourceTableEntity;
     private IProjectKeyPolicies _projectKeyPolicies;
     private IResourceKeyPolicies _resourceKeyPolicies;
     private RowKey _rowKey1;
@@ -45,8 +46,10 @@ public class ProjectsTableServiceSpecs
     private string _rowKey1Value;
     private string _rowKey2Value;
     private TableClient _tableClient;
+    private ITableEntityUtilities _tableEntityUtilities;
     private ITableService _tableService;
     private ITableServiceFactory _tableServiceFactory;
+    private UserAssignmentTableEntity _userAssignmentTableEntity;
     private ProjectsTableService _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -86,14 +89,52 @@ public class ProjectsTableServiceSpecs
             RowKey = keyPolicy.RowKey.Value
         }).ToList();
         _project1Id = new Guid("cbd30af3-2ec9-4bc2-b719-296c149f66bb");
-        _projectTableEntity1 = new ProjectTableEntity { Id = _project1Id, Name = Name, PartitionKey = PartitionKey, RowKey = Guid.NewGuid().ToString(), State = _returnableState, Username = Username };
+        _projectTableEntity1 = new ProjectTableEntity
+        {
+            EntityType = typeof(ProjectTableEntity).Name,
+            EntityVersion = 1,
+            Id = _project1Id,
+            Name = Name,
+            PartitionKey = PartitionKey,
+            RowKey = Guid.NewGuid().ToString(),
+            State = _returnableState,
+            Username = Username
+        };
         _project = _projectTableEntity1.ToProject();
         _projectKeyPolicies = A.Fake<IProjectKeyPolicies>();
         _resourceKeyPolicies = A.Fake<IResourceKeyPolicies>();
+        _resourceTableEntity = new ResourceTableEntity
+        {
+            EntityType = typeof(ResourceTableEntity).Name,
+            EntityVersion = 1,
+            FullName = ResourceFullName,
+            LockedTo = "TEST LOCKED TO",
+            PartitionKey = PartitionKey,
+            ProjectId = _project1Id,
+            RowKey = _rowKey1Value,
+            Username = Username,
+            VersionId = "TEST VERSION ID",
+            VersionIndex = 3
+        };
         _tableClient = A.Fake<TableClient>();
+        _tableEntityUtilities = A.Fake<ITableEntityUtilities>();
         _tableService = A.Fake<ITableService>();
         _tableServiceFactory = A.Fake<ITableServiceFactory>();
+        _userAssignmentTableEntity = new UserAssignmentTableEntity
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername,
+            EntityType = typeof(UserAssignmentTableEntity).Name,
+            EntityVersion = 1,
+            PartitionKey = PartitionKey,
+            ProjectId = _project1Id,
+            ProjectName = Name,
+            RowKey = _rowKey1Value,
+            ResourceFullName = ResourceFullName
+        };
 
+        A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(A<KeyPolicy>._)).ReturnsLazily((KeyPolicy keyPolicy) => $"PartitionKey eq '{keyPolicy.PartitionKey}' and RowKey eq '{keyPolicy.RowKey.Value}'");
         A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(_keyPolicyForGet)).Returns(RowKey1Filter);
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesByState(A<string>._)).ReturnsLazily((string state) => _getKeyPoliciesByState(state));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(A<Guid>._)).Returns(_keyPolicyForGet);
@@ -101,11 +142,15 @@ public class ProjectsTableServiceSpecs
         A.CallTo(() => _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)), A<string>.That.Matches(s => s.Equals(ResourceFullName)), A<string>.That.Matches(s => s.Equals(AssigneeUsername)))).Returns(_resourceKeyPoliciesForUserAssignment);
         A.CallTo(() => _tableService.TableClient).Returns(new Lazy<TableClient>(() => _tableClient));
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
+        A.CallTo(() => _tableEntityUtilities.ParseTableEntityAsType(A<Type>._, A<TableEntity>._, A<IReadOnlyCollection<string>>._)).ReturnsLazily((Type typeForActivation,
+                                                                                                                                                   TableEntity tableEntity,
+                                                                                                                                                   IReadOnlyCollection<string> ignorablePropertyNames) => Activator.CreateInstance(typeForActivation) as ITableEntity);
 
         _testee = new ProjectsTableService(_projectKeyPolicies,
                                            _resourceKeyPolicies,
                                            _tableServiceFactory,
-                                           _keyPolicyFilterGeneration);
+                                           _keyPolicyFilterGeneration,
+                                           _tableEntityUtilities);
     }
 
     [TestMethod]
@@ -345,6 +390,74 @@ public class ProjectsTableServiceSpecs
         var result = await _testee.GetProjectByIdAsync(_projectTableEntity1.Id);
 
         result.IsNone.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task GetProjectEntitiesAsync_WhenProjectIdIsInvalid_ReturnsEmptyListOfEntities()
+    {
+        const string propName1 = nameof(propName1);
+        const string propName2 = nameof(propName2);
+        var propValue1 = Guid.NewGuid().ToString();
+        var propValue2 = Guid.NewGuid().ToString();
+
+        var tableEntities = new List<TableEntity>
+        {
+            ConvertToTableEntity(_projectTableEntity1),
+            ConvertToTableEntity(_resourceTableEntity),
+            ConvertToTableEntity(_userAssignmentTableEntity)
+        };
+
+        var pages = GetQueryResponse(tableEntities.ToArray());
+
+        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>.That.Matches(s => s.Contains(_project1Id.ToString()) && s.Contains(AssigneeUsername)),
+                                                            A<int?>._,
+                                                            A<IEnumerable<string>>._,
+                                                            A<CancellationToken>._)).Returns(pages);
+
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByProjectForUserAssignment(_project1Id, AssigneeUsername)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername, KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(_project1Id)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
+
+        var result = await _testee.GetProjectEntitiesAsync(_project1Id, AssigneeUsername);
+
+        result.Should().HaveCount(tableEntities.Count);
+        result.Where(tableEntity => tableEntity.GetType().Equals(typeof(ProjectTableEntity))).Should().HaveCount(1);
+        result.Where(tableEntity => tableEntity.GetType().Equals(typeof(ResourceTableEntity))).Should().HaveCount(1);
+        result.Where(tableEntity => tableEntity.GetType().Equals(typeof(UserAssignmentTableEntity))).Should().HaveCount(1);
+    }
+
+    [TestMethod]
+    public async Task GetProjectEntitiesAsync_WhenProjectIdIsValid_ReturnsRetrievedEntities()
+    {
+        var invalidProjectId = Guid.NewGuid();
+        const string propName1 = nameof(propName1);
+        const string propName2 = nameof(propName2);
+        var propValue1 = Guid.NewGuid().ToString();
+        var propValue2 = Guid.NewGuid().ToString();
+
+        var tableEntities = new List<TableEntity>
+        {
+            ConvertToTableEntity(_projectTableEntity1),
+            ConvertToTableEntity(_resourceTableEntity),
+            ConvertToTableEntity(_userAssignmentTableEntity)
+        };
+
+        var pages = GetQueryResponse(tableEntities.ToArray());
+
+        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>.That.Matches(s => s.Contains(_project1Id.ToString()) && s.Contains(AssigneeUsername)),
+                                                            A<int?>._,
+                                                            A<IEnumerable<string>>._,
+                                                            A<CancellationToken>._)).Returns(pages);
+
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByProjectForUserAssignment(_project1Id, AssigneeUsername)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername, KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(_project1Id)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
+
+        var result = await _testee.GetProjectEntitiesAsync(invalidProjectId, AssigneeUsername);
+
+        result.Should()
+              .NotBeNull().And
+              .BeEmpty();
     }
 
     [TestMethod]
@@ -816,6 +929,18 @@ public class ProjectsTableServiceSpecs
         var result = await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, newState);
 
         result.IsSome.Should().BeTrue();
+    }
+
+    private static TableEntity ConvertToTableEntity(ITableEntity entityImplementation)
+    {
+        var tableEntity = new TableEntity();
+
+        foreach (var propInfo in entityImplementation.GetType().GetProperties())
+        {
+            tableEntity[propInfo.Name] = propInfo.GetValue(entityImplementation);
+        }
+
+        return tableEntity;
     }
 
     private static AsyncPageable<TTableEntity> GetQueryResponse<TTableEntity>(params TTableEntity[] projectsResult) where TTableEntity : ITableEntity

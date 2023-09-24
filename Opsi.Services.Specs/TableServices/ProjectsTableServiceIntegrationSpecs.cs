@@ -30,6 +30,7 @@ public class ProjectsTableServiceIntegrationSpecs
     private List<ProjectTableEntity> _projectTableEntities;
     private IResourceKeyPolicies _resourceKeyPolicies;
     private ISettingsProvider _settingsProvider;
+    private ITableEntityUtilities _tableEntityUtilities;
     private ITableService _tableService;
     private ITableServiceFactory _tableServiceFactory;
     private ProjectsTableService _testee;
@@ -53,6 +54,7 @@ public class ProjectsTableServiceIntegrationSpecs
                                                   A<bool>._,
                                                   A<string>._)).Returns(StorageConnectionString);
 
+        _tableEntityUtilities = new TableEntityUtilities();
         _tableService = new TableService(_settingsProvider, TableName, _keyPolicyFilterGeneration);
         _tableServiceFactory = A.Fake<ITableServiceFactory>();
 
@@ -61,7 +63,8 @@ public class ProjectsTableServiceIntegrationSpecs
         _testee = new ProjectsTableService(_projectKeyPolicies,
                                            _resourceKeyPolicies,
                                            _tableServiceFactory,
-                                           _keyPolicyFilterGeneration);
+                                           _keyPolicyFilterGeneration,
+                                           _tableEntityUtilities);
 
         _projects = GenerateProjects().Take(ProjectCount).ToList();
         _projectTableEntities = _projects.Select(project => ProjectTableEntity.FromProject(project, PartitionKey, $"rowKey_{project.State}_{project.Id}")).ToList();

@@ -10,4 +10,9 @@ internal class KeyPolicyFilterGeneration : IKeyPolicyFilterGeneration
 
         return $"PartitionKey eq '{partitionKey}' and RowKey {keyPolicy.RowKey.QueryOperator} '{keyPolicy.RowKey.Value}'";
     }
+
+    public string ToPartitionKeyFilter(KeyPolicy keyPolicy)
+    {
+        return $"PartitionKey eq '{keyPolicy.PartitionKey}'";
+    }
 }
