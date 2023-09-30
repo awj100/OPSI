@@ -125,9 +125,7 @@ internal class TableEntityUtilities : ITableEntityUtilities
                                                   .Where(pi => !ignorablePropertyNames.Contains(pi.Name))
                                                   .ToList())
         {
-            var propertyType = propInfo.PropertyType == typeof(Nullable)
-                ? Nullable.GetUnderlyingType(propInfo.PropertyType)
-                : propInfo.PropertyType;
+            var propertyType = Nullable.GetUnderlyingType(propInfo.PropertyType) ?? propInfo.PropertyType;
 
             if (propertyType == typeof(byte[]))
             {

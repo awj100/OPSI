@@ -18,12 +18,6 @@ namespace Opsi.AzureStorage
 
         Task<IReadOnlyCollection<ResourceTableEntity>> GetResourcesAsync(Guid projectId);
 
-        Task LockResourceToUser(Guid projectId, string fullName, string username);
-
         Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo);
-
-        Task UnlockResource(Guid projectId, string fullName);
-
-        Task UnlockResourceFromUser(Guid projectId, string fullName, string username);
     }
 }

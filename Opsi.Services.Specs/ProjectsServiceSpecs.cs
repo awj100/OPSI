@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using Azure.Data.Tables;
+﻿using Azure.Data.Tables;
 using FakeItEasy;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -23,11 +22,13 @@ namespace Opsi.Services.Specs;
 public class ProjectsServiceSpecs
 {
     private const string _assignedByUsername = "TEST ASSIGNED BY USERNAME";
-    private const string _assigneeUsername = "TEST ASSIGNEE USERNAME";
+    private const string _assigneeUsername1 = "TEST ASSIGNEE USERNAME 1";
+    private const string _assigneeUsername2 = "TEST ASSIGNEE USERNAME 2";
     private const string _continuationToken = "TEST CONTINUATION TOKEN";
     private const int _pageSize = 10;
     private const string _projectName = "TEST PROJECT NAME";
-    private const string _resourceFullName = "TEST RESOURCE FULL NAME";
+    private const string _resource1FullName = "TEST RESOURCE 1 FULL NAME";
+    private const string _resource2FullName = "TEST RESOURCE 2 FULL NAME";
     private const string _state2 = "TEST STATE 2";
     private const string _username = "TEST USERNAME";
     private const string _webhookCustomProp1Name = nameof(_webhookCustomProp1Name);
@@ -47,9 +48,11 @@ public class ProjectsServiceSpecs
     private ILoggerFactory _loggerFactory;
     private IResourcesService _resourcesService;
     private ResourceTableEntity _resourceTableEntity;
-    private UserAssignment _userAssignment;
+    private UserAssignment _userAssignment1;
+    private UserAssignment _userAssignment2;
     private IUserProvider _userProvider;
-    private UserAssignmentTableEntity _userAssignmentTableEntity;
+    private UserAssignmentTableEntity _userAssignmentTableEntity1;
+    private UserAssignmentTableEntity _userAssignmentTableEntity2;
     private IWebhookQueueService _webhookQueueService;
     private Dictionary<string, object> _webhookCustomProps;
     private ConsumerWebhookSpecification _webhookSpecs;
@@ -60,14 +63,6 @@ public class ProjectsServiceSpecs
     public void TestInit()
     {
         _assignedOnUtc = DateTime.UtcNow;
-        _userAssignment = new UserAssignment
-        {
-            AssignedByUsername = _assignedByUsername,
-            AssignedOnUtc = _assignedOnUtc,
-            AssigneeUsername = _assigneeUsername,
-            ProjectId = _projectId,
-            ResourceFullName = _resourceFullName
-        };
 
         var basicKeyPolicy = new KeyPolicy("TEST PARTITION KEY", new RowKey("TEST ROW KEY", KeyPolicyQueryOperators.Equal));
         Func<Project, IReadOnlyCollection<KeyPolicy>> basicKeyPolicyResolver = project => new List<KeyPolicy> { basicKeyPolicy };
@@ -115,8 +110,7 @@ public class ProjectsServiceSpecs
         {
             EntityType = typeof(ResourceTableEntity).Name,
             EntityVersion = 1,
-            FullName = _resourceFullName,
-            LockedTo = "TEST LOCKED TO",
+            FullName = _resource1FullName,
             PartitionKey = "TEST PARTITION KEY",
             ProjectId = _projectId,
             RowKey = "TEST ROW KEY",
@@ -125,18 +119,48 @@ public class ProjectsServiceSpecs
             VersionIndex = 3
         };
 
-        _userAssignmentTableEntity = new UserAssignmentTableEntity
+        _userAssignmentTableEntity1 = new UserAssignmentTableEntity
         {
-            AssignedByUsername = _username,
-            AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = _assigneeUsername,
+            AssignedByUsername = _assignedByUsername,
+            AssignedOnUtc = _assignedOnUtc,
+            AssigneeUsername = _assigneeUsername1,
             EntityType = typeof(UserAssignmentTableEntity).Name,
             EntityVersion = 1,
             PartitionKey = "TEST PARTITION KEY",
             ProjectId = _projectId,
             ProjectName = _projectName,
             RowKey = "TEST ROW KEY",
-            ResourceFullName = _resourceFullName
+            ResourceFullName = _resource1FullName
+        };
+        _userAssignment1 = new UserAssignment
+        {
+            AssignedByUsername = _assignedByUsername,
+            AssignedOnUtc = _assignedOnUtc,
+            AssigneeUsername = _assigneeUsername1,
+            ProjectId = _projectId,
+            ResourceFullName = _resource1FullName
+        };
+
+        _userAssignmentTableEntity2 = new UserAssignmentTableEntity
+        {
+            AssignedByUsername = _assignedByUsername,
+            AssignedOnUtc = _assignedOnUtc,
+            AssigneeUsername = _assigneeUsername2,
+            EntityType = typeof(UserAssignmentTableEntity).Name,
+            EntityVersion = 1,
+            PartitionKey = "TEST PARTITION KEY",
+            ProjectId = _projectId,
+            ProjectName = _projectName,
+            RowKey = "TEST ROW KEY",
+            ResourceFullName = _resource2FullName
+        };
+        _userAssignment2 = new UserAssignment
+        {
+            AssignedByUsername = _assignedByUsername,
+            AssignedOnUtc = _assignedOnUtc,
+            AssigneeUsername = _assigneeUsername2,
+            ProjectId = _projectId,
+            ResourceFullName = _resource2FullName
         };
 
         Option<Project> nullProject = Option<Project>.None();
@@ -168,7 +192,7 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.None());
 
-        await _testee.Invoking(t => t.AssignUserAsync(_userAssignment)).Should().ThrowAsync<ArgumentException>();
+        await _testee.Invoking(t => t.AssignUserAsync(_userAssignment1)).Should().ThrowAsync<ArgumentException>();
     }
 
     [TestMethod]
@@ -176,7 +200,7 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.AssignUserAsync(_userAssignment);
+        await _testee.AssignUserAsync(_userAssignment1);
 
         A.CallTo(() => _projectsTableService.AssignUserAsync(A<UserAssignment>.That.Matches(ua => ua.ProjectName.Equals(_project.Name))))
          .MustHaveHappenedOnceExactly();
@@ -187,7 +211,7 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.AssignUserAsync(_userAssignment);
+        await _testee.AssignUserAsync(_userAssignment1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.ProjectId.Equals(_project.Id)), A<ConsumerWebhookSpecification>._))
          .MustHaveHappenedOnceExactly();
@@ -198,7 +222,7 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.AssignUserAsync(_userAssignment);
+        await _testee.AssignUserAsync(_userAssignment1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Name.Equals(_project.Name)), A<ConsumerWebhookSpecification>._))
          .MustHaveHappenedOnceExactly();
@@ -209,7 +233,7 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.AssignUserAsync(_userAssignment);
+        await _testee.AssignUserAsync(_userAssignment1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Event.Equals(Events.UserAssigned)), A<ConsumerWebhookSpecification>._))
          .MustHaveHappenedOnceExactly();
@@ -231,9 +255,9 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.AssignUserAsync(_userAssignment);
+        await _testee.AssignUserAsync(_userAssignment1);
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Username.Equals(_userAssignment.AssignedByUsername)), A<ConsumerWebhookSpecification>._))
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Username.Equals(_userAssignment1.AssignedByUsername)), A<ConsumerWebhookSpecification>._))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -244,12 +268,12 @@ public class ProjectsServiceSpecs
 
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.AssignUserAsync(_userAssignment);
+        await _testee.AssignUserAsync(_userAssignment1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
             A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
                                                                 && cws.CustomProps.ContainsKey(propNameAssignedUsername)
-                                                                && cws.CustomProps[propNameAssignedUsername].Equals(_assigneeUsername))))
+                                                                && cws.CustomProps[propNameAssignedUsername].Equals(_assigneeUsername1))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -260,12 +284,12 @@ public class ProjectsServiceSpecs
 
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.AssignUserAsync(_userAssignment);
+        await _testee.AssignUserAsync(_userAssignment1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
             A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
                                                                 && cws.CustomProps.ContainsKey(propNameResourceFullName)
-                                                                && cws.CustomProps[propNameResourceFullName].Equals(_resourceFullName))))
+                                                                && cws.CustomProps[propNameResourceFullName].Equals(_resource1FullName))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -274,9 +298,9 @@ public class ProjectsServiceSpecs
     {
         var tableEntities = new List<ITableEntity>(0);
 
-        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername)).Returns(tableEntities);
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername1)).Returns(tableEntities);
 
-        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername))
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1))
                      .Should()
                      .ThrowAsync<ProjectNotFoundException>();
     }
@@ -290,9 +314,9 @@ public class ProjectsServiceSpecs
             _resourceTableEntity
         };
 
-        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername)).Returns(tableEntities);
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername1)).Returns(tableEntities);
 
-        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername))
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1))
                      .Should()
                      .ThrowAsync<UnassignedToProjectException>();
     }
@@ -303,12 +327,12 @@ public class ProjectsServiceSpecs
         var tableEntities = new List<ITableEntity>
         {
             _resourceTableEntity,
-            _userAssignmentTableEntity
+            _userAssignmentTableEntity1
         };
 
-        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername)).Returns(tableEntities);
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername1)).Returns(tableEntities);
 
-        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername))
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1))
                      .Should()
                      .ThrowAsync<ProjectNotFoundException>();
     }
@@ -322,12 +346,12 @@ public class ProjectsServiceSpecs
         {
             _projectTableEntity,
             _resourceTableEntity,
-            _userAssignmentTableEntity
+            _userAssignmentTableEntity1
         };
 
-        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername)).Returns(tableEntities);
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername1)).Returns(tableEntities);
 
-        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername))
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1))
                      .Should()
                      .ThrowAsync<ProjectStateException>();
     }
@@ -339,18 +363,18 @@ public class ProjectsServiceSpecs
         {
             _projectTableEntity,
             _resourceTableEntity,
-            _userAssignmentTableEntity
+            _userAssignmentTableEntity1
         };
 
-        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername)).Returns(tableEntities);
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername1)).Returns(tableEntities);
 
-        var result = await _testee.GetAssignedProjectAsync(_projectId, _assigneeUsername);
+        var result = await _testee.GetAssignedProjectAsync(_projectId, _assigneeUsername1);
 
         result.Should().NotBeNull();
         result.Name.Should().Be(_projectName);
         result.Id.Should().Be(_projectId);
         result.Resources.Should().NotBeNullOrEmpty().And.HaveCount(1);
-        result.Resources.Single().FullName.Should().Be(_resourceFullName);
+        result.Resources.Single().FullName.Should().Be(_resource1FullName);
     }
 
     [TestMethod]
@@ -426,84 +450,76 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
-    public async Task GetProjectAsync_WhenProjectIdNotRecognised_ReturnsNull()
+    public async Task GetProjectAsync_WhenNoTableEntitiesAreReturned_ThrowsProjectNotFoundException()
     {
-        var response = await _testee.GetProjectAsync(Guid.NewGuid());
+        var tableEntities = new List<ITableEntity>(0);
 
-        response.Should().BeNull();
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId)).Returns(tableEntities);
+
+        await _testee.Invoking(t => t.GetProjectAsync(_projectId))
+                     .Should()
+                     .ThrowAsync<ProjectNotFoundException>();
     }
 
     [TestMethod]
-    public async Task GetProjectAsync_WhenNoResourcesObtained_ReturnsNull()
+    public async Task GetProjectAsync_WhenNoProjectTableEntityReturned_ThrowsProjectNotFoundException()
     {
-        A.CallTo(() => _resourcesService.GetResourcesAsync(Guid.NewGuid())).Returns(new List<ResourceTableEntity>(0));
+        var tableEntities = new List<ITableEntity>
+        {
+            _resourceTableEntity,
+            _userAssignmentTableEntity1
+        };
 
-        var response = await _testee.GetProjectAsync(_projectId);
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId)).Returns(tableEntities);
 
-        response.Should().BeNull();
+        await _testee.Invoking(t => t.GetProjectAsync(_projectId))
+                     .Should()
+                     .ThrowAsync<ProjectNotFoundException>();
     }
 
     [TestMethod]
-    public async Task GetProjectAsync_WhenUserIsAdministrator_ReturnsProjectWithAllResources()
+    public async Task GetProjectAsync_WhenNoUserAssignmentTableEntityIsReturned_ReturnsProjectWithResourcesWhichHaveNoAssignment()
     {
-        const bool isAdministrator = true;
-        const string otherUsername = "otherUser@test.com";
-        var resources = GenerateResources().Take(4).ToList();
-        resources.ElementAt(1).Username = otherUsername;
-        resources.ElementAt(3).Username = otherUsername;
+        var tableEntities = new List<ITableEntity>
+        {
+            _projectTableEntity,
+            _resourceTableEntity
+        };
 
-        A.CallTo(() => _resourcesService.GetResourcesAsync(_projectId)).Returns(resources);
-        A.CallTo(() => _userProvider.IsAdministrator).Returns(new Lazy<bool>(() => isAdministrator));
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId)).Returns(tableEntities);
 
-        var response = await _testee.GetProjectAsync(_projectId);
-
-        response.Should().NotBeNull();
-        response!.Resources.Should().NotBeNullOrEmpty();
-        response!.Resources.Should().HaveCount(resources.Count);
-    }
-
-    [TestMethod]
-    public async Task GetProjectAsync_WhenUserIsNotAdministrator_ReturnsProjectWithOnlyUserAssignedResources()
-    {
-        const bool isAdministrator = false;
-        const string otherUsername = "otherUser@test.com";
-        var resources = GenerateResources().Take(4).ToList();
-        resources.ElementAt(1).Username = otherUsername;
-        resources.ElementAt(3).Username = otherUsername;
-
-        A.CallTo(() => _resourcesService.GetResourcesAsync(_projectId)).Returns(resources);
-        A.CallTo(() => _userProvider.IsAdministrator).Returns(new Lazy<bool>(() => isAdministrator));
-
-        var response = await _testee.GetProjectAsync(_projectId);
-
-        response.Should().NotBeNull();
-        response!.Resources.Should().NotBeNullOrEmpty();
-        response!.Resources.Should().HaveCount(resources.Count(resource => resource.Username != null && resource.Username.Equals(_username)));
-        response!.Resources.Should().AllSatisfy(resource => resource.Username.Should().Be(_username));
-    }
-
-    [TestMethod]
-    public async Task GetProjectsAsync_WhenProjectStateIsRecognised_ReturnsResultFromTableService()
-    {
-        var pageableResponse = new PageableResponse<OrderedProject>(new List<OrderedProject> { _orderedProject }, _continuationToken);
-
-        A.CallTo(() => _projectsTableService.GetProjectsByStateAsync(_state1, _defaultOrderBy, _pageSize, A<string?>._)).Returns(pageableResponse);
-
-        var result = await _testee.GetProjectsAsync(_state1, _defaultOrderBy, _pageSize);
+        var result = await _testee.GetProjectAsync(_projectId);
 
         result.Should().NotBeNull();
-        result.Items.Should().NotBeNullOrEmpty();
-        result.Items.Should().HaveCount(1)
-              .And.Match(projects => projects.Single().Id.Equals(_project.Id));
+        result.Name.Should().Be(_projectName);
+        result.Id.Should().Be(_projectId);
+        result.Resources.Should().NotBeNull().And.HaveCount(1);
+        result.Resources.Should().AllSatisfy(resource => resource.AssignedTo.Should().BeNullOrEmpty());
+        result.Resources.Should().AllSatisfy(resource => resource.AssignedBy.Should().BeNullOrEmpty());
+        result.Resources.Should().AllSatisfy(resource => resource.AssignedOnUtc.HasValue.Should().BeFalse());
     }
 
     [TestMethod]
-    public async Task GetProjectsAsync_WhenProjectStateIsNoRecognised_ThrowsArgumentException()
+    public async Task GetProjectAsync_WhenUserAssignmentAndProjectTableEntitiesReturned_ReturnsProjectWithResourcesWhichHaveAssignmentProperties()
     {
-        await _testee.Invoking(t => t.GetProjectsAsync(Guid.NewGuid().ToString(), _defaultOrderBy, _pageSize, _continuationToken))
-                     .Should()
-                     .ThrowAsync<ArgumentException>()
-                     .WithParameterName("projectState");
+        var tableEntities = new List<ITableEntity>
+        {
+            _projectTableEntity,
+            _resourceTableEntity,
+            _userAssignmentTableEntity1
+        };
+
+        A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId)).Returns(tableEntities);
+
+        var result = await _testee.GetProjectAsync(_projectId);
+
+        result.Should().NotBeNull();
+        result.Name.Should().Be(_projectName);
+        result.Id.Should().Be(_projectId);
+        result.Resources.Should().NotBeNull().And.HaveCount(1);
+        result.Resources.Single().AssignedTo.Should().Be(_userAssignment1.AssigneeUsername);
+        result.Resources.Single().AssignedBy.Should().Be(_userAssignment1.AssignedByUsername);
+        result.Resources.Single().AssignedOnUtc.Should().Be(_userAssignment1.AssignedOnUtc);
     }
 
     [TestMethod]
@@ -592,7 +608,7 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.None());
 
-        await _testee.Invoking(t => t.RevokeUserAsync(_userAssignment)).Should().ThrowAsync<ArgumentException>();
+        await _testee.Invoking(t => t.RevokeUserAsync(_userAssignment1)).Should().ThrowAsync<ArgumentException>();
     }
 
     [TestMethod]
@@ -600,7 +616,7 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.RevokeUserAsync(_userAssignment);
+        await _testee.RevokeUserAsync(_userAssignment1);
 
         A.CallTo(() => _projectsTableService.RevokeUserAsync(A<UserAssignment>.That.Matches(ua => ua.ProjectName.Equals(_project.Name))))
          .MustHaveHappenedOnceExactly();
@@ -611,7 +627,7 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.RevokeUserAsync(_userAssignment);
+        await _testee.RevokeUserAsync(_userAssignment1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.ProjectId.Equals(_project.Id)), A<ConsumerWebhookSpecification>._))
          .MustHaveHappenedOnceExactly();
@@ -622,7 +638,7 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.RevokeUserAsync(_userAssignment);
+        await _testee.RevokeUserAsync(_userAssignment1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Name.Equals(_project.Name)), A<ConsumerWebhookSpecification>._))
          .MustHaveHappenedOnceExactly();
@@ -633,7 +649,7 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.RevokeUserAsync(_userAssignment);
+        await _testee.RevokeUserAsync(_userAssignment1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Event.Equals(Events.UserRevoked)), A<ConsumerWebhookSpecification>._))
          .MustHaveHappenedOnceExactly();
@@ -655,9 +671,9 @@ public class ProjectsServiceSpecs
     {
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.RevokeUserAsync(_userAssignment);
+        await _testee.RevokeUserAsync(_userAssignment1);
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Username.Equals(_userAssignment.AssignedByUsername)), A<ConsumerWebhookSpecification>._))
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Username.Equals(_userAssignment1.AssignedByUsername)), A<ConsumerWebhookSpecification>._))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -668,12 +684,12 @@ public class ProjectsServiceSpecs
 
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.RevokeUserAsync(_userAssignment);
+        await _testee.RevokeUserAsync(_userAssignment1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
             A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
                                                                 && cws.CustomProps.ContainsKey(propNameAssignedUsername)
-                                                                && cws.CustomProps[propNameAssignedUsername].Equals(_assigneeUsername))))
+                                                                && cws.CustomProps[propNameAssignedUsername].Equals(_assigneeUsername1))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -684,12 +700,12 @@ public class ProjectsServiceSpecs
 
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
 
-        await _testee.RevokeUserAsync(_userAssignment);
+        await _testee.RevokeUserAsync(_userAssignment1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
             A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
                                                                 && cws.CustomProps.ContainsKey(propNameResourceFullName)
-                                                                && cws.CustomProps[propNameResourceFullName].Equals(_resourceFullName))))
+                                                                && cws.CustomProps[propNameResourceFullName].Equals(_resource1FullName))))
          .MustHaveHappenedOnceExactly();
     }
 

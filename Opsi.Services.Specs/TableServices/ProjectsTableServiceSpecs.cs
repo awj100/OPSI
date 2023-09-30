@@ -16,10 +16,12 @@ namespace Opsi.Services.Specs.TableServices;
 [TestClass]
 public class ProjectsTableServiceSpecs
 {
-    private const string AssigneeUsername = "TEST ASSIGNEE USERNAME";
+    private const string AssigneeUsername1 = "TEST ASSIGNEE USERNAME 1";
+    private const string AssigneeUsername2 = "TEST ASSIGNEE USERNAME 2";
     private const string Name = "TEST NAME";
     private const string PartitionKey = "PARTITION KEY";
-    private const string ResourceFullName = "TEST RESOURCE FULL NAME";
+    private const string Resource1FullName = "TEST RESOURCE 1 FULL NAME";
+    private const string Resource2FullName = "TEST RESOURCE 2 FULL NAME";
     private const string RowKey1Filter = "ROW KEY 1 FILTER desc";
     private const string Username = "TEST USERNAME";
 
@@ -49,7 +51,8 @@ public class ProjectsTableServiceSpecs
     private ITableEntityUtilities _tableEntityUtilities;
     private ITableService _tableService;
     private ITableServiceFactory _tableServiceFactory;
-    private UserAssignmentTableEntity _userAssignmentTableEntity;
+    private UserAssignmentTableEntity _userAssignmentTableEntity1;
+    private UserAssignmentTableEntity _userAssignmentTableEntity2;
     private ProjectsTableService _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -107,8 +110,8 @@ public class ProjectsTableServiceSpecs
         {
             EntityType = typeof(ResourceTableEntity).Name,
             EntityVersion = 1,
-            FullName = ResourceFullName,
-            LockedTo = "TEST LOCKED TO",
+            FullName = Resource1FullName,
+            AssignedTo = "TEST LOCKED TO",
             PartitionKey = PartitionKey,
             ProjectId = _project1Id,
             RowKey = _rowKey1Value,
@@ -120,26 +123,39 @@ public class ProjectsTableServiceSpecs
         _tableEntityUtilities = A.Fake<ITableEntityUtilities>();
         _tableService = A.Fake<ITableService>();
         _tableServiceFactory = A.Fake<ITableServiceFactory>();
-        _userAssignmentTableEntity = new UserAssignmentTableEntity
+        _userAssignmentTableEntity1 = new UserAssignmentTableEntity
         {
             AssignedByUsername = Username,
             AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = AssigneeUsername,
+            AssigneeUsername = AssigneeUsername2,
             EntityType = typeof(UserAssignmentTableEntity).Name,
             EntityVersion = 1,
             PartitionKey = PartitionKey,
             ProjectId = _project1Id,
             ProjectName = Name,
             RowKey = _rowKey1Value,
-            ResourceFullName = ResourceFullName
+            ResourceFullName = Resource1FullName
+        };
+        _userAssignmentTableEntity2 = new UserAssignmentTableEntity
+        {
+            AssignedByUsername = Username,
+            AssignedOnUtc = DateTime.UtcNow,
+            AssigneeUsername = AssigneeUsername1,
+            EntityType = typeof(UserAssignmentTableEntity).Name,
+            EntityVersion = 1,
+            PartitionKey = PartitionKey,
+            ProjectId = _project1Id,
+            ProjectName = Name,
+            RowKey = _rowKey1Value,
+            ResourceFullName = Resource2FullName
         };
 
         A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(A<KeyPolicy>._)).ReturnsLazily((KeyPolicy keyPolicy) => $"PartitionKey eq '{keyPolicy.PartitionKey}' and RowKey eq '{keyPolicy.RowKey.Value}'");
         A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(_keyPolicyForGet)).Returns(RowKey1Filter);
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesByState(A<string>._)).ReturnsLazily((string state) => _getKeyPoliciesByState(state));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(A<Guid>._)).Returns(_keyPolicyForGet);
-        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)), A<string>.That.Matches(s => s.Equals(AssigneeUsername)))).Returns(_projectKeyPoliciesForUserAssignment);
-        A.CallTo(() => _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)), A<string>.That.Matches(s => s.Equals(ResourceFullName)), A<string>.That.Matches(s => s.Equals(AssigneeUsername)))).Returns(_resourceKeyPoliciesForUserAssignment);
+        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)), A<string>.That.Matches(s => s.Equals(AssigneeUsername1)))).Returns(_projectKeyPoliciesForUserAssignment);
+        A.CallTo(() => _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)), A<string>.That.Matches(s => s.Equals(Resource1FullName)), A<string>.That.Matches(s => s.Equals(AssigneeUsername1)))).Returns(_resourceKeyPoliciesForUserAssignment);
         A.CallTo(() => _tableService.TableClient).Returns(new Lazy<TableClient>(() => _tableClient));
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
         A.CallTo(() => _tableEntityUtilities.ParseTableEntityAsType(A<Type>._, A<TableEntity>._, A<IReadOnlyCollection<string>>._)).ReturnsLazily((Type typeForActivation,
@@ -160,16 +176,16 @@ public class ProjectsTableServiceSpecs
         {
             AssignedByUsername = Username,
             AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = AssigneeUsername,
+            AssigneeUsername = AssigneeUsername1,
             ProjectId = _project1Id,
             ProjectName = _project.Name,
-            ResourceFullName = ResourceFullName
+            ResourceFullName = Resource1FullName
         };
 
         await _testee.AssignUserAsync(userAssignment);
 
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)),
-                                                                           A<string>.That.Matches(s => s.Equals(AssigneeUsername))))
+                                                                           A<string>.That.Matches(s => s.Equals(AssigneeUsername1))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -180,17 +196,17 @@ public class ProjectsTableServiceSpecs
         {
             AssignedByUsername = Username,
             AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = AssigneeUsername,
+            AssigneeUsername = AssigneeUsername1,
             ProjectId = _project1Id,
             ProjectName = _project.Name,
-            ResourceFullName = ResourceFullName
+            ResourceFullName = Resource1FullName
         };
 
         await _testee.AssignUserAsync(userAssignment);
 
         A.CallTo(() => _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)),
-                                                                            A<string>.That.Matches(s => s.Equals(ResourceFullName)),
-                                                                            A<string>.That.Matches(s => s.Equals(AssigneeUsername))))
+                                                                            A<string>.That.Matches(s => s.Equals(Resource1FullName)),
+                                                                            A<string>.That.Matches(s => s.Equals(AssigneeUsername1))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -201,10 +217,10 @@ public class ProjectsTableServiceSpecs
         {
             AssignedByUsername = Username,
             AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = AssigneeUsername,
+            AssigneeUsername = AssigneeUsername1,
             ProjectId = _project1Id,
             ProjectName = _project.Name,
-            ResourceFullName = ResourceFullName
+            ResourceFullName = Resource1FullName
         };
 
         var tableEntitiesArgs = new List<ITableEntity>();
@@ -228,10 +244,10 @@ public class ProjectsTableServiceSpecs
         {
             AssignedByUsername = Username,
             AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = AssigneeUsername,
+            AssigneeUsername = AssigneeUsername1,
             ProjectId = _project1Id,
             ProjectName = _project.Name,
-            ResourceFullName = ResourceFullName
+            ResourceFullName = Resource1FullName
         };
 
         var tableEntitiesArgs = new List<UserAssignmentTableEntity>();
@@ -256,10 +272,10 @@ public class ProjectsTableServiceSpecs
         {
             AssignedByUsername = Username,
             AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = AssigneeUsername,
+            AssigneeUsername = AssigneeUsername1,
             ProjectId = _project1Id,
             ProjectName = _project.Name,
-            ResourceFullName = ResourceFullName
+            ResourceFullName = Resource1FullName
         };
 
         var tableEntitiesArgs = new List<UserAssignmentTableEntity>();
@@ -393,32 +409,48 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task GetProjectEntitiesAsync_WhenProjectIdIsInvalid_ReturnsEmptyListOfEntities()
+    public async Task GetProjectEntitiesAsync_ForSpecificAssignee_WhenNoEntitiesFound_ReturnsEmptyListOfEntities()
     {
-        const string propName1 = nameof(propName1);
-        const string propName2 = nameof(propName2);
-        var propValue1 = Guid.NewGuid().ToString();
-        var propValue2 = Guid.NewGuid().ToString();
-
-        var tableEntities = new List<TableEntity>
-        {
-            ConvertToTableEntity(_projectTableEntity1),
-            ConvertToTableEntity(_resourceTableEntity),
-            ConvertToTableEntity(_userAssignmentTableEntity)
-        };
+        var tableEntities = new List<TableEntity>(0);
 
         var pages = GetQueryResponse(tableEntities.ToArray());
 
-        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>.That.Matches(s => s.Contains(_project1Id.ToString()) && s.Contains(AssigneeUsername)),
+        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>._,
                                                             A<int?>._,
                                                             A<IEnumerable<string>>._,
                                                             A<CancellationToken>._)).Returns(pages);
 
-        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByProjectForUserAssignment(_project1Id, AssigneeUsername)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername, KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(_project1Id)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
 
-        var result = await _testee.GetProjectEntitiesAsync(_project1Id, AssigneeUsername);
+        var result = await _testee.GetProjectEntitiesAsync(_project1Id, AssigneeUsername1);
+
+        result.Should().NotBeNull().And.BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task GetProjectEntitiesAsync_ForSpecificAssignee_WhenEntitiesFound_ReturnsRetrievedEntities()
+    {
+        var tableEntities = new List<TableEntity>
+        {
+            ConvertToTableEntity(_projectTableEntity1),
+            ConvertToTableEntity(_resourceTableEntity),
+            ConvertToTableEntity(_userAssignmentTableEntity1)
+        };
+
+        var pages = GetQueryResponse(tableEntities.ToArray());
+
+        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>.That.Matches(s => s.Contains(_project1Id.ToString()) && s.Contains(AssigneeUsername1)),
+                                                            A<int?>._,
+                                                            A<IEnumerable<string>>._,
+                                                            A<CancellationToken>._)).Returns(pages);
+
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(_project1Id)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
+
+        var result = await _testee.GetProjectEntitiesAsync(_project1Id, AssigneeUsername1);
 
         result.Should().HaveCount(tableEntities.Count);
         result.Where(tableEntity => tableEntity.GetType().Equals(typeof(ProjectTableEntity))).Should().HaveCount(1);
@@ -427,37 +459,71 @@ public class ProjectsTableServiceSpecs
     }
 
     [TestMethod]
-    public async Task GetProjectEntitiesAsync_WhenProjectIdIsValid_ReturnsRetrievedEntities()
+    public async Task GetProjectEntitiesAsync_WhenNoEntitiesFound_ReturnsEmptyListOfEntities()
     {
-        var invalidProjectId = Guid.NewGuid();
-        const string propName1 = nameof(propName1);
-        const string propName2 = nameof(propName2);
-        var propValue1 = Guid.NewGuid().ToString();
-        var propValue2 = Guid.NewGuid().ToString();
-
-        var tableEntities = new List<TableEntity>
-        {
-            ConvertToTableEntity(_projectTableEntity1),
-            ConvertToTableEntity(_resourceTableEntity),
-            ConvertToTableEntity(_userAssignmentTableEntity)
-        };
+        var tableEntities = new List<TableEntity>(0);
 
         var pages = GetQueryResponse(tableEntities.ToArray());
 
-        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>.That.Matches(s => s.Contains(_project1Id.ToString()) && s.Contains(AssigneeUsername)),
+        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>._,
                                                             A<int?>._,
                                                             A<IEnumerable<string>>._,
                                                             A<CancellationToken>._)).Returns(pages);
 
-        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByProjectForUserAssignment(_project1Id, AssigneeUsername)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername, KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(_project1Id)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
 
-        var result = await _testee.GetProjectEntitiesAsync(invalidProjectId, AssigneeUsername);
+        var result = await _testee.GetProjectEntitiesAsync(_project1Id);
 
         result.Should()
-              .NotBeNull().And
-              .BeEmpty();
+            .NotBeNull().And
+            .BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task GetProjectEntitiesAsync_WhenEntitiesFound_ReturnsRetrievedEntities()
+    {
+        var tableEntities = new List<TableEntity>
+        {
+            ConvertToTableEntity(_projectTableEntity1),
+            ConvertToTableEntity(_resourceTableEntity),
+            ConvertToTableEntity(_userAssignmentTableEntity1),
+            ConvertToTableEntity(_userAssignmentTableEntity2)
+        };
+
+        var pages = GetQueryResponse(tableEntities.ToArray());
+
+        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>.That.Matches(s => s.Contains(_project1Id.ToString()) && s.Contains(AssigneeUsername1)),
+                                                            A<int?>._,
+                                                            A<IEnumerable<string>>._,
+                                                            A<CancellationToken>._)).Returns(pages);
+
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(_project1Id)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
+
+        var result = await _testee.GetProjectEntitiesAsync(_project1Id, AssigneeUsername1);
+        
+        result.Should().HaveCount(tableEntities.Count);
+        result.Where(tableEntity => tableEntity.GetType().Equals(typeof(ProjectTableEntity))).Should().HaveCount(1);
+        result.Where(tableEntity => tableEntity.GetType().Equals(typeof(ResourceTableEntity))).Should().HaveCount(1);
+        result.Where(tableEntity => tableEntity.GetType().Equals(typeof(UserAssignmentTableEntity))).Should().HaveCount(2);
+    }
+
+    [TestMethod]
+    public async Task GetProjectsByStateAsync_ForSpecificAssignee_WhenNoMatchingProjectsFound_ReturnsEmptyCollection()
+    {
+        var pages = GetQueryResponse<ProjectTableEntity>();
+        A.CallTo(() => _tableClient.QueryAsync<ProjectTableEntity>(A<string>._,
+                                                                   A<int?>._,
+                                                                   A<IEnumerable<string>>._,
+                                                                   A<CancellationToken>._)).Returns(pages);
+
+        var result = await _testee.GetProjectsByStateAsync(_nonReturnableState, _defaultOrderBy, int.MaxValue);
+
+        result.Should().NotBeNull();
+        result.Items.Should().NotBeNull().And.BeEmpty();
     }
 
     [TestMethod]
@@ -482,16 +548,16 @@ public class ProjectsTableServiceSpecs
         {
             AssignedByUsername = Username,
             AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = AssigneeUsername,
+            AssigneeUsername = AssigneeUsername1,
             ProjectId = _project1Id,
             ProjectName = _project.Name,
-            ResourceFullName = ResourceFullName
+            ResourceFullName = Resource1FullName
         };
 
         await _testee.RevokeUserAsync(userAssignment);
 
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)),
-                                                                           A<string>.That.Matches(s => s.Equals(AssigneeUsername))))
+                                                                           A<string>.That.Matches(s => s.Equals(AssigneeUsername1))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -502,17 +568,17 @@ public class ProjectsTableServiceSpecs
         {
             AssignedByUsername = Username,
             AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = AssigneeUsername,
+            AssigneeUsername = AssigneeUsername1,
             ProjectId = _project1Id,
             ProjectName = _project.Name,
-            ResourceFullName = ResourceFullName
+            ResourceFullName = Resource1FullName
         };
 
         await _testee.RevokeUserAsync(userAssignment);
 
         A.CallTo(() => _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)),
-                                                                            A<string>.That.Matches(s => s.Equals(ResourceFullName)),
-                                                                            A<string>.That.Matches(s => s.Equals(AssigneeUsername))))
+                                                                            A<string>.That.Matches(s => s.Equals(Resource1FullName)),
+                                                                            A<string>.That.Matches(s => s.Equals(AssigneeUsername1))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -523,10 +589,10 @@ public class ProjectsTableServiceSpecs
         {
             AssignedByUsername = Username,
             AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = AssigneeUsername,
+            AssigneeUsername = AssigneeUsername1,
             ProjectId = _project1Id,
             ProjectName = _project.Name,
-            ResourceFullName = ResourceFullName
+            ResourceFullName = Resource1FullName
         };
 
         var keyPolicyArgs = new List<KeyPolicy>();
@@ -550,10 +616,10 @@ public class ProjectsTableServiceSpecs
         {
             AssignedByUsername = Username,
             AssignedOnUtc = DateTime.UtcNow,
-            AssigneeUsername = AssigneeUsername,
+            AssigneeUsername = AssigneeUsername1,
             ProjectId = _project1Id,
             ProjectName = _project.Name,
-            ResourceFullName = ResourceFullName
+            ResourceFullName = Resource1FullName
         };
 
         var keyPolicyArgs = new List<KeyPolicy>();

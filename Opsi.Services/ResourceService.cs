@@ -45,11 +45,6 @@ internal class ResourceService : IResourceService
         await StoreFileDataAndVersionAsync(resourceStorageInfo);
 
         await QueueWebhookMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo);
-
-        if (currentVersionInfo.LockedTo.IsSome)
-        {
-            await UnlockFileAsync(resourceStorageInfo);
-        }
     }
 
     private async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)
@@ -125,13 +120,8 @@ internal class ResourceService : IResourceService
         }, webhookSpec);
     }
 
-    private async Task UnlockFileAsync(ResourceStorageInfo resourceStorageInfo)
-    {
-        await _resourcesService.UnlockResourceFromUser(resourceStorageInfo.ProjectId, resourceStorageInfo.FullPath.Value, resourceStorageInfo.Username);
-    }
-
     private static bool CanUserStoreFile(VersionInfo versionInfo, string username)
     {
-        return versionInfo.LockedTo.IsNone || versionInfo.LockedTo.Value == username;
+        return versionInfo.AssignedTo.IsNone || versionInfo.AssignedTo.Value == username;
     }
 }

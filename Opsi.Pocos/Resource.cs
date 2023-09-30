@@ -4,7 +4,11 @@ public class Resource
 {
     public virtual string FullName { get; set; } = default!;
 
-    public string? LockedTo { get; set; } = default;
+    public string? AssignedBy { get; set; }
+
+    public DateTime? AssignedOnUtc { get; set; }
+
+    public string? AssignedTo { get; set; }
 
     public Guid ProjectId { get; set; }
 

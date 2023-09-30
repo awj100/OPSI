@@ -81,7 +81,7 @@ public class ResourceServiceSpecs
     [TestMethod]
     public async Task StoreResourceAsync_WhenResourceIsLockedToAnotherUser_ThrowsException()
     {
-        _versionInfo.LockedTo = Option<string>.Some($"another_{Username}");
+        _versionInfo.AssignedTo = Option<string>.Some($"another_{Username}");
 
         A.CallTo(() => _resourcesService.GetCurrentVersionInfo(A<Guid>.That.Matches(g => g.Equals(_resourceStorageInfo.ProjectId)),
                                                                A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.RestOfPath))))
@@ -90,23 +90,6 @@ public class ResourceServiceSpecs
         await _testee.Invoking(y => y.StoreResourceAsync(_resourceStorageInfo))
                      .Should()
                      .ThrowAsync<ResourceLockConflictException>();
-    }
-
-    [TestMethod]
-    public async Task StoreResourceAsync_WhenResourceIsLockedToSameUser_UnlocksResource()
-    {
-        _versionInfo.LockedTo = Option<string>.Some(Username);
-
-        A.CallTo(() => _resourcesService.GetCurrentVersionInfo(A<Guid>.That.Matches(g => g.Equals(_resourceStorageInfo.ProjectId)),
-                                                               A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.RestOfPath))))
-            .Returns(_versionInfo);
-
-        await _testee.StoreResourceAsync(_resourceStorageInfo);
-
-        A.CallTo(() => _resourcesService.UnlockResourceFromUser(A<Guid>.That.Matches(g => g.Equals(_resourceStorageInfo.ProjectId)),
-                                                                A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.FullPath.Value)),
-                                                                A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.Username))))
-            .MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]

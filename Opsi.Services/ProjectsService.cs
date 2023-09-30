@@ -95,10 +95,10 @@ public class ProjectsService : IProjectsService
         }
 
         projectWithResources.Resources = tableEntities.Where(entity => entity.GetType() == typeof(ResourceTableEntity))
-                                                                .Cast<ResourceTableEntity>()
-                                                                .Select(resourceTablEntity => resourceTablEntity.ToResource())
-                                                                .DistinctBy(resource => resource.FullName)
-                                                                .ToList();
+                                                      .Cast<ResourceTableEntity>()
+                                                      .Select(resourceTableEntity => resourceTableEntity.ToResource())
+                                                      .DistinctBy(resource => resource.FullName)
+                                                      .ToList();
 
         return projectWithResources;
     }
@@ -110,40 +110,46 @@ public class ProjectsService : IProjectsService
         return userAssignmentTableEntities.Select(te => te.ToUserAssignment()).ToList();
     }
 
-    public async Task<ProjectWithResources?> GetProjectAsync(Guid projectId)
+    public async Task<ProjectWithResources> GetProjectAsync(Guid projectId)
     {
-        var project = await _projectsTableService.GetProjectByIdAsync(projectId);
-        if (project.IsNone)
+        var tableEntities = await _projectsTableService.GetProjectEntitiesAsync(projectId);
+
+        if (!tableEntities.Any())
         {
-            _logger.LogWarning($"{nameof(GetProjectAsync)}: Invalid project ID ({projectId}).");
-            return null;
+            // No project with the specified ID.
+            throw new ProjectNotFoundException();
         }
 
-        var resourceEntities = await _resourcesService.GetResourcesAsync(projectId);
-
-        if (!_userProvider.IsAdministrator.Value)
+        if (tableEntities.SingleOrDefault(entity => entity.GetType() == typeof(ProjectTableEntity)) is not ProjectTableEntity projectTableEntity)
         {
-            // Consider only those resources which are assigned to the current user.
-            resourceEntities = resourceEntities.Where(resourceEntity => resourceEntity.Username != null && resourceEntity.Username.Equals(_userProvider.Username.Value))
-                                               .ToList();
+            throw new ProjectNotFoundException();
         }
 
-        if (!resourceEntities.Any())
-        {
-            // If there are no ResourceTableEntity instances then either...
-            // - the project ID is invalid (would have already been caught earlier in this method)
-            // - this user does not have access to any of the resources, and therefore no access to the project
-            _logger.LogWarning($"{nameof(GetProjectAsync)}: No user-accessible resources found for project \"{projectId}\" - user probably doesn't have access.");
-            return null;
-        }
+        var project = projectTableEntity.ToProject();
+        var projectWithResources = ProjectWithResources.FromProjectBase(project);
 
-        var projectWithResources = ProjectWithResources.FromProjectBase(project.Value);
+        var userAssignments = tableEntities.OfType<UserAssignmentTableEntity>()
+                                           .Select(userAssignment => userAssignment.ToUserAssignment())
+                                           .ToList();
 
-        projectWithResources.Resources = resourceEntities.Select(resourceEntity => resourceEntity.ToResource()).ToList();
-
-        _logger.LogInformation($"{nameof(GetProjectAsync)}: Obtained project with {projectWithResources.Resources.Count} resources.");
+        projectWithResources.Resources = tableEntities.OfType<ResourceTableEntity>()
+                                                      .Select(resourceTableEntity => GetAssignmentPopulatedResource(resourceTableEntity.ToResource()))
+                                                      .ToList();
 
         return projectWithResources;
+
+        Resource GetAssignmentPopulatedResource(Resource resource)
+        {
+            var userAssignment = userAssignments?.SingleOrDefault(ua => ua.ResourceFullName.Equals(resource.FullName, StringComparison.OrdinalIgnoreCase));
+            if (userAssignment != null)
+            {
+                resource.AssignedBy = userAssignment.AssignedByUsername;
+                resource.AssignedOnUtc = userAssignment.AssignedOnUtc;
+                resource.AssignedTo = userAssignment.AssigneeUsername;
+            }
+
+            return resource;
+        }
     }
 
     public async Task<PageableResponse<OrderedProject>> GetProjectsAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null)

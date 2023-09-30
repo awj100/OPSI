@@ -82,11 +82,55 @@ internal class ProjectsTableService : IProjectsTableService
         return Option<Project>.None();
     }
 
+    public async Task<IReadOnlyCollection<ITableEntity>> GetProjectEntitiesAsync(Guid projectId)
+    {
+        const int maxResultsPerPage = 500;
+
+        var keyPolicyForProjectAssignments = _projectKeyPolicies.GetKeyPolicyByProjectForUserAssignment(projectId, "dummy-username");    // We'll use only the partition key, which requires only the project ID.
+        var keyPolicyForGetById = _projectKeyPolicies.GetKeyPolicyForGetById(projectId);
+        var keyPolicyForResources = _resourceKeyPolicies.GetKeyPolicyForResourceCount(projectId, "dummy-full-name"); // We'll use only the partition key, which requires only the project ID.
+
+        var filterProjectAssignments = _keyPolicyFilterGeneration.ToPartitionKeyFilter(keyPolicyForProjectAssignments);
+        var filterGetById = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGetById);
+        var filterForResources = _keyPolicyFilterGeneration.ToPartitionKeyFilter(keyPolicyForResources);
+
+        var filter = $"({filterProjectAssignments}) or ({filterGetById}) or ({filterForResources})";
+
+        var propNamesToSelect = new List<string>();
+        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<ProjectTableEntity>());
+        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<ResourceTableEntity>());
+        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<UserAssignmentTableEntity>());
+        propNamesToSelect = propNamesToSelect.Distinct().ToList();
+
+        var tableClient = _projectsTableService.TableClient.Value;
+
+        var tableEntityResults = tableClient.QueryAsync<TableEntity>(filter,
+                                                                     maxPerPage: maxResultsPerPage,
+                                                                     select: propNamesToSelect,
+                                                                     cancellationToken: CancellationToken.None);
+
+        var tableEntities = new List<TableEntity>();
+
+        await foreach (var tableEntity in tableEntityResults)
+        {
+            tableEntities.Add(tableEntity);
+        }
+
+        var expectedEntityTypes = new List<Type>
+        {
+            typeof(ProjectTableEntity),
+            typeof(ResourceTableEntity),
+            typeof(UserAssignmentTableEntity)
+        };
+
+        return RetrieveTableEntitiesAsTypes(tableEntities, expectedEntityTypes);
+    }
+
     public async Task<IReadOnlyCollection<ITableEntity>> GetProjectEntitiesAsync(Guid projectId, string assigneeUsername)
     {
         const int maxResultsPerPage = 500;
 
-        var keyPolicyForProjectAssignment = _projectKeyPolicies.GetKeyPolicyByProjectForUserAssignment(projectId, assigneeUsername);
+        var keyPolicyForProjectAssignment = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(projectId, assigneeUsername);
         var keyPolicyForGetById = _projectKeyPolicies.GetKeyPolicyForGetById(projectId);
         var keyPolicyForResources = _resourceKeyPolicies.GetKeyPolicyForResourceCount(projectId, "dummy-full-name"); // We'll use only the partition key, which requires only the project ID.
 
@@ -313,6 +357,7 @@ internal class ProjectsTableService : IProjectsTableService
                 }
 
                 typeForConversion = expectedType;
+                break;
             }
 
             if (typeForConversion == null)

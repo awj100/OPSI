@@ -11,7 +11,7 @@ public interface IProjectsService
 
     Task<IReadOnlyCollection<UserAssignment>> GetAssignedProjectsAsync(string assigneeUsername);
 
-    Task<ProjectWithResources?> GetProjectAsync(Guid projectId);
+    Task<ProjectWithResources> GetProjectAsync(Guid projectId);
 
     Task<PageableResponse<OrderedProject>> GetProjectsAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null);
 

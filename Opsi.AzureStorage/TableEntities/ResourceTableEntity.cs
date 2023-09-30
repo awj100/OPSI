@@ -23,8 +23,10 @@ public class ResourceTableEntity : Resource, ITableEntity
     {
         return new Resource
         {
+            AssignedBy = AssignedBy,
+            AssignedOnUtc = AssignedOnUtc,
+            AssignedTo = AssignedTo,
             FullName = FullName,
-            LockedTo = LockedTo,
             ProjectId = ProjectId,
             Username = Username,
             VersionId = VersionId,
@@ -41,8 +43,10 @@ public class ResourceTableEntity : Resource, ITableEntity
     {
         return new ResourceTableEntity
         {
+            AssignedBy = resource.AssignedBy,
+            AssignedOnUtc = resource.AssignedOnUtc,
+            AssignedTo = resource.AssignedTo,
             FullName = resource.FullName,
-            LockedTo = resource.LockedTo,
             PartitionKey = partitionKey,
             ProjectId = resource.ProjectId,
             RowKey = rowKey,

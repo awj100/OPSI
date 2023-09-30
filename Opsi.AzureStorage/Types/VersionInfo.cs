@@ -4,9 +4,9 @@ namespace Opsi.AzureStorage.Types
 {
     public struct VersionInfo
     {
-        public VersionInfo(int version, string? lockedTo = null)
+        public VersionInfo(int version, string? assignedTo = null)
         {
-            LockedTo = lockedTo != null ? Option<string>.Some(lockedTo) : Option<string>.None();
+            AssignedTo = assignedTo != null ? Option<string>.Some(assignedTo) : Option<string>.None();
             Index = version;
         }
 
@@ -16,21 +16,21 @@ namespace Opsi.AzureStorage.Types
         public int Index { get; set; }
 
         /// <summary>
-        /// Gets or sets an <see cref="Option{string}"/> specifying the username of the user to whom the resource is locked.
+        /// Gets or sets an <see cref="Option{string}"/> specifying the username of the user to whom the resource is assigned.
         /// </summary>
-        public Option<string> LockedTo { get; set; }
+        public Option<string> AssignedTo { get; set; }
 
         /// <summary>
         /// Obtains an instance of <see cref="VersionInfo"/> for the next version of the resource.
         /// </summary>
-        /// <param name="shouldLockToSameUser">
-        /// If <c>true</c>, the current instance's <see cref="LockedTo"/> property is cloned to the returned instance.
+        /// <param name="shouldAssignToSameUser">
+        /// If <c>true</c>, the current instance's <see cref="AssignedTo"/> property is cloned to the returned instance.
         /// </param>
         /// <returns>A <see cref="VersionInfo"/> object with <see cref="Index"/> incremented.</returns>
-        public VersionInfo GetNextVersionInfo(bool shouldLockToSameUser = false)
+        public VersionInfo GetNextVersionInfo(bool shouldAssignToSameUser = false)
         {
-            var lockTo = shouldLockToSameUser && LockedTo.IsSome
-                ? LockedTo.Value
+            var lockTo = shouldAssignToSameUser && AssignedTo.IsSome
+                ? AssignedTo.Value
                 : null;
 
             return new VersionInfo(Index + 1, lockTo);
@@ -38,11 +38,11 @@ namespace Opsi.AzureStorage.Types
 
         public override string ToString()
         {
-            var lockedToInfo = LockedTo.IsSome
-                ? $"Locked to: {LockedTo.Value}"
+            var assignedToInfo = AssignedTo.IsSome
+                ? $"Assigned to: {AssignedTo.Value}"
                 : "(Unlocked)";
 
-            return $"Index {Index}; {lockedToInfo}";
+            return $"Index {Index}; {assignedToInfo}";
         }
     }
 }

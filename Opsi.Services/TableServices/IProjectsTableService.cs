@@ -9,6 +9,8 @@ public interface IProjectsTableService
 {
     Task AssignUserAsync(UserAssignment userAssignment);
 
+    Task<IReadOnlyCollection<ITableEntity>> GetProjectEntitiesAsync(Guid projectId);
+
     Task<IReadOnlyCollection<UserAssignmentTableEntity>> GetAssignedProjectsAsync(string assigneeUsername);
 
     Task<Option<Project>> GetProjectByIdAsync(Guid projectId);
