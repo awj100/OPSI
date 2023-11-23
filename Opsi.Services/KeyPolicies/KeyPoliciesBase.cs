@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Web;
 
 namespace Opsi.Services.KeyPolicies;
 
@@ -32,6 +33,11 @@ public abstract class KeyPoliciesBase
         }
 
         return newString.ToString();
+    }
+
+    protected static string GetEncodedFullName(string fullName)
+    {
+        return HttpUtility.UrlEncode(fullName);
     }
 
     protected static string GetUniqueOrderPart(bool forAscendingKey)

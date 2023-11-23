@@ -114,9 +114,7 @@ public class ProjectsServiceSpecs
             PartitionKey = "TEST PARTITION KEY",
             ProjectId = _projectId,
             RowKey = "TEST ROW KEY",
-            Username = _username,
-            VersionId = "TEST VERSION ID",
-            VersionIndex = 3
+            Username = _username
         };
 
         _userAssignmentTableEntity1 = new UserAssignmentTableEntity
@@ -932,9 +930,7 @@ public class ProjectsServiceSpecs
             {
                 FullName = $"TEST RESOURCE {i}",
                 ProjectId = _projectId,
-                Username = _username,
-                VersionId = $"VERSION ID {i}",
-                VersionIndex = i
+                Username = _username
             };
         }
     }

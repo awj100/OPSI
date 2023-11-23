@@ -41,18 +41,18 @@ internal class ResourcesService : IResourcesService
         var tableClient = _tableService.TableClient.Value;
         var filter = _keyPolicyFilterGeneration.ToFilter(keyPolicy);
 
-        var queryResults = tableClient.QueryAsync<ResourceTableEntity>(filter,
+        var queryResults = tableClient.QueryAsync<ResourceVersionTableEntity>(filter,
             select: new[]
             {
-                nameof(ResourceTableEntity.VersionIndex),
-                nameof(ResourceTableEntity.AssignedTo)
+                nameof(ResourceVersionTableEntity.VersionIndex),
+                nameof(ResourceVersionTableEntity.Username)
             });
 
         var versionInfos = new List<VersionInfo>();
 
         await foreach (var queryResult in queryResults)
         {
-            versionInfos.Add(new VersionInfo(queryResult.VersionIndex, queryResult.AssignedTo));
+            versionInfos.Add(new VersionInfo(queryResult.VersionIndex, queryResult.Username));
         }
 
         var latestVersionInfo = versionInfos.OrderBy(versionInfo => versionInfo.Index).LastOrDefault();
@@ -95,9 +95,9 @@ internal class ResourcesService : IResourcesService
                              PartitionKey = keyPolicy.PartitionKey,
                              ProjectId = resourceStorageInfo.ProjectId,
                              RowKey = keyPolicy.RowKey.Value,
-                             Username = resourceStorageInfo.Username,
-                             VersionId = resourceStorageInfo.VersionId,
-                             VersionIndex = resourceStorageInfo.VersionInfo.Index
+                             Username = resourceStorageInfo.Username
+                            //  VersionId = resourceStorageInfo.VersionId,
+                            //  VersionIndex = resourceStorageInfo.VersionInfo.Index
                          }).ToList();
 
         await _tableService.StoreTableEntitiesAsync(resources);

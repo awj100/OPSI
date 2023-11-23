@@ -34,7 +34,7 @@ internal class ProjectsTableService : IProjectsTableService
 
     public async Task AssignUserAsync(UserAssignment userAssignment)
     {
-        var projectKeyPolicies = _projectKeyPolicies.GetKeyPoliciesForUserAssignment(userAssignment.ProjectId, userAssignment.AssigneeUsername);
+        var projectKeyPolicies = _projectKeyPolicies.GetKeyPoliciesForUserAssignment(userAssignment.ProjectId, userAssignment.AssigneeUsername, userAssignment.ResourceFullName);
         var resourceKeyPolicies = _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(userAssignment.ProjectId, userAssignment.ResourceFullName, userAssignment.AssigneeUsername);
 
         var keyPolicies = new List<KeyPolicy>(projectKeyPolicies.Count + resourceKeyPolicies.Count);
@@ -52,7 +52,7 @@ internal class ProjectsTableService : IProjectsTableService
         var propNamesToSelect = _tableEntityUtilities.GetPropertyNames<UserAssignmentTableEntity>();
         var dummyProjectId = Guid.NewGuid();    // We will use only the partition key, and this project ID is required for a row key which we will neglect.
 
-        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(dummyProjectId, assigneeUsername);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(dummyProjectId, assigneeUsername, String.Empty);
 
         var tableClient = _projectsTableService.TableClient.Value;
 
@@ -86,21 +86,29 @@ internal class ProjectsTableService : IProjectsTableService
     {
         const int maxResultsPerPage = 500;
 
-        var keyPolicyForProjectAssignments = _projectKeyPolicies.GetKeyPolicyByProjectForUserAssignment(projectId, "dummy-username");    // We'll use only the partition key, which requires only the project ID.
+        var keyPolicyForProjectAssignments = _projectKeyPolicies.GetKeyPolicyByProjectForUserAssignment(projectId, String.Empty, String.Empty);    // We'll use only the partition key, which requires only the project ID.
         var keyPolicyForGetById = _projectKeyPolicies.GetKeyPolicyForGetById(projectId);
-        var keyPolicyForResources = _resourceKeyPolicies.GetKeyPolicyForResourceCount(projectId, "dummy-full-name"); // We'll use only the partition key, which requires only the project ID.
+        var keyPolicyForResources = _resourceKeyPolicies.GetKeyPolicyForResourceCount(projectId, String.Empty); // We'll use only the partition key, which requires only the project ID.
+        var keyPolicyForResourceAssignments = _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(projectId, String.Empty, String.Empty); // We'll use only the partition key, which requires only the project ID.
 
         var filterProjectAssignments = _keyPolicyFilterGeneration.ToPartitionKeyFilter(keyPolicyForProjectAssignments);
         var filterGetById = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGetById);
         var filterForResources = _keyPolicyFilterGeneration.ToPartitionKeyFilter(keyPolicyForResources);
+        var filterForResourceAssignments = _keyPolicyFilterGeneration.ToPartitionKeyFilter(keyPolicyForResourceAssignments.Single());
 
-        var filter = $"({filterProjectAssignments}) or ({filterGetById}) or ({filterForResources})";
+        var filter = $"({filterProjectAssignments}) or ({filterGetById}) or ({filterForResources}) or ({filterForResourceAssignments})";
 
-        var propNamesToSelect = new List<string>();
-        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<ProjectTableEntity>());
-        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<ResourceTableEntity>());
-        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<UserAssignmentTableEntity>());
-        propNamesToSelect = propNamesToSelect.Distinct().ToList();
+        var expectedEntityTypes = new List<Type>
+        {
+            typeof(ProjectTableEntity),
+            typeof(ResourceTableEntity),
+            typeof(ResourceVersionTableEntity),
+            typeof(UserAssignmentTableEntity)
+        };
+
+        var propNamesToSelect = expectedEntityTypes.SelectMany(_tableEntityUtilities.GetPropertyNames)
+                                                   .Distinct()
+                                                   .ToList();
 
         var tableClient = _projectsTableService.TableClient.Value;
 
@@ -115,13 +123,6 @@ internal class ProjectsTableService : IProjectsTableService
         {
             tableEntities.Add(tableEntity);
         }
-
-        var expectedEntityTypes = new List<Type>
-        {
-            typeof(ProjectTableEntity),
-            typeof(ResourceTableEntity),
-            typeof(UserAssignmentTableEntity)
-        };
 
         return RetrieveTableEntitiesAsTypes(tableEntities, expectedEntityTypes);
     }
@@ -130,20 +131,27 @@ internal class ProjectsTableService : IProjectsTableService
     {
         const int maxResultsPerPage = 500;
 
-        var keyPolicyForProjectAssignment = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(projectId, assigneeUsername);
+        var keyPolicyForProjectAssignment = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(projectId, assigneeUsername, String.Empty);
         var keyPolicyForGetById = _projectKeyPolicies.GetKeyPolicyForGetById(projectId);
-        var keyPolicyForResources = _resourceKeyPolicies.GetKeyPolicyForResourceCount(projectId, "dummy-full-name"); // We'll use only the partition key, which requires only the project ID.
+        var keyPolicyForResources = _resourceKeyPolicies.GetKeyPolicyForResourceCount(projectId, String.Empty); // We'll use only the partition key, which requires only the project ID.
 
-        var filterProjectAssignment = _keyPolicyFilterGeneration.ToFilter(keyPolicyForProjectAssignment);
+        var filterProjectAssignment = _keyPolicyFilterGeneration.ToPartitionKeyFilter(keyPolicyForProjectAssignment);
         var filterGetById = _keyPolicyFilterGeneration.ToFilter(keyPolicyForGetById);
         var filterForResources = _keyPolicyFilterGeneration.ToPartitionKeyFilter(keyPolicyForResources);
 
         var filter = $"({filterProjectAssignment}) or ({filterGetById}) or ({filterForResources})";
 
-        var propNamesToSelect = new List<string>();
-        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<ProjectTableEntity>());
-        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<ResourceTableEntity>());
-        propNamesToSelect.AddRange(_tableEntityUtilities.GetPropertyNames<UserAssignmentTableEntity>());
+        var expectedEntityTypes = new List<Type>
+        {
+            typeof(ProjectTableEntity),
+            typeof(ResourceTableEntity),
+            typeof(ResourceVersionTableEntity),
+            typeof(UserAssignmentTableEntity)
+        };
+
+        var propNamesToSelect = expectedEntityTypes.SelectMany(_tableEntityUtilities.GetPropertyNames)
+                                                   .Distinct()
+                                                   .ToList();
 
         var tableClient = _projectsTableService.TableClient.Value;
 
@@ -158,13 +166,6 @@ internal class ProjectsTableService : IProjectsTableService
         {
             tableEntities.Add(tableEntity);
         }
-
-        var expectedEntityTypes = new List<Type>
-        {
-            typeof(ProjectTableEntity),
-            typeof(ResourceTableEntity),
-            typeof(UserAssignmentTableEntity)
-        };
 
         return RetrieveTableEntitiesAsTypes(tableEntities, expectedEntityTypes);
     }
@@ -202,7 +203,7 @@ internal class ProjectsTableService : IProjectsTableService
 
     public async Task RevokeUserAsync(UserAssignment userAssignment)
     {
-        var projectKeyPolicies = _projectKeyPolicies.GetKeyPoliciesForUserAssignment(userAssignment.ProjectId, userAssignment.AssigneeUsername);
+        var projectKeyPolicies = _projectKeyPolicies.GetKeyPoliciesForUserAssignment(userAssignment.ProjectId, userAssignment.AssigneeUsername, userAssignment.ResourceFullName);
         var resourceKeyPolicies = _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(userAssignment.ProjectId, userAssignment.ResourceFullName, userAssignment.AssigneeUsername);
 
         var keyPolicies = new List<KeyPolicy>(projectKeyPolicies.Count + resourceKeyPolicies.Count);

@@ -13,4 +13,9 @@ public class UserAssignment
     public string ProjectName { get; set; } = default!;
 
     public virtual string ResourceFullName { get; set; } = default!;
+
+    public override string ToString()
+    {
+        return $"{ProjectId} | {AssigneeUsername} | {ResourceFullName}";
+    }
 }

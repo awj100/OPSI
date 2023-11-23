@@ -14,7 +14,10 @@ public class Resource
 
     public string? Username { get; set; } = default!;
 
-    public string? VersionId { get; set; }
+    public List<ResourceVersion> ResourceVersions { get; set; }
 
-    public int VersionIndex { get; set; }
+    public Resource()
+    {
+        ResourceVersions = new List<ResourceVersion>();
+    }
 }

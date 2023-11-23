@@ -28,15 +28,13 @@ public class ResourceTableEntity : Resource, ITableEntity
             AssignedTo = AssignedTo,
             FullName = FullName,
             ProjectId = ProjectId,
-            Username = Username,
-            VersionId = VersionId,
-            VersionIndex = VersionIndex
+            Username = Username
         };
     }
 
     public override string ToString()
     {
-        return $"{FullName} ({VersionIndex})";
+        return FullName ?? "[Unnamed]";
     }
 
     public static ResourceTableEntity FromResource(Resource resource, string partitionKey, string rowKey)
@@ -50,9 +48,7 @@ public class ResourceTableEntity : Resource, ITableEntity
             PartitionKey = partitionKey,
             ProjectId = resource.ProjectId,
             RowKey = rowKey,
-            Username = resource.Username,
-            VersionId = resource.VersionId,
-            VersionIndex = resource.VersionIndex
+            Username = resource.Username
         };
     }
 

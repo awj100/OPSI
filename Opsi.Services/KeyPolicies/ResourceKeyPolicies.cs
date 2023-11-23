@@ -47,7 +47,7 @@ public class ResourceKeyPolicies : KeyPoliciesBase, IResourceKeyPolicies
 
     private static string GetFullNameAsRowKey(string fullName)
     {
-        return HttpUtility.UrlEncode(fullName);
+        return GetEncodedFullName(fullName);
     }
 
     private static string GetRowKeyPrefix(Guid projectId, string fullName)

@@ -124,7 +124,7 @@ public class ProjectsService : IProjectsService
         {
             throw new ProjectNotFoundException();
         }
-
+        
         var project = projectTableEntity.ToProject();
         var projectWithResources = ProjectWithResources.FromProjectBase(project);
 
@@ -132,8 +132,13 @@ public class ProjectsService : IProjectsService
                                            .Select(userAssignment => userAssignment.ToUserAssignment())
                                            .ToList();
 
+        var resourceVersions = tableEntities.OfType<ResourceVersionTableEntity>()
+                                            .Select(resourceVersion => resourceVersion.ToResourceVersion())
+                                            .ToList() ?? new List<ResourceVersion>(0);
+
         projectWithResources.Resources = tableEntities.OfType<ResourceTableEntity>()
-                                                      .Select(resourceTableEntity => GetAssignmentPopulatedResource(resourceTableEntity.ToResource()))
+                                                      .Select(GetAssignmentPopulatedResource)
+                                                      .Select(GetVersionPopulatedResource)
                                                       .ToList();
 
         return projectWithResources;
@@ -147,6 +152,13 @@ public class ProjectsService : IProjectsService
                 resource.AssignedOnUtc = userAssignment.AssignedOnUtc;
                 resource.AssignedTo = userAssignment.AssigneeUsername;
             }
+
+            return resource;
+        }
+
+        Resource GetVersionPopulatedResource(Resource resource)
+        {
+            resource.ResourceVersions.AddRange(resourceVersions!.Where(resourceVersion => resourceVersion.FullName.Equals(resource.FullName, StringComparison.OrdinalIgnoreCase)));
 
             return resource;
         }

@@ -136,9 +136,7 @@ public class AssignedProjectHandlerSpecs
             {
                 FullName = $"TEST RESOURCE {i}",
                 ProjectId = _validProjectId,
-                Username = _assignedUsername,
-                VersionId = $"VERSION ID {i}",
-                VersionIndex = i
+                Username = _assignedUsername
             };
         }
     }

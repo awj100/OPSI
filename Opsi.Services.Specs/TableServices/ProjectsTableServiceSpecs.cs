@@ -65,6 +65,8 @@ public class ProjectsTableServiceSpecs
         _rowKey2 = new(_rowKey2Value, KeyPolicyQueryOperators.Equal);
 
         _keyPolicyFilterGeneration = A.Fake<IKeyPolicyFilterGeneration>();
+        A.CallTo(() => _keyPolicyFilterGeneration.ToPartitionKeyFilter(A<KeyPolicy>._)).ReturnsLazily((KeyPolicy keyPolicy) => $"PartitionKey eq '{keyPolicy.PartitionKey}'");
+
         _getKeyPoliciesByState = state => new List<KeyPolicy> {
             new KeyPolicy($"{PartitionKey} {state}", _rowKey1),
             new KeyPolicy($"{PartitionKey} {state}", _rowKey2)
@@ -115,9 +117,7 @@ public class ProjectsTableServiceSpecs
             PartitionKey = PartitionKey,
             ProjectId = _project1Id,
             RowKey = _rowKey1Value,
-            Username = Username,
-            VersionId = "TEST VERSION ID",
-            VersionIndex = 3
+            Username = Username
         };
         _tableClient = A.Fake<TableClient>();
         _tableEntityUtilities = A.Fake<ITableEntityUtilities>();
@@ -154,7 +154,7 @@ public class ProjectsTableServiceSpecs
         A.CallTo(() => _keyPolicyFilterGeneration.ToFilter(_keyPolicyForGet)).Returns(RowKey1Filter);
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesByState(A<string>._)).ReturnsLazily((string state) => _getKeyPoliciesByState(state));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(A<Guid>._)).Returns(_keyPolicyForGet);
-        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)), A<string>.That.Matches(s => s.Equals(AssigneeUsername1)))).Returns(_projectKeyPoliciesForUserAssignment);
+        A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)), A<string>.That.Matches(s => s.Equals(AssigneeUsername1)), A<string>._)).Returns(_projectKeyPoliciesForUserAssignment);
         A.CallTo(() => _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)), A<string>.That.Matches(s => s.Equals(Resource1FullName)), A<string>.That.Matches(s => s.Equals(AssigneeUsername1)))).Returns(_resourceKeyPoliciesForUserAssignment);
         A.CallTo(() => _tableService.TableClient).Returns(new Lazy<TableClient>(() => _tableClient));
         A.CallTo(() => _tableServiceFactory.Create(A<string>._)).Returns(_tableService);
@@ -185,7 +185,8 @@ public class ProjectsTableServiceSpecs
         await _testee.AssignUserAsync(userAssignment);
 
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)),
-                                                                           A<string>.That.Matches(s => s.Equals(AssigneeUsername1))))
+                                                                           A<string>.That.Matches(s => s.Equals(AssigneeUsername1)),
+                                                                           A<string>._))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -306,7 +307,7 @@ public class ProjectsTableServiceSpecs
         const string assigneeUsername = "TEST ASSIGNEE USERNAME";
 
         var pages = GetQueryResponse<UserAssignmentTableEntity>();
-        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(projectId, assigneeUsername);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(projectId, assigneeUsername, String.Empty);
         var keyPolicyFilter = $"PartitionKey eq '{keyPolicyForGet.PartitionKey}'";
 
         A.CallTo(() => _tableClient.QueryAsync<UserAssignmentTableEntity>(A<string>.That.Matches(filter => filter.Equals(keyPolicyFilter)),
@@ -337,7 +338,7 @@ public class ProjectsTableServiceSpecs
         const string resourceFullName1 = "TEST RESOURCE FULL NAME 1";
         const string resourceFullName2 = "TEST RESOURCE FULL NAME 2";
 
-        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(A<Guid>._, assigneeUsername)).Returns(new KeyPolicy(PartitionKey, new RowKey("WHATEVER", KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(A<Guid>._, assigneeUsername, A<string>._)).Returns(new KeyPolicy(PartitionKey, new RowKey("WHATEVER", KeyPolicyQueryOperators.Equal)));
 
         var userAssignments = new[]
         {
@@ -362,7 +363,7 @@ public class ProjectsTableServiceSpecs
         };
 
         var pages = GetQueryResponse(userAssignments);
-        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(projectId1, assigneeUsername);
+        var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(projectId1, assigneeUsername, String.Empty);
         
         A.CallTo(() => _tableClient.QueryAsync<UserAssignmentTableEntity>(A<string>.That.Matches(filter => filter.Equals($"PartitionKey eq '{keyPolicyForGet.PartitionKey}'")),
                                                                           A<int?>._,
@@ -420,7 +421,7 @@ public class ProjectsTableServiceSpecs
                                                             A<IEnumerable<string>>._,
                                                             A<CancellationToken>._)).Returns(pages);
 
-        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1, A<string>._)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(_project1Id)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
 
@@ -441,12 +442,12 @@ public class ProjectsTableServiceSpecs
 
         var pages = GetQueryResponse(tableEntities.ToArray());
 
-        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>.That.Matches(s => s.Contains(_project1Id.ToString()) && s.Contains(AssigneeUsername1)),
+        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>.That.Matches(s => s.Contains(_project1Id.ToString())),
                                                             A<int?>._,
                                                             A<IEnumerable<string>>._,
                                                             A<CancellationToken>._)).Returns(pages);
 
-        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1, A<string>._)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(_project1Id)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
 
@@ -470,15 +471,16 @@ public class ProjectsTableServiceSpecs
                                                             A<IEnumerable<string>>._,
                                                             A<CancellationToken>._)).Returns(pages);
 
-        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByProjectForUserAssignment(_project1Id, A<string>._, A<string>._)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(_project1Id)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _resourceKeyPolicies.GetKeyPoliciesForUserAssignment(_project1Id, A<string>._, A<string>._)).Returns(new List<KeyPolicy> { new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)) });
 
         var result = await _testee.GetProjectEntitiesAsync(_project1Id);
 
         result.Should()
-            .NotBeNull().And
-            .BeEmpty();
+              .NotBeNull().And
+              .BeEmpty();
     }
 
     [TestMethod]
@@ -494,12 +496,12 @@ public class ProjectsTableServiceSpecs
 
         var pages = GetQueryResponse(tableEntities.ToArray());
 
-        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>.That.Matches(s => s.Contains(_project1Id.ToString()) && s.Contains(AssigneeUsername1)),
+        A.CallTo(() => _tableClient.QueryAsync<TableEntity>(A<string>.That.Matches(s => s.Contains(_project1Id.ToString())),
                                                             A<int?>._,
                                                             A<IEnumerable<string>>._,
                                                             A<CancellationToken>._)).Returns(pages);
 
-        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
+        A.CallTo(() => _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(_project1Id, AssigneeUsername1, A<string>._)).Returns(new KeyPolicy(_project1Id.ToString(), new RowKey(AssigneeUsername1, KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _projectKeyPolicies.GetKeyPolicyForGetById(_project1Id)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
         A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
 
@@ -557,7 +559,8 @@ public class ProjectsTableServiceSpecs
         await _testee.RevokeUserAsync(userAssignment);
 
         A.CallTo(() => _projectKeyPolicies.GetKeyPoliciesForUserAssignment(A<Guid>.That.Matches(g => g.Equals(_project1Id)),
-                                                                           A<string>.That.Matches(s => s.Equals(AssigneeUsername1))))
+                                                                           A<string>.That.Matches(s => s.Equals(AssigneeUsername1)),
+                                                                           A<string>._))
          .MustHaveHappenedOnceExactly();
     }
 

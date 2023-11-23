@@ -7,8 +7,13 @@ internal class TableEntityUtilities : ITableEntityUtilities
 {
     public IReadOnlyCollection<string> GetPropertyNames<TTableEntity>()
     {
-        return GetProperties<TTableEntity>().Select(propInfo => propInfo.Name)
-                                            .ToList();
+        return GetPropertyNames(typeof(TTableEntity));
+    }
+
+    public IReadOnlyCollection<string> GetPropertyNames(Type type)
+    {
+        return GetProperties(type).Select(propInfo => propInfo.Name)
+                                  .ToList();
     }
 
     public TTableEntity ParseTableEntityAs<TTableEntity>(TableEntity tableEntity) where TTableEntity : new()
@@ -192,8 +197,6 @@ internal class TableEntityUtilities : ITableEntityUtilities
                 {
                 }
             }
-
-            throw new InvalidOperationException($"Cannot parse property '{propInfo.Name}' from the TableEntity property bag.");
         }
 
         return instance as ITableEntity;
@@ -201,7 +204,12 @@ internal class TableEntityUtilities : ITableEntityUtilities
 
     private static IReadOnlyCollection<PropertyInfo> GetProperties<TTableEntity>()
     {
-        return typeof(TTableEntity).GetProperties()
-                                   .ToList();
+        return GetProperties(typeof(TTableEntity));
+    }
+
+    private static IReadOnlyCollection<PropertyInfo> GetProperties(Type type)
+    {
+        return type.GetProperties()
+                    .ToList();
     }
 }
