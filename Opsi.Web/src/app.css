@@ -1,3 +1,86 @@
-body {
-    margin: 0;
+.bx--accordion__content {
+    padding-right: 0 !important;
+}
+
+.bx--accordion__content > ul {
+    margin-left: 0 !important;
+}
+.bx--accordion__content ul > li {
+    padding-left: 0 !important;
+}
+
+.bx--form-item {
+    display: inline-flex !important;
+}
+
+.bx--inline-loading,
+.bx--inline-loading div,
+.bx--inline-loading svg {
+    display: inline-flex !important;
+    position: absolute;
+}
+
+.resource-tree {
+    margin-bottom: 1rem;
+    margin-left: 1rem;
+}
+
+.resource-tree ul {
+    margin-left: 1rem;
+}
+
+.resource-tree > ul {
+    margin-left: 0;
+    margin-top: 1rem;
+}
+
+.resource-tree > ul > li {
+    padding-left: 0;
+}
+
+.resource-tree li {
+    padding: 0.2rem 0;
+}
+
+.resource-tree li.file {
+    font-weight: bold;
+}
+
+.resource-tree li.file > div {
+    display: inline-block;
+    margin-left: 0.5rem;
+    position: relative;
+    top: -1.4rem;
+}
+
+.resource-tree ul li:before {
+    content: "\005C\0020\0020";
+    white-space: pre;
+}
+
+.resource-tree > ul > li:before {
+    content: "\0020\0020\0020";
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.icon-with-label {
+    margin-bottom: 0.5rem;
+    margin-left: 1.4rem;
+}
+
+.icon-with-label > label {
+    bottom: 2px;
+    margin-left: 0.25rem;
+    position: relative;
+}
+
+.user-assignment .bx--modal-content {
+    margin-bottom: none !important;
+}
+
+.user-assignment .bx--text-input-wrapper {
+    width: 100%;
 }
