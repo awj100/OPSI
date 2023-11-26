@@ -13,9 +13,9 @@
     display: inline-flex !important;
 }
 
-.bx--inline-loading,
-.bx--inline-loading div,
-.bx--inline-loading svg {
+.resource-tree .bx--inline-loading,
+.resource-tree .bx--inline-loading div,
+.resource-tree .bx--inline-loading svg {
     display: inline-flex !important;
     position: absolute;
 }

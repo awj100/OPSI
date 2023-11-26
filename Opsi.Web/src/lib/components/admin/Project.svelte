@@ -59,40 +59,42 @@
           projectDetail={projectDetailModel}
           on:selectedResourcesChanged={selectedResourcesChanged} />
         </Column>
-        <Column noGutterLeft sm={4} md={1} lg={1}>
-          <span class="cursor-pointer"
-                role="button"
-                tabindex="0"
-                on:blur={() => toggleVersionVisibilityTooltip(false)}
-                on:click={toggleVersionVisibility}
-                on:keypress={toggleVersionVisibility}
-                on:focus={() => toggleVersionVisibilityTooltip(true)}
-                on:mouseout={() => toggleVersionVisibilityTooltip(false)}
-                on:mouseover={() => toggleVersionVisibilityTooltip(true)}>
-            <Tooltip
-                direction="right"
-                icon={Version}
-                open={shouldShowVersionVisibilityTooltip}>
-              <p>Show or hide the version history for all resources.</p>
-            </Tooltip>
-          </span>
-          <span class="cursor-pointer"
-                role="button"
-                tabindex="0"
-                on:blur={() => toggleAssignmentVisibilityTooltip(false)}
-                on:click={() => { shouldShowUserAssignment = selectedResources.length > 0; }}
-                on:keypress={() => { shouldShowUserAssignment = selectedResources.length > 0; }}
-                on:focus={() => toggleAssignmentVisibilityTooltip(true)}
-                on:mouseout={() => toggleAssignmentVisibilityTooltip(false)}
-                on:mouseover={() => toggleAssignmentVisibilityTooltip(true)}>
-            <Tooltip
-                direction="right"
-                icon={UserFollow}
-                open={shouldShowAssignmentVisibilityTooltip}>
-              <p>Assign user for the selected resources.</p>
-            </Tooltip>
-          </span>
-        </Column> 
+        {#if projectDetailModel !== undefined}
+          <Column noGutterLeft sm={4} md={1} lg={1}>
+            <span class="cursor-pointer"
+                  role="button"
+                  tabindex="0"
+                  on:blur={() => toggleVersionVisibilityTooltip(false)}
+                  on:click={toggleVersionVisibility}
+                  on:keypress={toggleVersionVisibility}
+                  on:focus={() => toggleVersionVisibilityTooltip(true)}
+                  on:mouseout={() => toggleVersionVisibilityTooltip(false)}
+                  on:mouseover={() => toggleVersionVisibilityTooltip(true)}>
+              <Tooltip
+                  direction="right"
+                  icon={Version}
+                  open={shouldShowVersionVisibilityTooltip}>
+                <p>Show or hide the version history for all resources.</p>
+              </Tooltip>
+            </span>
+            <span class="cursor-pointer"
+                  role="button"
+                  tabindex="0"
+                  on:blur={() => toggleAssignmentVisibilityTooltip(false)}
+                  on:click={() => { shouldShowUserAssignment = selectedResources.length > 0; }}
+                  on:keypress={() => { shouldShowUserAssignment = selectedResources.length > 0; }}
+                  on:focus={() => toggleAssignmentVisibilityTooltip(true)}
+                  on:mouseout={() => toggleAssignmentVisibilityTooltip(false)}
+                  on:mouseover={() => toggleAssignmentVisibilityTooltip(true)}>
+              <Tooltip
+                  direction="right"
+                  icon={UserFollow}
+                  open={shouldShowAssignmentVisibilityTooltip}>
+                <p>Assign user for the selected resources.</p>
+              </Tooltip>
+            </span>
+          </Column>
+        {/if}
       </Row>
     </Grid>
   {/if}

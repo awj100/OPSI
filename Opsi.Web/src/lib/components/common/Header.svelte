@@ -1,14 +1,18 @@
 <script lang="ts">
-  import { Column, Row, Theme } from "carbon-components-svelte";
+  import { Header, SideNav, SideNavMenu, SideNavMenuItem, SideNavItems, SideNavLink } from "../../../../node_modules/carbon-components-svelte";
+  import { Settings, UserSettings } from "carbon-icons-svelte";
+
+  let isSideNavOpen: boolean;
 </script>
 
-<Row>
-  <Column sm={4} md={7}>
-    <header>
-      <h1>OPSI.Web</h1>
-    </header>
-  </Column>
-  <Column sm={4} md={1}>
-    <Theme persist={true} render="select" />
-  </Column>
-</Row>
+<Header platformName="OPSI.Web" bind:isSideNavOpen>
+  <SideNav bind:isOpen={isSideNavOpen} rail={true}>
+    <SideNavItems>
+      <SideNavLink icon={Settings} text="Configuration" />
+      <SideNavMenu icon={UserSettings} text="User mode">
+        <SideNavMenuItem href="~" isSelected={true} text="Administrator" />
+        <SideNavMenuItem href="~" text="Freelancer" />
+      </SideNavMenu>
+    </SideNavItems>
+  </SideNav>
+</Header>
