@@ -2,6 +2,7 @@
   import { createEventDispatcher, tick } from "svelte";
   import { Form, FormGroup, Modal, TextInput } from "carbon-components-svelte";
   import RootNode from "./TreeView/RootNode.svelte";
+  import UserAssignment from "./UserAssignment";
   import type Node from "./TreeView/Node";
   import ResourceModel from "../../../Models/Resource";
   import { assignUser } from "../../../services/assignmentsService";
@@ -68,7 +69,9 @@
     if (!isUsernameInvalid) {
 
       await assignUserToResources();
-      dispatch("onSubmit", e);
+
+      // Let the parent know that user assignment is successful.
+      dispatch("userAssigned", new UserAssignment(username, selectedResources));
 
       // Reset things.
       hasFormSubmitted = false;

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Project from "./Project.svelte";
+  import Project from "./Project/Project.svelte";
   import { ProjectStates } from "../../enums/ProjectStates";
   import ProjectSummaryModel from "@/lib/Models/ProjectSummary";
   import { Accordion, Button, Grid, Row, Column } from "carbon-components-svelte";

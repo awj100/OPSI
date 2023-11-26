@@ -1,10 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-	import ProjectDetailModel from "../../Models/ProjectDetail";
-  import ResourceModel from "../../Models/Resource";
-  import TreeView from "../common/TreeView/TreeView.svelte";
-  import TreeNode from "../common/TreeView/TreeNode";
-  import type CheckChanged from "../../eventArgs/CheckChanged";
+	import ProjectDetailModel from "../../../Models/ProjectDetail";
+  import ResourceModel from "../../../Models/Resource";
+  import TreeView from "../../common/TreeView/TreeView.svelte";
+  import TreeNode from "../../common/TreeView/TreeNode";
+  import type CheckChanged from "../../../eventArgs/CheckChanged";
 
   const dispatch = createEventDispatcher();
 	const expandedIds: Array<string> = [];
