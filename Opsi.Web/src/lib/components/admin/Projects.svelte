@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fade } from "svelte/transition";
   import Project from "./Project/Project.svelte";
   import ProjectStateSelector from "./ProjectStateSelector.svelte";
   import { ProjectStates } from "../../enums/ProjectStates";
@@ -35,29 +36,31 @@
   }
 </script>
 
-<ProjectStateSelector projectState={projectState} on:selected={onProjectStateSelected} />
+<div in:fade="{{duration: 500}}">
+  <ProjectStateSelector projectState={projectState} on:selected={onProjectStateSelected} />
 
-<Grid noGutterLeft padding>
-  <Row>
-    <Column sm={4} md={8} lg={12}>
-      {#if hasContent}
-        <Accordion align="start">
-          {#each projectSummaryModels as projectSummaryModel ( projectSummaryModel.id )}
-            <Project projectSummary={projectSummaryModel} />
-          {/each}
-        </Accordion>
-      {:else}
-        <Accordion skeleton count={10} open={false} />
-      {/if}
-    </Column>
-  </Row>
-  <Row>
-    <Column>
-      <Button
-        disabled={!continuationToken}
-        icon={Add}
-        size="small"
-        on:click={loadMore}>More projects</Button>
-    </Column>
-  </Row>
-</Grid>
+  <Grid noGutterLeft padding>
+    <Row>
+      <Column sm={4} md={8} lg={12}>
+        {#if hasContent}
+          <Accordion align="start">
+            {#each projectSummaryModels as projectSummaryModel ( projectSummaryModel.id )}
+              <Project projectSummary={projectSummaryModel} />
+            {/each}
+          </Accordion>
+        {:else}
+          <Accordion skeleton count={10} open={false} />
+        {/if}
+      </Column>
+    </Row>
+    <Row>
+      <Column>
+        <Button
+          disabled={!continuationToken}
+          icon={Add}
+          size="small"
+          on:click={loadMore}>More projects</Button>
+      </Column>
+    </Row>
+  </Grid>
+</div>
