@@ -1,16 +1,19 @@
 <script lang="ts">
   import Project from "./Project/Project.svelte";
+  import ProjectStateSelector from "./ProjectStateSelector.svelte";
   import { ProjectStates } from "../../enums/ProjectStates";
   import ProjectSummaryModel from "@/lib/Models/ProjectSummary";
   import { Accordion, Button, Grid, Row, Column } from "carbon-components-svelte";
   import { Add } from "carbon-icons-svelte";
   import { getAllByStatus } from "../../services/projectsService";
 
+  const defaultProjectState: ProjectStates = ProjectStates.InProgress;
   const pageSize: number = 10;
 
   let continuationToken: string | undefined = undefined;
   let hasContent: boolean;
   let previousProjectState: ProjectStates | undefined = undefined;
+  let projectState: ProjectStates = defaultProjectState;
   let projectSummaryModels: ProjectSummaryModel[] = [];
 
   async function loadMore() {
@@ -20,7 +23,9 @@
     projectSummaryModels = [...projectSummaryModels, ...response.data.items]
   }
 
-  export let projectState: ProjectStates;
+  function onProjectStateSelected(e: CustomEvent<ProjectStates>) {
+    projectState = e.detail;
+  }
 
   $: if (projectState !== previousProjectState) {
     continuationToken = undefined;
@@ -29,6 +34,8 @@
     loadMore();
   }
 </script>
+
+<ProjectStateSelector projectState={projectState} on:selected={onProjectStateSelected} />
 
 <Grid noGutterLeft padding>
   <Row>
