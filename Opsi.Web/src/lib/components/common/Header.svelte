@@ -22,11 +22,11 @@
     <HeaderAction icon={Credentials} transition="{{duration: 200}}" bind:isOpen>
       <HeaderPanelLinks>
         <HeaderPanelDivider>User mode</HeaderPanelDivider>
-        <HeaderPanelLink href="/#administrator">Administrator</HeaderPanelLink>
-        <HeaderPanelLink href="/#freelancer">Freelancer</HeaderPanelLink>
+        <HeaderPanelLink href="#/administrator">Administrator</HeaderPanelLink>
+        <HeaderPanelLink href="#/freelancer">Freelancer</HeaderPanelLink>
       </HeaderPanelLinks>
     </HeaderAction>
-    <HeaderActionLink icon="{Settings}" href="#config" />
+    <HeaderActionLink icon="{Settings}" href="#/config" />
     <HeaderActionLink icon="{LogoGithub}" href="https://github.com/carbon-design-system/carbon-components-svelte" target="_blank" />
   </HeaderUtilities>
 </Header>
