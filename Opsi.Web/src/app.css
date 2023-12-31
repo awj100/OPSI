@@ -9,10 +9,6 @@
     padding-left: 0 !important;
 }
 
-.bx--form-item {
-    display: inline-flex !important;
-}
-
 .resource-tree .bx--inline-loading,
 .resource-tree .bx--inline-loading div,
 .resource-tree .bx--inline-loading svg {
@@ -75,6 +71,10 @@
     bottom: 2px;
     margin-left: 0.25rem;
     position: relative;
+}
+
+.user-assignment .bx--form-item {
+    display: inline-flex !important;
 }
 
 .user-assignment .bx--modal-content {
