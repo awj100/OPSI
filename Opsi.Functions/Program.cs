@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Functions.Worker.ContextAccessor;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Opsi.AzureStorage.DiModules;
@@ -19,6 +20,15 @@ var host = new HostBuilder()
                          .UseWhenHttpTriggered<IdentityProvider>()
                          .UseWhenHttpTriggered<AdministratorEnforcement>()
                          .UseFunctionContextAccessor();
+    })
+    .ConfigureAppConfiguration(config =>
+    {
+        config.SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("AppSettings.json", false, true)
+            .AddJsonFile(
+                $"AppSettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json",
+                true)
+            .AddEnvironmentVariables();
     })
     .ConfigureServices(services =>
     {

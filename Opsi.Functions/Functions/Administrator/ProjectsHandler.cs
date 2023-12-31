@@ -37,8 +37,8 @@ public class ProjectsHandler
     [Function(nameof(ProjectsHandler))]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = route)] HttpRequestData req,
                                             string projectState,
-                                            string? orderBy,
-                                            int? pageSize,
+                                            string? orderBy = null,
+                                            int? pageSize = null,
                                             string? continuationToken = null)
     {
         pageSize ??= defaultPageSize;
