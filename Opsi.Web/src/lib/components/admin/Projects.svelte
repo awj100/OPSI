@@ -7,9 +7,9 @@
   import { Accordion, Button, Grid, Row, Column } from "carbon-components-svelte";
   import { Add } from "carbon-icons-svelte";
   import { getAllByStatus } from "../../services/projectsService";
+  import { fetchCount } from "@/lib/stores/projectsStore";
 
   const defaultProjectState: ProjectStates = ProjectStates.InProgress;
-  const pageSize: number = 10;
 
   let continuationToken: string | undefined = undefined;
   let hasContent: boolean;
@@ -18,7 +18,7 @@
   let projectSummaryModels: ProjectSummaryModel[] = [];
 
   async function loadMore() {
-    const response = await getAllByStatus(projectState, pageSize, continuationToken);
+    const response = await getAllByStatus(projectState, $fetchCount, continuationToken);
     continuationToken = response.data.continuationToken;
     hasContent = true;
     projectSummaryModels = [...projectSummaryModels, ...response.data.items]

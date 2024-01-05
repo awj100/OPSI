@@ -1,24 +1,38 @@
 import Configuration from "../Models/Configuration/Configuration";
+import { fetchCount } from "../stores/projectsStore";
+import { adminUsername, freelancerUsername } from "../stores/usersStore";
 
 const configKey: string = "opsi.config";
 
-export function loadConfiguration(): Configuration {
+export function getConfig(): Configuration {
+    let config: Configuration;
+
     const strConfig = localStorage.getItem(configKey);
     if (strConfig === null) {
-        return getDefault();
+        config = getDefault();
+    } else {
+        try {
+            config = JSON.parse(strConfig) as Configuration;
+        } catch {
+            localStorage.removeItem(configKey);
+            console.error("A stored configuration was invalid and has been removed.");
+            config = getDefault();
+        }
     }
 
-    try {
-        return JSON.parse(strConfig) as Configuration ;
-    } catch {
-        localStorage.removeItem(configKey);
-        console.error("The stored configuration is invalid. It has been removed.");
-        return getDefault();
-    }
+    return config;
 }
 
-export function setConfiguration(configuration: Configuration): void {
+export function initConfig(): void {
+    const config = getConfig();
+    setConfig(config);
+}
+
+export function setConfig(configuration: Configuration): void {
     localStorage.setItem(configKey, JSON.stringify(configuration));
+    fetchCount.update((_) => configuration.ui.projects.fetchCount);
+    adminUsername.update((_) => configuration.users.administrator.username);
+    freelancerUsername.update((_) => configuration.users.freelancer.username);
 }
 
 function getDefault(): Configuration {

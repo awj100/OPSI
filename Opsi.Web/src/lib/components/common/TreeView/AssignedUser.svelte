@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import User from "carbon-icons-svelte/lib/User.svelte";
-  import UserFilled from "carbon-icons-svelte/lib/UserFilled.svelte";
+  import { User, UserFilled } from "carbon-icons-svelte";
   
   const unassignedUsernameText: string = "Unassigned";
   let assignedUsernameText: string;

@@ -1,34 +1,55 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { Button, Column, Form, FormGroup, Grid, NumberInput, Row, TextInput } from "carbon-components-svelte";
+  import { Button, ButtonSet, Column, Form, FormGroup, Grid, NumberInput, Row, TextInput } from "carbon-components-svelte";
+  import { DocumentExport, DocumentImport } from "carbon-icons-svelte";
   import Configuration from "../../Models/Configuration/Configuration";
-  import { loadConfiguration } from "@/lib/services/configurationService";
-  import type { Readable } from "svelte/store";
+  import { getConfig, setConfig } from "@/lib/services/configurationService";
+  import { fetchCount } from "@/lib/stores/projectsStore";
+  import { adminUsername, freelancerUsername } from "@/lib/stores/usersStore";
   
-  let config: Configuration = loadConfiguration();
-  const fetchCount = (config.ui.projects.fetchCount as any) as Readable<number>;
+  const config = getConfig();
 
-  const filePickerOptions: OpenFilePickerOptions = {
-    types: [{
-      accept: {
-          "application/json": [".json"]
-      },
-      description: "OPSI.Web configuration"
-    }],
-    excludeAcceptAllOption: true,
-    multiple: false,
-  };
+  async function exportConfig() {
+    let fileHandle: FileSystemFileHandle;
 
-  async function getFile() {
+    try {
+      fileHandle = await window.showSaveFilePicker({
+        startIn: "downloads",
+        suggestedName: "config.opsi.json"
+      });
+    } catch (err: any) {
+        if (err.message === "window.showSaveFilePicker is not a function") {
+            alert("The file system API has not been enabled on this browser.\n\nIt may be protected behind an experimental flag.")
+        } else {
+            console.error(err);
+        }
+        return;
+    }
+
+    const writable = await fileHandle.createWritable();
+    await writable.write(JSON.stringify(config, null, 2));
+    await writable.close();
+  }
+
+  async function loadConfigFromFile() {
     
     let file: File;
     let fileHandles: FileSystemFileHandle[];
 
     try {
         do {
-            fileHandles = await window.showOpenFilePicker(filePickerOptions);
+            fileHandles = await window.showOpenFilePicker({
+                types: [{
+                  accept: {
+                      "application/json": [".json"]
+                  },
+                  description: "OPSI.Web configuration"
+                }],
+                excludeAcceptAllOption: true,
+                multiple: false,
+              });
             if (fileHandles.length !== 1) {
-                alert("Select 1 file.");
+                alert("Select only file.");
             }
         } while (fileHandles.length !== 1)
 
@@ -42,11 +63,21 @@
         return;
     }
 
+
     try {
-        config = JSON.parse(await file.text()) as Configuration;
+        let config = JSON.parse(await file.text()) as Configuration;
+        setConfig(config);
     } catch (err) {
         console.error(err);
     }
+  }
+
+  $: {
+    config.ui.projects.fetchCount = $fetchCount;
+    config.users.administrator.username = $adminUsername;
+    config.users.freelancer.username = $freelancerUsername;
+
+    setConfig(config);
   }
 </script>
 
@@ -74,7 +105,7 @@
               labelText="Administrator"
               placeholder="Username of the administrator user"
               required={true}
-              bind:value={config.users.administrator.username} />
+              bind:value={$adminUsername} />
           </FormGroup>
           <FormGroup>
             <TextInput
@@ -82,7 +113,7 @@
               labelText="Freelancer"
               placeholder="Username of the freelancer user"
               required={true}
-              bind:value={config.users.freelancer.username} />
+              bind:value={$freelancerUsername} />
           </FormGroup>
         </Form>
       </Column>
@@ -105,13 +136,23 @@
     </Row>
     <Row>
       <Column sm={4} md={4} lg={6}>
-        <h3>Import</h3>
-        <p>A configuration may be imported.</p>
-        <Button
-          size="small"
-          on:click={getFile}>
-          Select file
-        </Button>
+        <h3>Import / Export</h3>
+        <p>A configuration may be imported, or the current configuration may be exported.</p>
+        <ButtonSet>
+          <Button
+            icon={DocumentImport}
+            size="small"
+            on:click={loadConfigFromFile}>
+            Select file
+          </Button>
+          <Button
+            icon={DocumentExport}
+            kind="tertiary"
+            size="small"
+            on:click={exportConfig}>
+            Export
+          </Button>
+        </ButtonSet>
       </Column>
     </Row>
   </Grid>

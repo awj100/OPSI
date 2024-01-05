@@ -1,3 +1,3 @@
 export default class Projects {
-    fetchCount: number = 10;
+    fetchCount: number = 5;
 }

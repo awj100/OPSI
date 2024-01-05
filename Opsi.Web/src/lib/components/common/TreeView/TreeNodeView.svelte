@@ -71,7 +71,8 @@
       id={treeNode.id}
       labelText={treeNode.text}
       name={treeNode.id}
-      on:check={onCheckChanged} />
+      on:check={onCheckChanged}
+      class="inline-block" />
   {/if}
   {#if treeNode.isSelected && treeNode.children.length}
     <TreeView
