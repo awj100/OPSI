@@ -91,14 +91,14 @@
   }
 
   li {
-      background-color: transparent;
-      padding: 0 0 0 0.5rem;
-  }
+    background-color: transparent;
+    padding: 0 0 0 0.5rem;
 
-  li:not([aria-expanded]) svg,
-  li[aria-expanded="false"] svg {
-    transform: rotate(-90deg);
-    transition: all .11s cubic-bezier(.2,0,.38,.9);
+    &:not([aria-expanded]) svg,
+    &[aria-expanded="false"] svg {
+      transform: rotate(-90deg);
+      transition: all .3s cubic-bezier(.2,0,.38,.9);
+    }
   }
 
   span {
