@@ -55,11 +55,15 @@
     </Row>
     <Row>
       <Column>
-        <Button
-          disabled={!continuationToken}
-          icon={Add}
-          size="small"
-          on:click={loadMore}>More projects</Button>
+        {#if hasContent}
+          <Button
+            disabled={!continuationToken}
+            icon={Add}
+            size="small"
+            on:click={loadMore}>More projects</Button>
+          {:else}
+            <Button skeleton size="small" />
+          {/if}
       </Column>
     </Row>
   </Grid>
