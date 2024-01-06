@@ -78,7 +78,7 @@ h3 svg {
 }
 
 .inline-block {
-    display: inline-block;
+    display: inline-block !important;
 }
 
 .user-assignment .bx--form-item {
