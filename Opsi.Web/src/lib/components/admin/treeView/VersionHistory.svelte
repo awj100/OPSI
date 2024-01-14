@@ -1,4 +1,4 @@
-Í<script lang="ts">
+<script lang="ts">
   import { onMount } from "svelte";
   import { ListItem, UnorderedList } from "carbon-components-svelte";
   import Version from "carbon-icons-svelte/lib/Version.svelte";
