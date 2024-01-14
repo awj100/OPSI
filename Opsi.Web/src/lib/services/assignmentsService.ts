@@ -1,9 +1,9 @@
 import axios, { type AxiosPromise } from "axios";
-import PageableResponse from "@/lib/Models/PageableResponse";
-import ProjectDetail from "@/lib/Models/ProjectDetail";
-import Resource from "@/lib/Models/Resource";
+import PageableResponse from "@/lib/models/PageableResponse";
+import ProjectDetail from "@/lib/models/ProjectDetail";
+import Resource from "@/lib/models/Resource";
 import { ProjectStates } from "../enums/ProjectStates";
-import ProjectSummary from "@/lib/Models/ProjectSummary";
+import ProjectSummary from "@/lib/models/ProjectSummary";
 
 const authToken = "dXNlckB0ZXN0LmNvbTpBZG1pbmlzdHJhdG9y";
 const endpointUri = "http://localhost:7071/api/_admin/users";

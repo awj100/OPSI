@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import Project from "../Models/ProjectDetail";
+import Project from "../models/ProjectDetail";
 
 export const fetchCount = writable(0);
 

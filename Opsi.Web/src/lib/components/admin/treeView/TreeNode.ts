@@ -1,4 +1,4 @@
-import type Resource from "../../../Models/Resource";
+import type Resource from "../../../models/Resource";
 
 export default class TreeNode {
     children: Array<TreeNode> = [];

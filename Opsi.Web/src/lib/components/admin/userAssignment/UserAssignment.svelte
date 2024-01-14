@@ -4,7 +4,7 @@
   import RootNode from "./TreeView/RootNode.svelte";
   import UserAssignment from "./UserAssignment";
   import type Node from "./TreeView/Node";
-  import ResourceModel from "../../../Models/Resource";
+  import ResourceModel from "../../../models/Resource";
   import { assignUser } from "../../../services/assignmentsService";
   import AssignmentError from "./AssignmentError";
   import axios from "axios";

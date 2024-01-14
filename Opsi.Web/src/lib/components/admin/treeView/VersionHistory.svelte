@@ -1,8 +1,8 @@
-<script lang="ts">
+Í<script lang="ts">
   import { onMount } from "svelte";
   import { ListItem, UnorderedList } from "carbon-components-svelte";
   import Version from "carbon-icons-svelte/lib/Version.svelte";
-  import type ResourceVersion from "../../../Models/ResourceVersion";
+  import type ResourceVersion from "../../../models/ResourceVersion";
 
   let shouldShowVersions2: boolean = false;
   let showHideVersionsText: string;

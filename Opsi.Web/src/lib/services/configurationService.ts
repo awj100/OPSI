@@ -1,4 +1,4 @@
-import Configuration from "../Models/Configuration/Configuration";
+import Configuration from "../models/configuration/Configuration";
 import { fetchCount } from "../stores/projectsStore";
 import { adminUsername, freelancerUsername } from "../stores/usersStore";
 

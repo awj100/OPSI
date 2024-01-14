@@ -2,10 +2,10 @@
   import ProjectAction from "./ProjectAction.svelte";
   import ProjectDetail from "./ProjectDetail.svelte";
   import { AccordionItem, Column, Grid, InlineLoading, Row, Tooltip } from "carbon-components-svelte";
-  import ProjectDetailModel from "../../../Models/ProjectDetail";
-  import ProjectSummaryModel from "../../../Models/ProjectSummary";
-  import ResourceModel from "../../../Models/Resource";
-  import { get } from "../../../services/projectsService";
+  import ProjectDetailModel from "../../../models/ProjectDetail";
+  import ProjectSummaryModel from "../../../models/ProjectSummary";
+  import ResourceModel from "../../../models/Resource";
+  import { get } from "../../../services/adminProjectsService";
   import { Renew, UserFollow, Version } from "carbon-icons-svelte";
   import UserAssignment from "../userAssignment/UserAssignment.svelte";
 

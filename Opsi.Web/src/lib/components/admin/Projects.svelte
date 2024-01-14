@@ -1,12 +1,12 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import Project from "./Project/Project.svelte";
+  import Project from "./project/Project.svelte";
   import ProjectStateSelector from "./ProjectStateSelector.svelte";
   import { ProjectStates } from "../../enums/ProjectStates";
-  import ProjectSummaryModel from "@/lib/Models/ProjectSummary";
+  import ProjectSummaryModel from "@/lib/models/ProjectSummary";
   import { Accordion, Button, Grid, Row, Column } from "carbon-components-svelte";
   import { Add } from "carbon-icons-svelte";
-  import { getAllByStatus } from "../../services/projectsService";
+  import { getAllByStatus } from "../../services/adminProjectsService";
   import { fetchCount } from "@/lib/stores/projectsStore";
 
   const defaultProjectState: ProjectStates = ProjectStates.InProgress;

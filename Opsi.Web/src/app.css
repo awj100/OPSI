@@ -2,9 +2,9 @@ h3 svg {
     margin-right: 1rem;
 }
 
-.bx--accordion__content {
-    padding-right: 0 !important;
-}
+/* .bx--accordion__content {
+    padding: 0 0 1.5rem 1rem !important;
+} */
 
 .bx--accordion__content > ul {
     margin-left: 0 !important;
@@ -79,6 +79,10 @@ h3 svg {
 
 .inline-block {
     display: inline-block !important;
+}
+
+.pad-t-0 {
+    padding-top: 0 !important;
 }
 
 .user-assignment .bx--form-item {

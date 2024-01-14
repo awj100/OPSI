@@ -1,4 +1,4 @@
-import ResourceModel from "../../../Models/Resource";
+import ResourceModel from "../../../models/Resource";
 
 export default class UserAssignment {
     username: string;

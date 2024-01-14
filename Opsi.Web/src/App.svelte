@@ -3,8 +3,8 @@
   import Router from "../node_modules/svelte-spa-router";
   import { Column, Content, Grid, Row, } from "../node_modules/carbon-components-svelte";
   import Header from "./lib/components/common/Header.svelte";
-  import HelloFreelancer from "./lib/components/freelancer/text.svelte";
   import AdminProjects from "./lib/components/admin/Projects.svelte";
+  import FreelancerProjects from "./lib/components/freelancer/Projects.svelte";
   import Configuration from "./lib/components/common/Configuration.svelte";
   import NotFound from "./lib/components/common/NotFound.svelte";
   import { initConfig } from "@/lib/services/configurationService";
@@ -13,7 +13,7 @@
       "/": AdminProjects,
       "/administrator": AdminProjects,
       "/config": Configuration,
-      "/freelancer": HelloFreelancer,
+      "/freelancer": FreelancerProjects,
       "*": NotFound,
   };
 

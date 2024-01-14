@@ -2,7 +2,7 @@
   import { fade } from "svelte/transition";
   import { Button, ButtonSet, Column, Form, FormGroup, Grid, NumberInput, Row, TextInput } from "carbon-components-svelte";
   import { DocumentExport, DocumentImport } from "carbon-icons-svelte";
-  import Configuration from "../../Models/Configuration/Configuration";
+  import Configuration from "../../models/configuration/Configuration";
   import { getConfig, setConfig } from "@/lib/services/configurationService";
   import { fetchCount } from "@/lib/stores/projectsStore";
   import { adminUsername, freelancerUsername } from "@/lib/stores/usersStore";
