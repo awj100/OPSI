@@ -1,9 +1,14 @@
 <script lang="ts">
 	import { Link } from "carbon-components-svelte";
+  import { download } from "../../../services/resourcesService";
   import TreeNode from "./TreeNode";
   import TreeView from "./TreeView.svelte";
 
 	let hasFocus: boolean = false;
+
+  function downloadResource() {
+    download(treeNode.data[0].projectId!, treeNode.data[0].fullName!, treeNode.text);
+  }
 
   export let treeNode: TreeNode;
 
@@ -40,9 +45,17 @@
     <div>&nbsp;</div>
   {/if}
   {#if isLeaf}
-    <Link href="~">
+    <span aria-label={`Download ${treeNode.text}`}
+          on:click={() => downloadResource()}
+          on:keydown={() => downloadResource()}
+          role="link"
+          tabindex="-1"
+      >
       {treeNode.text}
-    </Link>
+    </span>
+    <!-- <Link href="http://localhost:7071/api/projects/db5653ab-eece-4b15-acb9-e70b0859f1fc/resource/12345/de-CH/test-1.sdlxliff">
+      {treeNode.text}
+    </Link> -->
   {:else}
     {treeNode.text}
   {/if}

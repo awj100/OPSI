@@ -1,5 +1,4 @@
 import axios, { type AxiosPromise } from "axios";
-import PageableResponse from "@/lib/models/PageableResponse";
 import UserAssignment from "@/lib/models/UserAssignment";
 import ProjectWithResources from "@/lib/models/ProjectWithResources";
 
