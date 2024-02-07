@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
 using Opsi.AzureStorage.Types;
 using Opsi.Common;
 
@@ -22,17 +23,22 @@ internal class BlobService : StorageServiceBase, IBlobService
         await blobClient.DeleteIfExistsAsync(Azure.Storage.Blobs.Models.DeleteSnapshotsOption.IncludeSnapshots);
     }
 
-    public async Task<Stream> RetrieveAsync(string fullName)
+    public async Task<Stream> RetrieveContentAsync(string fullName)
     {
-        var containerClient = GetContainerClient();
-
-        var blobClient = containerClient.GetBlobClient(fullName);
+        var blobClient = RetrieveBlob(fullName);
 
         var memoryStream = new MemoryStream();
         await blobClient.DownloadToAsync(memoryStream);
         memoryStream.Position = 0;
 
         return memoryStream;
+    }
+
+    public BlobBaseClient RetrieveBlob(string fullName)
+    {
+        var containerClient = GetContainerClient();
+
+        return containerClient.GetBlobClient(fullName);
     }
 
     public async Task StoreAsync(string fullName, Stream content)

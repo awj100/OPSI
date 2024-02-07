@@ -4,6 +4,7 @@ public static class Events
 {
     public static readonly string AlreadyExists = nameof(AlreadyExists);
     public static readonly string Locked = nameof(Locked);
+    public static readonly string ResourceDownloaded = nameof(ResourceDownloaded);
     public static readonly string StateChange = nameof(StateChange);
     public static readonly string Stored = nameof(Stored);
     public static readonly string StoreFailure = nameof(StoreFailure);

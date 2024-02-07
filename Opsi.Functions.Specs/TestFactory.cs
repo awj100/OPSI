@@ -10,13 +10,16 @@ namespace Opsi.Functions.Specs;
 
 public class TestFactory
 {
-    private const string MethodGet = "get";
+    public static HttpRequestData CreateHttpRequest(string uri)
+    {
+        return CreateHttpRequest(uri, HttpMethod.Get);
+    }
 
-    public static HttpRequestData CreateHttpRequest(string uri, string method = MethodGet)
+    public static HttpRequestData CreateHttpRequest(string uri, HttpMethod method)
     {
         var body = new MemoryStream();
         var context = A.Fake<FunctionContext>();
-        return new FakeHttpRequestData(context, new Uri(uri), method, body);
+        return new FakeHttpRequestData(context, new Uri(uri), method.ToString(), body);
     }
 
     public static async Task<HttpRequestData> CreateHttpRequestAsync(string uri, string method, object objectToPostOrPut)

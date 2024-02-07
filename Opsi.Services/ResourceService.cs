@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage.Types;
+using Opsi.Common;
 using Opsi.Common.Exceptions;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
@@ -31,6 +32,42 @@ internal class ResourceService : IResourceService
         _webhookQueueService = webhookQueueService;
     }
 
+    public async Task<Option<ResourceContent>> GetResourceContentAsync(Guid projectId, string fullName)
+    {
+        var blobName = $"{projectId}/{fullName}";
+        var blobClient = _blobService.RetrieveBlob(blobName);
+
+        if (!await blobClient.ExistsAsync())
+        {
+            return Option<ResourceContent>.None();
+        }
+
+        var blobProps = await blobClient.GetPropertiesAsync();
+
+        using var memoryStream = new MemoryStream();
+        await blobClient.DownloadToAsync(memoryStream);
+        memoryStream.Position = 0;
+        var contentLength = (int)blobProps.Value.ContentLength;
+        var bytes = new byte[contentLength];
+        await memoryStream.ReadAsync(bytes, 0, contentLength - 1);
+
+        var resourceStorageInfo = new ResourceStorageInfo(projectId, blobClient.Name, memoryStream, _userProvider.Username.Value);
+        await QueueWebhookMessageAsync(projectId, resourceStorageInfo, Events.ResourceDownloaded);
+
+        return Option<ResourceContent>.Some(new ResourceContent(blobClient.Name,
+                                                                bytes,
+                                                                blobProps.Value.ContentLength,
+                                                                blobProps.Value.ContentType,
+                                                                blobProps.Value.LastModified,
+                                                                blobProps.Value.ETag.ToString("H")));
+    }
+
+    public async Task<bool> HasUserAccessAsync(Guid projectId, string fullName, string requestingUsername)
+    {
+        return _userProvider.IsAdministrator.Value
+               || await _resourcesService.HasUserAccessAsync(projectId, fullName, requestingUsername);
+    }
+
     public async Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo)
     {
         var currentVersionInfo = await GetVersionInfoAsync(resourceStorageInfo);
@@ -44,7 +81,7 @@ internal class ResourceService : IResourceService
 
         await StoreFileDataAndVersionAsync(resourceStorageInfo);
 
-        await QueueWebhookMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo);
+        await QueueWebhookMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo, Events.Stored);
     }
 
     private async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)
@@ -102,7 +139,7 @@ internal class ResourceService : IResourceService
         }
     }
 
-    private async Task QueueWebhookMessageAsync(Guid projectId, ResourceStorageInfo resourceStorageInfo)
+    private async Task QueueWebhookMessageAsync(Guid projectId, ResourceStorageInfo resourceStorageInfo, string eventType)
     {
         var webhookSpec = await GetWebhookSpecificationAsync(projectId);
         if (webhookSpec == null)
@@ -112,7 +149,7 @@ internal class ResourceService : IResourceService
 
         await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
         {
-            Event = Events.Stored,
+            Event = eventType,
             Level = Levels.Resource,
             Name = resourceStorageInfo.FileName.Value,
             ProjectId = projectId,

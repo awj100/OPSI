@@ -1,6 +1,7 @@
 ﻿using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.AzureStorage.Types;
+using Opsi.Pocos;
 
 namespace Opsi.AzureStorage;
 
@@ -75,6 +76,15 @@ internal class ResourcesService : IResourcesService
         }
 
         return resources;
+    }
+
+    public async Task<bool> HasUserAccessAsync(Guid projectId, string fullName, string requestingUsername)
+    {
+        var keyPolicy = _keyPolicies.GetKeyPoliciesForUserAssignment(projectId, fullName, requestingUsername).First();
+        var tableClient = _tableService.TableClient.Value;
+        var pageableEntities = tableClient.QueryAsync<ResourceTableEntity>(x => x.PartitionKey == keyPolicy.PartitionKey && x.RowKey == x.RowKey);
+
+        return await pageableEntities.AnyAsync();
     }
 
     public async Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo)

@@ -60,7 +60,7 @@ public class ZippedQueueHandlerSpecs
         _unzipServiceFactory = A.Fake<IUnzipServiceFactory>();
         _webhookQueueService = A.Fake<IWebhookQueueService>();
 
-        A.CallTo(() => _blobService.RetrieveAsync(A<string>.That.Matches(s => s.Contains(_manifest.ProjectId.ToString())))).Returns(_nonManifestStream);
+        A.CallTo(() => _blobService.RetrieveContentAsync(A<string>.That.Matches(s => s.Contains(_manifest.ProjectId.ToString())))).Returns(_nonManifestStream);
         A.CallTo(() => _unzipServiceFactory.Create(_nonManifestStream)).Returns(_unzipService);
         A.CallTo(() => _unzipService.GetFilePathsFromPackage()).Returns(_nonManifestContentFilePaths);
 
@@ -157,7 +157,7 @@ public class ZippedQueueHandlerSpecs
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
-        A.CallTo(() => _blobService.RetrieveAsync(A<string>.That.Matches(s => s.Contains(_manifest.ProjectId.ToString())))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _blobService.RetrieveContentAsync(A<string>.That.Matches(s => s.Contains(_manifest.ProjectId.ToString())))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]

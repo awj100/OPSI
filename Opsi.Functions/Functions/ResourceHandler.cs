@@ -1,10 +1,10 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
-using Azure.Storage.Blobs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage.Types;
+using Opsi.Pocos;
 using Opsi.Services;
 using Opsi.Services.QueueServices;
 
@@ -12,7 +12,7 @@ namespace Opsi.Functions.Functions;
 
 public class ResourceHandler
 {
-    private const string route = "projects/{projectId:guid}/resource/{*restOfPath}";
+    private const string route = "projects/{projectId:guid}/resources/{*restOfPath}";
 
     private readonly IErrorQueueService _errorQueueService;
     private readonly ILogger<ResourceHandler> _logger;
@@ -40,6 +40,22 @@ public class ResourceHandler
     {
         _logger.LogInformation(nameof(ResourceHandler));
 
+        var accessStatusCode = await HasUserAccessAsync(projectId, restOfPath, _userProvider.Username.Value);
+        HttpResponseData response;
+
+        switch (accessStatusCode)
+        {
+            case HttpStatusCode.InternalServerError:
+                response = req.CreateResponse(HttpStatusCode.InternalServerError);
+                await response.WriteStringAsync($"An exception was thrown while determining your access to the resource. This has been logged.");
+                return response;
+
+            case HttpStatusCode.Unauthorized:
+                response = req.CreateResponse(HttpStatusCode.Unauthorized);
+                await response.WriteStringAsync($"You do not have access to \"{restOfPath}\" in project \"{projectId}\".");
+                return response;
+        }
+
         if (req.Method == HttpMethod.Post.Method)
         {
             return await HandlePostedFileAsync(req, projectId, restOfPath);
@@ -50,27 +66,22 @@ public class ResourceHandler
 
     private async Task<HttpResponseData> HandleGetFileAsync(HttpRequestData req, Guid projectId, string restOfPath)
     {
+        HttpResponseData response;
+
         try
         {
-            var blobServiceClient = new BlobServiceClient("UseDevelopmentStorage=true");
-            var container = blobServiceClient.GetBlobContainerClient("resources");
-            var blob = container.GetBlobClient($"{projectId}/{restOfPath}");
-            var blobProps = await blob.GetPropertiesAsync();
+            var resourceContent = await _resourceService.GetResourceContentAsync(projectId, restOfPath);
+            if (resourceContent.IsNone)
+            {
+                response = req.CreateResponse(HttpStatusCode.NotFound);
+                await response.WriteStringAsync($"The requested resource (\"{restOfPath}\") cuold not be found.");
 
-            var response = req.CreateResponse(HttpStatusCode.PartialContent);
-            response.Headers.Add("Cache-Control", new CacheControlHeaderValue { NoStore = true }.ToString());
-            response.Headers.Add("Content-Disposition", new ContentDispositionHeaderValue("attachment") { FileName = GetBlobName(blob.Name) }.ToString());
-            response.Headers.Add("Content-Length", blobProps.Value.ContentLength.ToString());
-            response.Headers.Add("Content-Type", blobProps.Value.ContentType);
-            response.Headers.Add("Etag", blobProps.Value.ETag.ToString("H"));
-            response.Headers.Add("Last-Modified", blobProps.Value.LastModified.ToString("R"));
+                return response;
+            }
 
-            var bytes = new byte[blobProps.Value.ContentLength];
-            using var stream = await blob.OpenReadAsync();
-            await stream.ReadAsync(bytes, 0, (int)blobProps.Value.ContentLength - 1);
-            await response.WriteBytesAsync(bytes);
-
-            return response;
+            response = req.CreateResponse(HttpStatusCode.OK);
+            SetResponseHeaders(response, resourceContent.Value);
+            await SetResponseContentAsync(response, resourceContent.Value);
         }
         catch (Exception ex)
         {
@@ -78,11 +89,11 @@ public class ResourceHandler
 
             await _errorQueueService.ReportAsync(ex);
 
-            var response = req.CreateResponse(HttpStatusCode.InternalServerError);
+            response = req.CreateResponse(HttpStatusCode.InternalServerError);
             await response.WriteStringAsync(ex.Message);
-
-            return response;
         }
+
+        return response;
     }
 
 /*
@@ -134,7 +145,7 @@ public class ResourceHandler
     {
         if (!DoesBodyContainFile(req))
         {
-            _logger.LogError($"Request contained invalid content-type (\"{GetContentType(req)}\") or no body ({req.Body.Length}).");
+            _logger.LogError($"Request contained invalid content-type (\"{GetContentTypeOfUpload(req)}\") or no body ({req.Body.Length}).");
 
             var response = req.CreateResponse(HttpStatusCode.BadRequest);
             await response.WriteStringAsync($"Invalid upload - attach the file content as the request's body, with Content-Type header set to \"application/octet-stream\".");
@@ -167,21 +178,39 @@ public class ResourceHandler
         return req.CreateResponse(HttpStatusCode.OK);
     }
 
+    private async Task<HttpStatusCode> HasUserAccessAsync(Guid projectId, string restOfPath, string username)
+    {
+        try
+        {
+            var hasUserAccess = await _resourceService.HasUserAccessAsync(projectId, restOfPath, username);
+
+            if (!hasUserAccess)
+            {
+                return HttpStatusCode.Unauthorized;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An exception was thrown while determining a user's access to a resource.", projectId, restOfPath, username);
+
+            await _errorQueueService.ReportAsync(ex);
+
+            return HttpStatusCode.InternalServerError;
+        }
+
+        return HttpStatusCode.OK;
+    }
+
     private static bool DoesBodyContainFile(HttpRequestData request)
     {
         const string expectedContentType = "application/octet-stream";
 
         return request != null
-            && string.Equals(GetContentType(request), expectedContentType, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(GetContentTypeOfUpload(request), expectedContentType, StringComparison.OrdinalIgnoreCase)
             && request.Body?.Length > 0;
     }
 
-    private static string GetBlobName(string fullName)
-    {
-        return fullName.Split("/").LastOrDefault() ?? "filename";
-    }
-
-    private static string GetContentType(HttpRequestData req)
+    private static string GetContentTypeOfUpload(HttpRequestData req)
     {
         if (req.Headers.TryGetValues(Microsoft.Net.Http.Headers.HeaderNames.ContentType, out var contentType))
         {
@@ -190,5 +219,24 @@ public class ResourceHandler
 
         return string.Empty;
     }
-}
 
+    private static async Task SetResponseContentAsync(HttpResponseData response, ResourceContent resourceContent)
+    {
+        await response.WriteBytesAsync(resourceContent.Contents);
+    }
+
+    private static void SetResponseHeaders(HttpResponseData response, ResourceContent resourceContent)
+    {
+        response.Headers.Add("Cache-Control", new CacheControlHeaderValue { NoStore = true }.ToString());
+        response.Headers.Add("Content-Disposition", new ContentDispositionHeaderValue("attachment") { FileName = GetFilename(resourceContent.Name) }.ToString());
+        response.Headers.Add("Content-Length", resourceContent.Length.ToString());
+        response.Headers.Add("Content-Type", resourceContent.ContentType);
+        response.Headers.Add("Etag", resourceContent.Etag);
+        response.Headers.Add("Last-Modified", resourceContent.LastModified.ToString("R"));
+
+        static string GetFilename(string fullName)
+        {
+            return fullName.Split("/").LastOrDefault() ?? "filename";
+        }
+    }
+}

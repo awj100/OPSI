@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Opsi.Functions\Opsi.Functions.csproj" />
+    <ProjectReference Include="../Opsi.Functions/Opsi.Functions.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Middleware\" />

@@ -16,7 +16,7 @@ export async function download(projectId: string, path: string, fileName: string
             headers: headers,
             method: "GET",
             responseType: "blob",
-            url: `${endpointUri}/${projectId}/resource/${path}`
+            url: `${endpointUri}/${projectId}/resources/${path}`
         });
         
         const contentDisposition =

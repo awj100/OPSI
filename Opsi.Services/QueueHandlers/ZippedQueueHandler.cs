@@ -53,7 +53,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
 
         bool areAllResourcesStored = false;
 
-        using (var zipStream = await _blobService.RetrieveAsync(internalManifest.GetPackagePathForStore()))
+        using (var zipStream = await _blobService.RetrieveContentAsync(internalManifest.GetPackagePathForStore()))
         using (var unzipService = _unzipServiceFactory.Create(zipStream))
         {
             var filePaths = unzipService.GetFilePathsFromPackage()
