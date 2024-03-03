@@ -35,30 +35,50 @@ public class ProjectsService : IProjectsService
 
     public async Task AssignUserAsync(UserAssignment userAssignment)
     {
-        var optProject = await _projectsTableService.GetProjectByIdAsync(userAssignment.ProjectId);
-        if (optProject.IsNone)
-        {
-            throw new ArgumentException("Invalid project ID");
-        }
-        var project = optProject.Value;
+        var project = await GetProjectAsync(userAssignment.ProjectId);
 
-        userAssignment.ProjectName = optProject.Value.Name;
+        var assingmentsOnRequestedResource = project.Resources
+                                                    .Where(resource => resource.FullName.Equals(userAssignment.ResourceFullName, StringComparison.OrdinalIgnoreCase) && resource.AssignedTo != null)
+                                                    .ToList();
+
+        // Is the resource assigned to another user?
+        if (assingmentsOnRequestedResource.Any(resource => !resource.AssignedTo!.Equals(userAssignment.AssigneeUsername, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new UserAssignmentException(userAssignment.ProjectId,
+                                              userAssignment.ResourceFullName,
+                                              "The specified resource is already assigned to another user.");
+        }
+
+        // Is the resource already assigned to the same user?
+        if (assingmentsOnRequestedResource.Any(resource => resource.AssignedTo!.Equals(userAssignment.AssigneeUsername, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        userAssignment.ProjectName = project.Name;
+
+        var webhookSpecification = await GetWebhookSpecificationAsync(userAssignment.ProjectId);
+
+        if (webhookSpecification == null)
+        {
+            return;
+        }
 
         await _projectsTableService.AssignUserAsync(userAssignment);
 
-        if (!String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
+        if (!String.IsNullOrWhiteSpace(webhookSpecification?.Uri))
         {
             const string propNameAssignedUsername = "assignedUsername";
             const string propNameResourceFullName = "resourceFullName";
 
             // Add the username of the assigned user to the custom props.
-            var additionalProps = project.WebhookSpecification.CustomProps ?? new Dictionary<string, object>();
+            var additionalProps = webhookSpecification.CustomProps ?? new Dictionary<string, object>();
             additionalProps.Add(propNameAssignedUsername, userAssignment.AssigneeUsername);
             additionalProps.Add(propNameResourceFullName, userAssignment.ResourceFullName);
 
             await QueueWebhookMessageAsync(project.Id,
                                            project.Name,
-                                           project.WebhookSpecification.Uri,
+                                           webhookSpecification.Uri,
                                            additionalProps,
                                            userAssignment.AssignedByUsername,
                                            Events.UserAssigned);
@@ -124,7 +144,7 @@ public class ProjectsService : IProjectsService
         {
             throw new ProjectNotFoundException();
         }
-        
+
         var project = projectTableEntity.ToProject();
         var projectWithResources = ProjectWithResources.FromProjectBase(project);
 

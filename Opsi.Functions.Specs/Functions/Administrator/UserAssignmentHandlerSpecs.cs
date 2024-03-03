@@ -1,5 +1,10 @@
+using System.Net;
+using System.Text;
 using FakeItEasy;
+using FluentAssertions;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging.Abstractions;
+using Opsi.Common.Exceptions;
 using Opsi.Functions.Functions.Administrator;
 using Opsi.Functions.Specs;
 using Opsi.Pocos;
@@ -179,5 +184,34 @@ public class UserAssignmentHandlerSpecs
 
         A.CallTo(() => _projectsService.AssignUserAsync(A<UserAssignment>.That.Matches(ua => ua.ResourceFullName.Equals(_resourceFullName))))
          .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task Run_WhenMethodIsPutAndUserAssignmentExceptionIsThrown_ReturnsBadRequestWithExceptionMessage()
+    {
+        const string exceptionMessage = "The specified resource is already assigned to another user.";
+
+        A.CallTo(() => _projectsService.AssignUserAsync(A<UserAssignment>.That.Matches(ua => ua.ProjectId.Equals(_projectId)
+                                                                                             && ua.ResourceFullName.Equals(_resourceFullName)
+                                                                                             && ua.AssigneeUsername.Equals(_assigneeUsername))))
+                                       .ThrowsAsync(new UserAssignmentException(_projectId,
+                                                                                _resourceFullName,
+                                                                                exceptionMessage));
+
+        var request = TestFactory.CreateHttpRequest(_uri, _methodPut);
+
+        var response = await _testee.Run(request,
+                                         _assigneeUsername,
+                                         _projectId,
+                                         _resourceFullName);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var s = response.Body;
+        s.Position = 0;
+        using var ms = new MemoryStream((int)s.Length);
+        await s.CopyToAsync(ms);
+        var bodyContentAsText = Encoding.UTF8.GetString(ms.ToArray());
+        bodyContentAsText.Should().Contain(exceptionMessage);
     }
 }

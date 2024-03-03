@@ -2,6 +2,7 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using Opsi.Common.Exceptions;
 using Opsi.Pocos;
 using Opsi.Services;
 using Opsi.Services.QueueServices;
@@ -54,6 +55,10 @@ public class UserAssignmentHandler
         catch (ArgumentException exception)
         {
             return req.BadRequest($"Invalid {exception.ParamName}.");
+        }
+        catch(UserAssignmentException exception)
+        {
+            return req.BadRequest(exception.Message);
         }
         catch (Exception exception)
         {
