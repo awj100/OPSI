@@ -8,6 +8,7 @@
   import Configuration from "./lib/components/common/Configuration.svelte";
   import NotFound from "./lib/components/common/NotFound.svelte";
   import { initConfig } from "@/lib/services/configurationService";
+  import ErrorNotifications from "./lib/components/common/ErrorNotifications.svelte";
 
   const routes = {
       "/": AdminProjects,
@@ -27,6 +28,7 @@
   <Grid fullWidth noGutter>
     <Row>
         <Column>
+          <ErrorNotifications />
           <Router {routes}/>
         </Column>
     </Row>

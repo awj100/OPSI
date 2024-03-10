@@ -1,3 +1,13 @@
+div.bx--checkbox-wrapper:has(+ a) {
+    display: inline-flex !important;
+}
+
+div.bx--checkbox-wrapper + a {
+    display: inline-flex !important;
+    position: relative;
+    top: -0.4rem;
+}
+
 h3 svg {
     margin-right: 1rem;
 }
@@ -11,6 +21,17 @@ h3 svg {
 }
 .bx--accordion__content ul > li {
     padding-left: 0 !important;
+}
+
+.icon-uploading {
+    margin-left: 0.5rem;
+    position: relative;
+    top: 0.5rem;
+}
+
+.icon-uploading.bx--inline-loading {
+    display: inline-block;
+    width: inherit;
 }
 
 .resource-tree .bx--inline-loading,

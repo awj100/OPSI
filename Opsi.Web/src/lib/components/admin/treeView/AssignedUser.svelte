@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { User, UserFilled } from "carbon-icons-svelte";
+  import { SubtractAlt, User, UserFilled } from "carbon-icons-svelte";
   
   const unassignedUsernameText: string = "Unassigned";
   let assignedUsernameText: string;
@@ -21,4 +21,7 @@
         <User aria-labelledby="lblShowVersions" id="imgShowVersions" />
     {/if}
     <label for="imgShowVersions" id="lblShowVersions">{assignedUsernameText}</label>
+    {#if userIsAssigned}
+      <SubtractAlt />
+    {/if}
 </div>

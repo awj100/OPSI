@@ -1,18 +1,27 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import ProjectDetailModel from "../../../models/ProjectDetail";
   import ResourceModel from "../../../models/Resource";
   import TreeNode from "../treeView/TreeNode";
   import TreeView from "../treeView/TreeView.svelte";
+  import ResourceUpload from "../resourceUpload/ResourceUpload.svelte";
 
 	const expandedIds: Array<string> = [];
+  let showUploadModal: boolean = false;
   let treeNodes: Array<TreeNode> = [];
+
+  export let projectDetail: ProjectDetailModel;
+
+  onMount(() => {
+    treeNodes = getStructure(projectDetail.resources);
+  });
 
   function getStructure(resources: ResourceModel[]): TreeNode[] {
     const result: Array<TreeNode> = [];
     const level = { result };
     const paths = resources.map((resource: ResourceModel) => resource.fullName!);
     const pathSeparator = "/";
-    
+
     function reducer(accumulator: any, currentValue: any, idx: number, arr: Array<any>) {
         if (accumulator[currentValue]) {
             return accumulator[currentValue];
@@ -25,8 +34,10 @@
         const node = {
             children: [],
             id: currentValue,
+            isFile: () => false,
             text: currentValue
         };
+        node.isFile = () => node.children.length === 0;
     
         if (idx < arr.length - 1) { // If this is a branch, not the leaf...
           node.children = accumulator[currentValue].result;
@@ -44,7 +55,7 @@
         setIdAndData(node.children[i], node.id);
       }
     }
-    
+
     paths.forEach(path => {
         path.split(pathSeparator).reduce(reducer, level)
     });
@@ -58,9 +69,23 @@
     return result;
   }
 
-  export let projectDetail: ProjectDetailModel;
+  function onResourceUploaded(e: CustomEvent<string>) {
+    // ...
+  }
 
-  treeNodes = getStructure(projectDetail.resources);
+  function onWantsUpload(e: CustomEvent<TreeNode>) {
+    console.log("ProjectDetail.onWantsUpload");
+    console.log(e.detail);
+  }
 </script>
 
-<TreeView {treeNodes} />
+<div on:click={() => {showUploadModal = true}}>Click me</div>
+
+<TreeView
+  {treeNodes}
+  on:wantsUpload={onWantsUpload} />
+
+<ResourceUpload
+  openModal={showUploadModal}
+  projectDetail={projectDetail}
+  on:resourceUploaded={onResourceUploaded} />

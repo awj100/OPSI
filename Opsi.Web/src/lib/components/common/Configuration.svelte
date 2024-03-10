@@ -1,11 +1,11 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { Button, ButtonSet, Column, Form, FormGroup, Grid, NumberInput, Row, TextInput } from "carbon-components-svelte";
+  import { Button, ButtonSet, Column, Form, FormGroup, Grid, NumberInput, Row, Tab, TabContent, Tabs, TextInput } from "carbon-components-svelte";
   import { DocumentExport, DocumentImport } from "carbon-icons-svelte";
   import Configuration from "../../models/configuration/Configuration";
   import { getConfig, setConfig } from "@/lib/services/configurationService";
   import { fetchCount } from "@/lib/stores/projectsStore";
-  import { adminUsername, freelancerUsername } from "@/lib/stores/usersStore";
+  import { adminAuthToken, adminUsername, freelancerAuthToken, freelancerUsername } from "@/lib/stores/usersStore";
   
   const config = getConfig();
 
@@ -32,7 +32,6 @@
   }
 
   async function loadConfigFromFile() {
-    
     let file: File;
     let fileHandles: FileSystemFileHandle[];
 
@@ -74,7 +73,9 @@
 
   $: {
     config.ui.projects.fetchCount = $fetchCount;
+    config.users.administrator.authToken = $adminAuthToken;
     config.users.administrator.username = $adminUsername;
+    config.users.freelancer.authToken = $freelancerAuthToken;
     config.users.freelancer.username = $freelancerUsername;
 
     setConfig(config);
@@ -97,25 +98,49 @@
     <Row>
       <Column sm={4} md={4} lg={6}>
         <h3>Users</h3>
-        <p>Configure the usernames.</p>
-        <Form>
-          <FormGroup>
-            <TextInput
-              invalidText="An administrator username must be specified."
-              labelText="Administrator"
-              placeholder="Username of the administrator user"
-              required={true}
-              bind:value={$adminUsername} />
-          </FormGroup>
-          <FormGroup>
-            <TextInput
-              invalidText="A freelancer username must be specified."
-              labelText="Freelancer"
-              placeholder="Username of the freelancer user"
-              required={true}
-              bind:value={$freelancerUsername} />
-          </FormGroup>
-        </Form>
+        <p>Configure the users.</p>
+        <Tabs>
+          <Tab label="Administrator" />
+          <Tab label="Freelancer" />
+          <svelte:fragment slot="content">
+            <TabContent>
+              <FormGroup>
+                <TextInput
+                  invalidText="An administrator username must be specified."
+                  labelText="Username"
+                  placeholder="Username of the administrator user"
+                  required={true}
+                  bind:value={$adminUsername} />
+                </FormGroup>
+                <FormGroup>
+                  <TextInput
+                    invalidText="An administrator authorisation token must be specified."
+                    labelText="Authorisation token"
+                    placeholder="Authorisation token for the administrator user"
+                    required={true}
+                    bind:value={$adminAuthToken} />
+              </FormGroup>
+            </TabContent>
+            <TabContent>
+              <FormGroup>
+                <TextInput
+                  invalidText="A freelancer username must be specified."
+                  labelText="Username"
+                  placeholder="Username of the freelancer user"
+                  required={true}
+                  bind:value={$freelancerUsername} />
+                </FormGroup>
+                <FormGroup>
+                  <TextInput
+                    invalidText="A freelancer authorisation token must be specified."
+                    labelText="Authorisation token"
+                    placeholder="Authorisation token for the freelancer user"
+                    required={true}
+                    bind:value={$freelancerAuthToken} />
+              </FormGroup>
+            </TabContent>
+          </svelte:fragment>
+        </Tabs>
       </Column>
     </Row>
     <Row>

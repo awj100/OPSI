@@ -1,8 +1,21 @@
 <script lang="ts">
-  import { Header, HeaderAction, HeaderActionLink, HeaderSearch, HeaderPanelDivider, HeaderPanelLink, HeaderPanelLinks, HeaderUtilities, SkipToContent } from "../../../../node_modules/carbon-components-svelte";
-  import { Credentials, LogoGithub, Settings } from "carbon-icons-svelte";
+  import { Header,
+           HeaderAction,
+           HeaderActionLink,
+           HeaderSearch,
+           HeaderPanelDivider,
+           HeaderPanelLink,
+           HeaderPanelLinks,
+           HeaderUtilities,
+           SkipToContent,
+           ToastNotification } from "../../../../node_modules/carbon-components-svelte";
+  import { Credentials, ErrorOutline, LogoGithub, Settings } from "carbon-icons-svelte";
+  import { errors } from "../../stores/errorsStore";
+
+  const SidePanelDisplayDuration = 200;
 
   let active = false;
+  let isErrorsOpen: boolean;
   let isOpen: boolean;
   let results: any;
   let value = "";
@@ -19,7 +32,21 @@
       bind:active
       placeholder="Search"
       results="{results}" />
-    <HeaderAction icon={Credentials} transition="{{duration: 200}}" bind:isOpen>
+    {#if $errors.length > 0}
+      <HeaderAction icon={ErrorOutline} transition="{{duration: SidePanelDisplayDuration}}" bind:isErrorsOpen>
+        {#each $errors as error (error.uniqueId)}
+          <ToastNotification
+            caption={new Date().toLocaleString()}
+            fullWidth={true}
+            subtitle={error.message}
+            title={error.displayTitle}
+            on:close={(_) => {
+              errors.remove(error);
+            }} />
+        {/each}
+      </HeaderAction>
+    {/if}
+    <HeaderAction icon={Credentials} transition="{{duration: SidePanelDisplayDuration}}" bind:isOpen>
       <HeaderPanelLinks>
         <HeaderPanelDivider>User mode</HeaderPanelDivider>
         <HeaderPanelLink href="#/administrator">Administrator</HeaderPanelLink>

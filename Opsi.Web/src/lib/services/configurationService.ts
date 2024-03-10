@@ -1,6 +1,6 @@
 import Configuration from "../models/configuration/Configuration";
 import { fetchCount } from "../stores/projectsStore";
-import { adminUsername, freelancerUsername } from "../stores/usersStore";
+import { adminAuthToken, adminUsername, freelancerAuthToken, freelancerUsername } from "../stores/usersStore";
 
 const configKey: string = "opsi.config";
 
@@ -31,7 +31,9 @@ export function initConfig(): void {
 export function setConfig(configuration: Configuration): void {
     localStorage.setItem(configKey, JSON.stringify(configuration));
     fetchCount.update((_) => configuration.ui.projects.fetchCount);
+    adminAuthToken.update((_) => configuration.users.administrator.authToken);
     adminUsername.update((_) => configuration.users.administrator.username);
+    freelancerAuthToken.update((_) => configuration.users.freelancer.authToken);
     freelancerUsername.update((_) => configuration.users.freelancer.username);
 }
 

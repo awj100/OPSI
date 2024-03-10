@@ -10,8 +10,6 @@
   let hasFocus: boolean = false;
 
   function onCheckChanged(e: CustomEvent<Boolean>) {
-    isChecked = e.detail.valueOf();
-
     dispatch("check", {
       isChecked: isChecked,
       resources: treeNode.data
@@ -23,8 +21,6 @@
   export let treeNode: TreeNode;
 
   $: isLeaf = treeNode.children.length === 0;
-
-  $: console.log(`TreeNodeView: ${shouldShowVersions}`);
 </script>
 
 <li
@@ -57,17 +53,18 @@
     <div>&nbsp;</div>
   {/if}
   {#if isLeaf}
+    <Checkbox
+      bind:checked={isChecked}
+      disabled={!!treeNode.data[0].assignedTo}
+      on:check={onCheckChanged} />
     <Link href="~">
-      <Checkbox
-        checked={isChecked}
-        labelText={treeNode.text}
-        on:check={onCheckChanged} />
+      {treeNode.text}
     </Link>
     <AssignedUser assignedUsername={treeNode.data[0].assignedTo} />
     <VersionHistory {shouldShowVersions} versions={treeNode.data[0].resourceVersions} />
   {:else}
     <Checkbox
-      checked={isChecked}
+      bind:checked={isChecked}
       id={treeNode.id}
       labelText={treeNode.text}
       name={treeNode.id}
