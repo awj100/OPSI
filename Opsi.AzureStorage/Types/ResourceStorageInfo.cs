@@ -1,29 +1,19 @@
 ﻿namespace Opsi.AzureStorage.Types;
 
-public class ResourceStorageInfo
+public record ResourceStorageInfo
 {
-    public ResourceStorageInfo(Guid projectId,
-                               string restOfPath,
-                               Stream contentStream,
-                               string username) : this(projectId,
-                                                       restOfPath,
-                                                       contentStream,
-                                                       new VersionInfo(1),
-                                                       username)
-    {
-    }
+    private readonly string _restOfPath;
 
     public ResourceStorageInfo(Guid projectId,
                                string restOfPath,
                                Stream contentStream,
-                               VersionInfo versionInfo,
                                string username)
     {
+        _restOfPath = restOfPath;
         ContentStream = contentStream;
         ProjectId = projectId;
         RestOfPath = restOfPath;
         Username = username;
-        VersionInfo = versionInfo;
 
         FileName = new Lazy<string>(() =>
         {
@@ -62,12 +52,17 @@ public class ResourceStorageInfo
 
     public string Username { get; }
 
-    public string? VersionId { get; set; }
-
-    public VersionInfo VersionInfo { get; set; }
-
     public void ResetContentStream()
     {
         ContentStream.Position = 0;
+    }
+
+    public VersionedResourceStorageInfo ToVersionedResourceStorageInfo(VersionInfo versionInfo)
+    {
+        return new VersionedResourceStorageInfo(ProjectId,
+                                                _restOfPath,
+                                                ContentStream,
+                                                Username,
+                                                versionInfo);
     }
 }

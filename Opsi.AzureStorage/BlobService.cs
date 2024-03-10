@@ -50,7 +50,7 @@ internal class BlobService : StorageServiceBase, IBlobService
         await blobClient.UploadAsync(content, true);
     }
 
-    public async Task<string> StoreVersionedFileAsync(ResourceStorageInfo resourceStorageInfo)
+    public async Task<string> StoreVersionedFileAsync(VersionedResourceStorageInfo resourceStorageInfo)
     {
         var containerClient = GetContainerClient();
 
@@ -66,28 +66,28 @@ internal class BlobService : StorageServiceBase, IBlobService
         return blobServiceClient.GetBlobContainerClient(ContainerName);
     }
 
-    private static async Task<string> StoreAsLatestAsync(BlobContainerClient containerClient, ResourceStorageInfo resourceStorageInfo)
+    private static async Task<string> StoreAsLatestAsync(BlobContainerClient containerClient, VersionedResourceStorageInfo versionedResourceStorageInfo)
     {
-        var blobName = Path.Combine(resourceStorageInfo.ProjectId.ToString(), resourceStorageInfo.RestOfPath);
+        var blobName = Path.Combine(versionedResourceStorageInfo.ProjectId.ToString(), versionedResourceStorageInfo.RestOfPath);
 
         var blobClient = containerClient.GetBlobClient(blobName);
 
-        resourceStorageInfo.ResetContentStream();
+        versionedResourceStorageInfo.ResetContentStream();
 
-        return (await blobClient.UploadAsync(resourceStorageInfo.ContentStream, true)).Value.VersionId;
+        return (await blobClient.UploadAsync(versionedResourceStorageInfo.ContentStream, true)).Value.VersionId;
     }
 
-    private static async Task<string> StoreVersionAsync(BlobContainerClient containerClient, ResourceStorageInfo resourceStorageInfo)
+    private static async Task<string> StoreVersionAsync(BlobContainerClient containerClient, VersionedResourceStorageInfo versionedResourceStorageInfo)
     {
-        var fileName = Path.GetFileName(resourceStorageInfo.RestOfPath);
-        var versionedFileName = $"{resourceStorageInfo.VersionInfo.Index}.{fileName}";
-        var pathWithoutFileName = resourceStorageInfo.RestOfPath.Substring(0, resourceStorageInfo.RestOfPath.Length - fileName.Length);
-        var blobName = Path.Combine(resourceStorageInfo.ProjectId.ToString(), FolderNameVersions, pathWithoutFileName, versionedFileName);
+        var fileName = Path.GetFileName(versionedResourceStorageInfo.RestOfPath);
+        var versionedFileName = $"{versionedResourceStorageInfo.VersionInfo.Index}.{fileName}";
+        var pathWithoutFileName = versionedResourceStorageInfo.RestOfPath.Substring(0, versionedResourceStorageInfo.RestOfPath.Length - fileName.Length);
+        var blobName = Path.Combine(versionedResourceStorageInfo.ProjectId.ToString(), FolderNameVersions, pathWithoutFileName, versionedFileName);
 
         var blobClient = containerClient.GetBlobClient(blobName);
 
-        resourceStorageInfo.ResetContentStream();
+        versionedResourceStorageInfo.ResetContentStream();
 
-        return (await blobClient.UploadAsync(resourceStorageInfo.ContentStream, true)).Value.VersionId;
+        return (await blobClient.UploadAsync(versionedResourceStorageInfo.ContentStream, true)).Value.VersionId;
     }
 }

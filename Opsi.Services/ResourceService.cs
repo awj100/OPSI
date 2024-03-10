@@ -77,9 +77,9 @@ internal class ResourceService : IResourceService
             throw new ResourceLockConflictException(resourceStorageInfo.ProjectId, resourceStorageInfo.FullPath.Value);
         }
 
-        resourceStorageInfo.VersionInfo = currentVersionInfo.GetNextVersionInfo();
+        var versionedResourceStorageInfo = resourceStorageInfo.ToVersionedResourceStorageInfo(currentVersionInfo.GetNextVersionInfo());
 
-        await StoreFileDataAndVersionAsync(resourceStorageInfo);
+        await StoreFileDataAndVersionAsync(versionedResourceStorageInfo);
 
         await QueueWebhookMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo, Events.Stored);
     }
@@ -103,12 +103,12 @@ internal class ResourceService : IResourceService
         }
     }
 
-    private async Task StoreFileDataAndVersionAsync(ResourceStorageInfo resourceStorageInfo)
+    private async Task StoreFileDataAndVersionAsync(VersionedResourceStorageInfo versionedResourceStorageInfo)
     {
         try
         {
             // Store the blob.
-            resourceStorageInfo.VersionId = await _blobService.StoreVersionedFileAsync(resourceStorageInfo);
+            versionedResourceStorageInfo.VersionId = await _blobService.StoreVersionedFileAsync(versionedResourceStorageInfo);
         }
         catch (Exception ex)
         {
@@ -120,14 +120,14 @@ internal class ResourceService : IResourceService
         try
         {
             // Record the resource upload in the 'resources' table.
-            await _resourcesService.StoreResourceAsync(resourceStorageInfo);
+            await _resourcesService.StoreResourceAsync(versionedResourceStorageInfo);
         }
         catch (Exception ex)
         {
             try
             {
                 // Remove the blob before throwing the exception.
-                await _blobService.DeleteAsync(resourceStorageInfo.FullPath.Value);
+                await _blobService.DeleteAsync(versionedResourceStorageInfo.FullPath.Value);
             }
             catch (Exception)
             {

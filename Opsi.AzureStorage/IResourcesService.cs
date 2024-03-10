@@ -20,6 +20,6 @@ namespace Opsi.AzureStorage
 
         Task<bool> HasUserAccessAsync(Guid projectId, string fullName, string requestingUsername);
 
-        Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo);
+        Task StoreResourceAsync(VersionedResourceStorageInfo versionedResourceStorageInfo);
     }
 }

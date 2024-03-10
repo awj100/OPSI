@@ -77,25 +77,25 @@ internal class ResourcesService(IResourceKeyPolicies _keyPolicies,
         return await pageableEntities.AnyAsync();
     }
 
-    public async Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo)
+    public async Task StoreResourceAsync(VersionedResourceStorageInfo versionedResourceStorageInfo)
     {
-        var keyPolicies = resourceStorageInfo.VersionInfo.Index == 1
-            ? _keyPolicies.GetKeyPoliciesForStore(resourceStorageInfo.ProjectId,
-                                            resourceStorageInfo.RestOfPath,
-                                            resourceStorageInfo.VersionInfo.Index)
-            : _keyPolicies.GetKeyPoliciesForNewVersion(resourceStorageInfo.ProjectId,
-                                                resourceStorageInfo.RestOfPath,
-                                                resourceStorageInfo.VersionInfo.Index);
+        var keyPolicies = versionedResourceStorageInfo.VersionInfo.Index == 1
+            ? _keyPolicies.GetKeyPoliciesForStore(versionedResourceStorageInfo.ProjectId,
+                                            versionedResourceStorageInfo.RestOfPath,
+                                            versionedResourceStorageInfo.VersionInfo.Index)
+            : _keyPolicies.GetKeyPoliciesForNewVersion(versionedResourceStorageInfo.ProjectId,
+                                                versionedResourceStorageInfo.RestOfPath,
+                                                versionedResourceStorageInfo.VersionInfo.Index);
 
         var resources = (from keyPolicy in keyPolicies
                          select new ResourceTableEntity
                          {
-                             FullName = resourceStorageInfo.RestOfPath,
-                             AssignedTo = resourceStorageInfo.VersionInfo.AssignedTo.IsSome ? resourceStorageInfo.VersionInfo.AssignedTo.Value : null,
+                             FullName = versionedResourceStorageInfo.RestOfPath,
+                             AssignedTo = versionedResourceStorageInfo.VersionInfo.AssignedTo.IsSome ? versionedResourceStorageInfo.VersionInfo.AssignedTo.Value : null,
                              PartitionKey = keyPolicy.PartitionKey,
-                             ProjectId = resourceStorageInfo.ProjectId,
+                             ProjectId = versionedResourceStorageInfo.ProjectId,
                              RowKey = keyPolicy.RowKey.Value,
-                             Username = resourceStorageInfo.Username
+                             Username = versionedResourceStorageInfo.Username
                             //  VersionId = resourceStorageInfo.VersionId,
                             //  VersionIndex = resourceStorageInfo.VersionInfo.Index
                          }).ToList();

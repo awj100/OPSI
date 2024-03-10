@@ -22,5 +22,5 @@ public interface IBlobService
 
     Task StoreAsync(string fullName, Stream content);
 
-    Task<string> StoreVersionedFileAsync(ResourceStorageInfo resourceStorageInfo);
+    Task<string> StoreVersionedFileAsync(VersionedResourceStorageInfo resourceStorageInfo);
 }

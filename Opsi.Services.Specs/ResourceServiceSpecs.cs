@@ -38,6 +38,7 @@ public class ResourceServiceSpecs
     private IProjectsService _projectsService;
     private IResourcesService _resourcesService;
     private ResourceStorageInfo _resourceStorageInfo;
+    private VersionedResourceStorageInfo _versionedResourceStorageInfo;
     private IUserProvider _userProvider;
     private ResourceService _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -52,6 +53,8 @@ public class ResourceServiceSpecs
         _resourcesService = A.Fake<IResourcesService>();
         _userProvider = A.Fake<IUserProvider>();
 
+
+
         A.CallTo(() => _resourcesService.GetCurrentVersionInfo(A<Guid>.That.Matches(g => g.Equals(_resourceStorageInfo.ProjectId)),
                                                                A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.RestOfPath))))
             .Returns(_versionInfo);
@@ -63,6 +66,8 @@ public class ResourceServiceSpecs
                                                        RestOfPath,
                                                        new MemoryStream(),
                                                        Username);
+
+        _versionedResourceStorageInfo = _resourceStorageInfo.ToVersionedResourceStorageInfo(_versionInfo);
 
         _testee = new ResourceService(_resourcesService,
                                       _blobService,
@@ -207,7 +212,7 @@ public class ResourceServiceSpecs
 
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _resourcesService.StoreResourceAsync(A<ResourceStorageInfo>.That.Matches(rsi => rsi.VersionInfo.Index == incrementedVersionIndex)))
+        A.CallTo(() => _resourcesService.StoreResourceAsync(A<VersionedResourceStorageInfo>.That.Matches(vrsi => vrsi.VersionInfo.Index == incrementedVersionIndex)))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -216,11 +221,11 @@ public class ResourceServiceSpecs
     {
         var blobVersion = Guid.NewGuid().ToString();
 
-        A.CallTo(() => _blobService.StoreVersionedFileAsync(A<ResourceStorageInfo>._)).Returns(blobVersion);
+        A.CallTo(() => _blobService.StoreVersionedFileAsync(A<VersionedResourceStorageInfo>._)).Returns(blobVersion);
 
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
-        A.CallTo(() => _resourcesService.StoreResourceAsync(A<ResourceStorageInfo>.That.Matches(rsi => rsi.VersionId == blobVersion))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _resourcesService.StoreResourceAsync(A<VersionedResourceStorageInfo>.That.Matches(vrsi => vrsi.VersionId == blobVersion))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -254,9 +259,9 @@ public class ResourceServiceSpecs
     {
         var blobVersion = Guid.NewGuid().ToString();
 
-        A.CallTo(() => _blobService.StoreVersionedFileAsync(A<ResourceStorageInfo>._)).Returns(blobVersion);
+        A.CallTo(() => _blobService.StoreVersionedFileAsync(A<VersionedResourceStorageInfo>._)).Returns(blobVersion);
 
-        A.CallTo(() => _resourcesService.StoreResourceAsync(A<ResourceStorageInfo>._)).Throws<Exception>();
+        A.CallTo(() => _resourcesService.StoreResourceAsync(A<VersionedResourceStorageInfo>._)).Throws<Exception>();
 
         await _testee.Invoking(y => y.StoreResourceAsync(_resourceStorageInfo))
                      .Should()
