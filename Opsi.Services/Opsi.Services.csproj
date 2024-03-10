@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Opsi.AzureStorage\Opsi.AzureStorage.csproj" />
+    <ProjectReference Include="..\Opsi.Pocos\Opsi.Pocos.csproj" />
+    <ProjectReference Include="..\Opsi.Common\Opsi.Common.csproj" />
+    <ProjectReference Include="..\Opsi.Notifications.Abstractions\Opsi.Notifications.Abstractions.csproj" />
+    <ProjectReference Include="..\Opsi.Abstractions\Opsi.Abstractions.csproj" />
+    <ProjectReference Include="..\Opsi.Constants\Opsi.Constants.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="DiModules\" />
+    <None Remove="QueueHandlers\" />
+    <None Remove="QueueHandlers\Dependencies\" />
+    <None Remove="TableServices\" />
+    <None Remove="Auth\" />
+    <None Remove="Auth\OneTimeAuth\" />
+    <None Remove="QueueServices\" />
+    <None Remove="InternalTypes\" />
+    <None Remove="Webhooks\" />
+    <None Remove="Extensions\" />
+    <None Remove="KeyPolicies\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DiModules\" />
+    <Folder Include="QueueHandlers\" />
+    <Folder Include="QueueHandlers\Dependencies\" />
+    <Folder Include="TableServices\" />
+    <Folder Include="Auth\" />
+    <Folder Include="Auth\OneTimeAuth\" />
+    <Folder Include="QueueServices\" />
+    <Folder Include="InternalTypes\" />
+    <Folder Include="Webhooks\" />
+    <Folder Include="Extensions\" />
+    <Folder Include="KeyPolicies\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="Functions.Worker.ContextAccessor" Version="2.0.0" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+  </ItemGroup>
+</Project>

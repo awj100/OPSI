@@ -1,0 +1,40 @@
+{
+  "name": "-users-andrew-projects-opsi-opsi-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "devDependencies": {
+    "@smui/button": "^7.0.0-beta.15",
+    "@smui/top-app-bar": "^7.0.0-beta.15",
+    "@sveltejs/vite-plugin-svelte": "^2.4.2",
+    "@tsconfig/svelte": "^5.0.0",
+    "@types/filesystem": "^0.0.35",
+    "@types/node": "^20.8.0",
+    "@types/wicg-file-system-access": "^2023.10.4",
+    "carbon-components-svelte": "^0.82.4",
+    "carbon-icons-svelte": "^12.3.0",
+    "carbon-preprocess-svelte": "^0.10.0",
+    "sass": "^1.69.0",
+    "scss": "^0.2.4",
+    "smui-theme": "^7.0.0-beta.15",
+    "svelte": "^4.0.5",
+    "svelte-add": "^2023.9.17-0.0",
+    "svelte-check": "^3.4.6",
+    "svelte-preprocess": "^5.0.4",
+    "tslib": "^2.6.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5"
+  },
+  "dependencies": {
+    "@smui/icon-button": "^7.0.0-beta.15",
+    "axios": "^1.5.1",
+    "svelte-material-ui": "^7.0.0-beta.15",
+    "svelte-spa-router": "^3.3.0"
+  }
+}

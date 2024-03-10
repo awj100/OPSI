@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Opsi.AzureStorage\Opsi.AzureStorage.csproj" />
+    <ProjectReference Include="..\Opsi.Notifications.Abstractions\Opsi.Notifications.Abstractions.csproj" />
+    <ProjectReference Include="..\Opsi.Pocos\Opsi.Pocos.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="DiModules\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DiModules\" />
+  </ItemGroup>
+</Project>

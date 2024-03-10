@@ -1,0 +1,140 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/Opsi.TradosStudio.csproj": {}
+  },
+  "projects": {
+    "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj",
+        "projectName": "Opsi.Common",
+        "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj",
+        "packagesPath": "/Users/andrew/.nuget/packages/",
+        "outputPath": "/Users/andrew/Projects/Opsi/Opsi.Common/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/andrew/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.203/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/Opsi.TradosStudio.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/Opsi.TradosStudio.csproj",
+        "projectName": "Opsi.TradosStudio",
+        "projectPath": "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/Opsi.TradosStudio.csproj",
+        "packagesPath": "/Users/andrew/.nuget/packages/",
+        "outputPath": "/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/andrew/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {
+              "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj": {
+                "projectPath": "/Users/andrew/Projects/Opsi/Opsi.Common/Opsi.Common.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "AzureFunctions.Extensions.DependencyInjection": {
+              "target": "Package",
+              "version": "[1.1.3, )"
+            },
+            "Microsoft.Azure.Functions.Extensions": {
+              "target": "Package",
+              "version": "[1.1.0, )"
+            },
+            "Microsoft.Extensions.DependencyInjection": {
+              "target": "Package",
+              "version": "[7.0.0, )"
+            },
+            "Microsoft.Extensions.Http": {
+              "target": "Package",
+              "version": "[7.0.0, )"
+            },
+            "System.IO.Compression.ZipFile": {
+              "target": "Package",
+              "version": "[4.3.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.203/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

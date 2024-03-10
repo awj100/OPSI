@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
+    <PackageReference Include="coverlet.collector" Version="6.0.0"><IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+<PrivateAssets>all</PrivateAssets>
+</PackageReference>
+    <PackageReference Include="FakeItEasy" Version="8.0.1" />
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="Azure.Data.Tables" Version="12.8.2" />
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Opsi.Functions/Opsi.Functions.csproj" />
+    <ProjectReference Include="..\Opsi.Services\Opsi.Services.csproj" />
+    <ProjectReference Include="..\Opsi.Abstractions\Opsi.Abstractions.csproj" />
+    <ProjectReference Include="..\Opsi.Common\Opsi.Common.csproj" />
+    <ProjectReference Include="..\Opsi.Pocos\Opsi.Pocos.csproj" />
+    <ProjectReference Include="..\Opsi.AzureStorage\Opsi.AzureStorage.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="QueueHandlers\" />
+    <None Remove="QueueHandlers\Dependencies\" />
+    <None Remove="Http\" />
+    <None Remove="TableServices\" />
+    <None Remove="Auth\" />
+    <None Remove="Auth\OneTimeAuth\" />
+    <None Remove="QueueServices\" />
+    <None Remove="Webhooks\" />
+    <None Remove="InternalTypes\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="QueueHandlers\" />
+    <Folder Include="QueueHandlers\Dependencies\" />
+    <Folder Include="Http\" />
+    <Folder Include="TableServices\" />
+    <Folder Include="Auth\" />
+    <Folder Include="Auth\OneTimeAuth\" />
+    <Folder Include="QueueServices\" />
+    <Folder Include="Webhooks\" />
+    <Folder Include="InternalTypes\" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,21 @@
+﻿{
+    "version": "2.0",
+    "extensions": {
+        "http": {
+          "customHeaders": {
+            "Access-Control-Expose-Headers": "*"
+          }
+        },
+        "queues": {
+            "messageEncoding": "none"
+        }
+    },
+    "logging": {
+        "applicationInsights": {
+            "samplingSettings": {
+                "isEnabled": true,
+                "excludedTypes": "Request"
+            }
+        }
+    }
+}

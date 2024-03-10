@@ -1,0 +1,15 @@
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/bin/Debug/net6.0/Opsi.TradosStudio.deps.json
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/bin/Debug/net6.0/Opsi.TradosStudio.dll
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/bin/Debug/net6.0/Opsi.TradosStudio.pdb
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/bin/Debug/net6.0/Opsi.Common.dll
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/bin/Debug/net6.0/Opsi.Common.pdb
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/Debug/net6.0/Opsi.TradosStudio.csproj.AssemblyReference.cache
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/Debug/net6.0/Opsi.TradosStudio.GeneratedMSBuildEditorConfig.editorconfig
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/Debug/net6.0/Opsi.TradosStudio.AssemblyInfoInputs.cache
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/Debug/net6.0/Opsi.TradosStudio.AssemblyInfo.cs
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/Debug/net6.0/Opsi.TradosStudio.csproj.CoreCompileInputs.cache
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/Debug/net6.0/Opsi.TradosStudio.csproj.CopyComplete
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/Debug/net6.0/Opsi.TradosStudio.dll
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/Debug/net6.0/refint/Opsi.TradosStudio.dll
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/Debug/net6.0/Opsi.TradosStudio.pdb
+/Users/andrew/Projects/Opsi/Opsi.TradosStudio/obj/Debug/net6.0/ref/Opsi.TradosStudio.dll
