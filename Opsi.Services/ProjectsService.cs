@@ -1,6 +1,4 @@
 ﻿using System.Reflection;
-using Microsoft.Extensions.Logging;
-using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Common.Exceptions;
@@ -12,27 +10,8 @@ using Opsi.Services.TableServices;
 
 namespace Opsi.Services;
 
-public class ProjectsService : IProjectsService
+public class ProjectsService(IProjectsTableService _projectsTableService, IWebhookQueueService _webhookQueueService) : IProjectsService
 {
-    private readonly ILogger<ProjectsService> _logger;
-    private readonly IProjectsTableService _projectsTableService;
-    private readonly IResourcesService _resourcesService;
-    private readonly IUserProvider _userProvider;
-    private readonly IWebhookQueueService _webhookQueueService;
-
-    public ProjectsService(IProjectsTableService projectsTableService,
-                           IResourcesService resourcesService,
-                           IUserProvider userProvider,
-                           IWebhookQueueService QueueService,
-                           ILoggerFactory loggerFactory)
-    {
-        _logger = loggerFactory.CreateLogger<ProjectsService>();
-        _projectsTableService = projectsTableService;
-        _resourcesService = resourcesService;
-        _userProvider = userProvider;
-        _webhookQueueService = QueueService;
-    }
-
     public async Task AssignUserAsync(UserAssignment userAssignment)
     {
         var project = await GetProjectAsync(userAssignment.ProjectId);

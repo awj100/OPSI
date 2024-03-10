@@ -212,11 +212,7 @@ public class ProjectsServiceSpecs
         });
         A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
 
-        _testee = new ProjectsService(_projectsTableService,
-                                      _resourcesService,
-                                      _userProvider,
-                                      _webhookQueueService,
-                                      _loggerFactory);
+        _testee = new ProjectsService(_projectsTableService, _webhookQueueService);
     }
 
     [TestMethod]

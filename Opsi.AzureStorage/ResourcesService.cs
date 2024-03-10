@@ -1,25 +1,15 @@
 ﻿using Opsi.AzureStorage.KeyPolicies;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.AzureStorage.Types;
-using Opsi.Pocos;
 
 namespace Opsi.AzureStorage;
 
-internal class ResourcesService : IResourcesService
+internal class ResourcesService(IResourceKeyPolicies _keyPolicies,
+                        ITableServiceFactory _tableServiceFactory,
+                        IKeyPolicyFilterGeneration _keyPolicyFilterGeneration) : IResourcesService
 {
     private const string TableName = "resources";
-    private readonly IResourceKeyPolicies _keyPolicies;
-    private readonly IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
-    private readonly ITableService _tableService;
-
-    public ResourcesService(IResourceKeyPolicies keyPolicies,
-                            ITableServiceFactory tableServiceFactory,
-                            IKeyPolicyFilterGeneration keyPolicyFilterGeneration)
-    {
-        _keyPolicies = keyPolicies;
-        _keyPolicyFilterGeneration = keyPolicyFilterGeneration;
-        _tableService = tableServiceFactory.Create(TableName);
-    }
+    private readonly ITableService _tableService = _tableServiceFactory.Create(TableName);
 
     public async Task DeleteResourceAsync(ResourceStorageInfo resourceStorageInfo)
     {
