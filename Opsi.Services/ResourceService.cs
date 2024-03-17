@@ -62,6 +62,16 @@ internal class ResourceService : IResourceService
                                                                 blobProps.Value.ETag.ToString("H")));
     }
 
+    public async Task<IReadOnlyCollection<VersionedResourceStorageInfo>> GetResourceHistoryAsync(Guid projectId, string restOfPath)
+    {
+        return await _resourcesService.GetHistoryAsync(projectId, restOfPath);
+    }
+
+    public async Task<IReadOnlyCollection<IGrouping<string, VersionedResourceStorageInfo>>> GetResourcesHistoryAsync(Guid projectId)
+    {
+        return await _resourcesService.GetHistoryAsync(projectId);
+    }
+
     public async Task<bool> HasUserAccessAsync(Guid projectId, string fullName, string requestingUsername)
     {
         return _userProvider.IsAdministrator.Value

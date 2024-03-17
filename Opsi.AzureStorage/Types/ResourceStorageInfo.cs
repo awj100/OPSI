@@ -1,4 +1,6 @@
-﻿namespace Opsi.AzureStorage.Types;
+﻿using System.Text.Json.Serialization;
+
+namespace Opsi.AzureStorage.Types;
 
 public record ResourceStorageInfo
 {
@@ -55,6 +57,11 @@ public record ResourceStorageInfo
     public void ResetContentStream()
     {
         ContentStream.Position = 0;
+    }
+
+    public override string ToString()
+    {
+        return $"{FullPath.Value}/{RestOfPath}{(String.IsNullOrEmpty(Username) ? String.Empty : $" {Username}")}";
     }
 
     public VersionedResourceStorageInfo ToVersionedResourceStorageInfo(VersionInfo versionInfo)

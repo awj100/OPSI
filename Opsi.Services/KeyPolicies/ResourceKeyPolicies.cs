@@ -12,6 +12,16 @@ public class ResourceKeyPolicies : KeyPoliciesBase, IResourceKeyPolicies
         return new KeyPolicy($"projects_{projectId}", new RowKey(GetRowKeyPrefixForVersioning(projectId, fullName), KeyPolicyQueryOperators.GreaterThan));
     }
 
+    public KeyPolicy GetKeyPolicyForResourceHistory(Guid projectId)
+    {
+        return new KeyPolicy($"projects_{projectId}", new RowKey($"{GetRowKeyPrefixForVersioning(projectId)}", KeyPolicyQueryOperators.GreaterThan));
+    }
+
+    public KeyPolicy GetKeyPolicyForResourceHistory(Guid projectId, string fullName)
+    {
+        return new KeyPolicy($"projects_{projectId}", new RowKey($"{GetRowKeyPrefixForVersioning(projectId, fullName)}", KeyPolicyQueryOperators.GreaterThan));
+    }
+
     public IReadOnlyCollection<KeyPolicy> GetKeyPoliciesForNewVersion(Guid projectId, string fullName, int versionIndex)
     {
         return new KeyPolicy[]
@@ -57,11 +67,16 @@ public class ResourceKeyPolicies : KeyPoliciesBase, IResourceKeyPolicies
         return $"resource_byProject_{projectId}_{safeFullName}";
     }
 
-    private static string GetRowKeyPrefixForVersioning(Guid projectId, string fullName)
+    private static string GetRowKeyPrefixForVersioning(Guid projectId, string? fullName = null)
     {
-        var modifiedFulllName = GetAlphanumericallySubstitutedString(fullName);
-        var safeFullName = GetFullNameAsRowKey(modifiedFulllName);
+        if (!String.IsNullOrEmpty(fullName))
+        {
+            var modifiedFulllName = GetAlphanumericallySubstitutedString(fullName);
+            var safeFullName = GetFullNameAsRowKey(modifiedFulllName);
 
-        return $"versionedResource_byProject_{projectId}_{safeFullName}_v";
+            return $"versionedResource_byProject_{projectId}_{safeFullName}_v";
+        }
+
+        return $"versionedResource_byProject_{projectId}_";
     }
 }

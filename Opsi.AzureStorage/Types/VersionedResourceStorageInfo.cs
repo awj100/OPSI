@@ -17,4 +17,9 @@ public record VersionedResourceStorageInfo : ResourceStorageInfo
     public string? VersionId { get; set; }
 
     public VersionInfo VersionInfo { get; set; }
+
+    public override string ToString()
+    {
+        return $"{FullPath.Value}/{RestOfPath} (v{VersionInfo.Index}){(String.IsNullOrEmpty(Username) ? String.Empty : $" {Username }")}";
+    }
 }

@@ -52,6 +52,63 @@ internal class ResourcesService(IResourceKeyPolicies _keyPolicies,
         return new VersionInfo(latestVersionInfo.Index, lockedTo);
     }
 
+    public async Task<IReadOnlyCollection<IGrouping<string, VersionedResourceStorageInfo>>> GetHistoryAsync(Guid projectId)
+    {
+        var keyPolicy = _keyPolicies.GetKeyPolicyForResourceHistory(projectId);
+        var tableClient = _tableService.TableClient.Value;
+        var filter = _keyPolicyFilterGeneration.ToFilter(keyPolicy);
+
+        var queryResults = tableClient.QueryAsync<ResourceVersionTableEntity>(filter,
+                                                                              select: [
+                                                                                nameof(ResourceVersionTableEntity.FullName),
+                                                                                nameof(ResourceVersionTableEntity.VersionId),
+                                                                                nameof(ResourceVersionTableEntity.VersionIndex),
+                                                                                nameof(ResourceVersionTableEntity.Username)
+                                                                              ]);
+
+        var versions = new List<VersionedResourceStorageInfo>();
+
+        await foreach (var queryResult in queryResults)
+        {
+            var versionInfo = new VersionInfo(queryResult.VersionIndex, queryResult.Username);
+            versions.Add(new VersionedResourceStorageInfo(projectId,
+                                                          queryResult.FullName,
+                                                          Stream.Null,
+                                                          queryResult.Username!,
+                                                          versionInfo));
+        }
+
+        return versions.GroupBy(version => version.RestOfPath).ToList();
+    }
+
+    public async Task<IReadOnlyCollection<VersionedResourceStorageInfo>> GetHistoryAsync(Guid projectId, string fullName)
+    {
+        var keyPolicy = _keyPolicies.GetKeyPolicyForResourceHistory(projectId, fullName);
+        var tableClient = _tableService.TableClient.Value;
+        var filter = _keyPolicyFilterGeneration.ToFilter(keyPolicy);
+
+        var queryResults = tableClient.QueryAsync<ResourceVersionTableEntity>(filter,
+                                                                              select: [
+                                                                                nameof(ResourceVersionTableEntity.VersionId),
+                                                                                nameof(ResourceVersionTableEntity.VersionIndex),
+                                                                                nameof(ResourceVersionTableEntity.Username)
+                                                                              ]);
+
+        var versions = new List<VersionedResourceStorageInfo>();
+
+        await foreach (var queryResult in queryResults)
+        {
+            var versionInfo = new VersionInfo(queryResult.VersionIndex, queryResult.Username);
+            versions.Add(new VersionedResourceStorageInfo(projectId,
+                                                          fullName,
+                                                          Stream.Null,
+                                                          queryResult.Username!,
+                                                          versionInfo));
+        }
+
+        return versions;
+    }
+
     public async Task<IReadOnlyCollection<ResourceTableEntity>> GetResourcesAsync(Guid projectId)
     {
         var key = projectId.ToString();
