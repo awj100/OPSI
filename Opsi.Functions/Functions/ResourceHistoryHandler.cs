@@ -2,11 +2,8 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using Opsi.AzureStorage.Types;
-using Opsi.Pocos.History;
 using Opsi.Services;
 using Opsi.Services.QueueServices;
-using ResourceVersion = Opsi.Pocos.History.ResourceVersion;
 
 namespace Opsi.Functions.Functions;
 
@@ -43,16 +40,12 @@ public class ResourceHistoryHandler
         {
             if (String.IsNullOrEmpty(restOfPath))
             {
-                var history = await _resourceService.GetResourcesHistoryAsync(projectId);
-                var groupedHistoricVersions = ConvertGroupedVersionedResourceInfos(history);
-
+                var groupedHistoricVersions = await _resourceService.GetResourcesHistoryAsync(projectId);
                 _responseSerialiser.WriteJsonToBody(response, groupedHistoricVersions);
             }
             else
             {
-                var history = await _resourceService.GetResourceHistoryAsync(projectId, restOfPath);
-                var historicVersions = ConvertVersionedResourceInfos(history);
-
+                var historicVersions = await _resourceService.GetResourceHistoryAsync(projectId, restOfPath);
                 _responseSerialiser.WriteJsonToBody(response, historicVersions);
             }
         }
@@ -67,26 +60,5 @@ public class ResourceHistoryHandler
         }
 
         return response;
-    }
-
-    private static ResourceVersion ConvertVersionedResourceInfo(VersionedResourceStorageInfo versionedResourceStorage)
-    {
-        return new ResourceVersion(versionedResourceStorage.RestOfPath,
-                                   versionedResourceStorage.Username,
-                                   versionedResourceStorage.VersionId,
-                                    versionedResourceStorage.VersionInfo.Index);
-    }
-
-    private static IReadOnlyCollection<ResourceVersion> ConvertVersionedResourceInfos(IEnumerable<VersionedResourceStorageInfo> versionedResourceStorages)
-    {
-        return versionedResourceStorages.Select(ConvertVersionedResourceInfo).ToList();
-    }
-
-    private static IReadOnlyCollection<GroupedResourceVersion> ConvertGroupedVersionedResourceInfos(IEnumerable<IGrouping<string, VersionedResourceStorageInfo>> groupedResourceStorageInfos)
-    {
-        return groupedResourceStorageInfos.Select(groupedVersions => {
-            var versions = ConvertVersionedResourceInfos(groupedVersions);
-            return new GroupedResourceVersion(groupedVersions.Key, versions);
-        }).ToList();
     }
 }

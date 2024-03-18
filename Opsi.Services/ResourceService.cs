@@ -4,7 +4,9 @@ using Opsi.Common;
 using Opsi.Common.Exceptions;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
+using Opsi.Pocos.History;
 using Opsi.Services.QueueServices;
+using ResourceVersion = Opsi.Pocos.History.ResourceVersion;
 
 namespace Opsi.Services;
 
@@ -62,14 +64,16 @@ internal class ResourceService : IResourceService
                                                                 blobProps.Value.ETag.ToString("H")));
     }
 
-    public async Task<IReadOnlyCollection<VersionedResourceStorageInfo>> GetResourceHistoryAsync(Guid projectId, string restOfPath)
+    public async Task<IReadOnlyCollection<ResourceVersion>> GetResourceHistoryAsync(Guid projectId, string restOfPath)
     {
-        return await _resourcesService.GetHistoryAsync(projectId, restOfPath);
+        var history = await _resourcesService.GetHistoryAsync(projectId, restOfPath);
+        return ConvertVersionedResourceInfos(history).ToList();
     }
 
-    public async Task<IReadOnlyCollection<IGrouping<string, VersionedResourceStorageInfo>>> GetResourcesHistoryAsync(Guid projectId)
+    public async Task<IReadOnlyCollection<GroupedResourceVersion>> GetResourcesHistoryAsync(Guid projectId)
     {
-        return await _resourcesService.GetHistoryAsync(projectId);
+        var history = await _resourcesService.GetHistoryAsync(projectId);
+        return ConvertGroupedVersionedResourceInfos(history).ToList();
     }
 
     public async Task<bool> HasUserAccessAsync(Guid projectId, string fullName, string requestingUsername)
@@ -170,5 +174,26 @@ internal class ResourceService : IResourceService
     private static bool CanUserStoreFile(VersionInfo versionInfo, string username)
     {
         return versionInfo.AssignedTo.IsNone || versionInfo.AssignedTo.Value == username;
+    }
+
+    private static IEnumerable<GroupedResourceVersion> ConvertGroupedVersionedResourceInfos(IEnumerable<IGrouping<string, VersionedResourceStorageInfo>> groupedResourceStorageInfos)
+    {
+        return groupedResourceStorageInfos.Select(groupedVersions => {
+            var versions = ConvertVersionedResourceInfos(groupedVersions);
+            return new GroupedResourceVersion(groupedVersions.Key, versions);
+        });
+    }
+
+    private static ResourceVersion ConvertVersionedResourceInfo(VersionedResourceStorageInfo versionedResourceStorage)
+    {
+        return new ResourceVersion(versionedResourceStorage.RestOfPath,
+                                   versionedResourceStorage.Username,
+                                   versionedResourceStorage.VersionId,
+                                   versionedResourceStorage.VersionInfo.Index);
+    }
+
+    private static IEnumerable<ResourceVersion> ConvertVersionedResourceInfos(IEnumerable<VersionedResourceStorageInfo> versionedResourceStorages)
+    {
+        return versionedResourceStorages.Select(ConvertVersionedResourceInfo);
     }
 }

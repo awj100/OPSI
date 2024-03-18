@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Text;
 using Azure;
@@ -148,6 +149,75 @@ public class ResourceServiceSpecs
     }
 
     [TestMethod]
+    public async Task GetResourceHistoryAsync_WhenNoResultsFound_ThenEmptyListIsReturned()
+    {
+        var tableResult = new List<VersionedResourceStorageInfo>(0);
+
+        A.CallTo(() => _resourcesService.GetHistoryAsync(_projectId, RestOfPath)).Returns(tableResult);
+
+        var result = await _testee.GetResourceHistoryAsync(_projectId, RestOfPath);
+
+        result.Should().NotBeNull()
+                       .And.BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task GetResourceHistoryAsync_WhenResultsAreFound_ThenCorrespondingResultsAreReturned()
+    {
+        const int expectedCount = 3;
+        var tableResult = GetVersionedResourceStorageInfos(_projectId, RestOfPath, Username).Take(expectedCount).ToList();
+
+        A.CallTo(() => _resourcesService.GetHistoryAsync(_projectId, RestOfPath)).Returns(tableResult);
+
+        var results = await _testee.GetResourceHistoryAsync(_projectId, RestOfPath);
+
+        results.Should().NotBeNull()
+                       .And.HaveCount(expectedCount);
+
+        results.DistinctBy(result => result.Path).Count().Should().Be(1);
+        results.DistinctBy(result => result.Username).Count().Should().Be(1);
+        results.DistinctBy(result => result.VersionIndex).Count().Should().Be(expectedCount);
+    }
+
+    [TestMethod]
+    public async Task GetResourcesHistoryAsync_WhenNoResultsAreFound_ThenEmptyListIsReturned()
+    {
+        var tableResult = new List<IGrouping<string, VersionedResourceStorageInfo>>(0);
+
+        A.CallTo(() => _resourcesService.GetHistoryAsync(_projectId)).Returns(tableResult);
+
+        var result = await _testee.GetResourcesHistoryAsync(_projectId);
+
+        result.Should().NotBeNull()
+                       .And.BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task GetResourcesHistoryAsync_WhenResultsAreFound_ThenCorrespondingResultsAreReturned()
+    {
+        const int expectedCount = 3;
+        const string restOfPath1 = nameof(restOfPath1);
+        const string restOfPath2 = nameof(restOfPath2);
+        var tableResult = GetVersionedResourceStorageInfos(_projectId, restOfPath1, Username).Take(expectedCount).ToList();
+        tableResult.AddRange(GetVersionedResourceStorageInfos(_projectId, restOfPath2, Username).Take(expectedCount).ToList());
+
+        var groupedTableResult = tableResult.GroupBy(result => result.RestOfPath).ToList();
+
+        A.CallTo(() => _resourcesService.GetHistoryAsync(_projectId)).Returns(groupedTableResult);
+
+        var results = await _testee.GetResourcesHistoryAsync(_projectId);
+
+        results.Should().NotBeNull();
+        results.Count.Should().Be(2);
+        results.First().ResourceVersions.Count().Should().Be(expectedCount);
+        results.First().ResourceVersions.DistinctBy(resourceVersion => resourceVersion.Path).Count().Should().Be(1);
+        results.First().ResourceVersions.DistinctBy(resourceVersion => resourceVersion.VersionIndex).Count().Should().Be(expectedCount);
+        results.Last().ResourceVersions.Count().Should().Be(expectedCount);
+        results.Last().ResourceVersions.DistinctBy(resourceVersion => resourceVersion.Path).Count().Should().Be(1);
+        results.Last().ResourceVersions.DistinctBy(resourceVersion => resourceVersion.VersionIndex).Count().Should().Be(expectedCount);
+    }
+
+    [TestMethod]
     public async Task HasUserAccessAsync_WhenUserIsAdmin_ReturnsTrue()
     {
         A.CallTo(() => _userProvider.IsAdministrator).Returns(new Lazy<bool>(() => true));
@@ -270,13 +340,28 @@ public class ResourceServiceSpecs
         A.CallTo(() => _blobService.DeleteAsync(A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.FullPath.Value)))).MustHaveHappenedOnceExactly();
     }
 
-    private string GenerateRandomString(int length)
+    private static string GenerateRandomString(int length)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         return new String(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
     }
 
+    private static IEnumerable<VersionedResourceStorageInfo> GetVersionedResourceStorageInfos(Guid projectId, string restOfPath, string username)
+    {
+        var i = 0;
+
+        while (true)
+        {
+            yield return new VersionedResourceStorageInfo(projectId,
+                                                          restOfPath,
+                                                          Stream.Null,
+                                                          username,
+                                                          new VersionInfo(i++));
+        }
+    }
+
     private const BindingFlags DeclaredOnlyLookup = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+    
     private static Action<T, TValue>? GetSetterForProperty<T, TValue>(Expression<Func<T, TValue>> selector) where T : class
     {
         var expression = selector.Body;
@@ -309,16 +394,10 @@ public class ResourceServiceSpecs
         }
     }
 
-    private class TestBlobClient : BlobBaseClient
+    private class TestBlobClient(string name, bool exists) : BlobBaseClient
     {
-        private readonly bool _exists;
-        private readonly string _name;
-
-        public TestBlobClient(string name, bool exists)
-        {
-            _exists = exists;
-            _name = name;
-        }
+        private readonly bool _exists = exists;
+        private readonly string _name = name;
 
         public override string Name => _name;
 
