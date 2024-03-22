@@ -66,13 +66,13 @@ internal class ResourceService : IResourceService
 
     public async Task<IReadOnlyCollection<ResourceVersion>> GetResourceHistoryAsync(Guid projectId, string restOfPath)
     {
-        var history = await _resourcesService.GetHistoryAsync(projectId, restOfPath);
+        var history = await _resourcesService.GetHistoryAsync(projectId, restOfPath, _userProvider.IsAdministrator.Value);
         return ConvertVersionedResourceInfos(history).ToList();
     }
 
     public async Task<IReadOnlyCollection<GroupedResourceVersion>> GetResourcesHistoryAsync(Guid projectId)
     {
-        var history = await _resourcesService.GetHistoryAsync(projectId);
+        var history = await _resourcesService.GetHistoryAsync(projectId, _userProvider.IsAdministrator.Value);
         return ConvertGroupedVersionedResourceInfos(history).ToList();
     }
 

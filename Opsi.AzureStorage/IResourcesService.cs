@@ -18,9 +18,13 @@ namespace Opsi.AzureStorage
 
         Task<IReadOnlyCollection<ResourceTableEntity>> GetResourcesAsync(Guid projectId);
 
-        Task<IReadOnlyCollection<IGrouping<string, VersionedResourceStorageInfo>>> GetHistoryAsync(Guid projectId);
+        Task<IReadOnlyCollection<IGrouping<string, VersionedResourceStorageInfo>>> GetHistoryAsync(Guid projectId, string username);
 
-        Task<IReadOnlyCollection<VersionedResourceStorageInfo>> GetHistoryAsync(Guid projectId, string fullName);
+        Task<IReadOnlyCollection<VersionedResourceStorageInfo>> GetHistoryAsync(Guid projectId, string fullName, string username);
+
+        Task<IReadOnlyCollection<IGrouping<string, VersionedResourceStorageInfo>>> GetHistoryForAdminAsync(Guid projectId);
+
+        Task<IReadOnlyCollection<VersionedResourceStorageInfo>> GetHistoryForAdminAsync(Guid projectId, string fullName);
 
         Task<bool> HasUserAccessAsync(Guid projectId, string fullName, string requestingUsername);
 

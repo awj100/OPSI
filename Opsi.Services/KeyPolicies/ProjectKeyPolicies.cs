@@ -34,6 +34,11 @@ public class ProjectKeyPolicies : KeyPoliciesBase, IProjectKeyPolicies
         return new KeyPolicy($"projects_byId", new RowKey($"projects_byId_{projectId}", KeyPolicyQueryOperators.Equal));
     }
 
+    public KeyPolicy GetKeyPolicyByProjectForUserAssignment(Guid projectId, string assigneeUsername)
+    {
+        return new KeyPolicy($"projects_{projectId}", new RowKey($"assignment_byProjectAndUser_{projectId}_{assigneeUsername}_", KeyPolicyQueryOperators.GreaterThan));
+    }
+
     public KeyPolicy GetKeyPolicyByProjectForUserAssignment(Guid projectId, string assigneeUsername, string resourceFullName)
     {
         var encodedFullName = GetEncodedFullName(resourceFullName);
