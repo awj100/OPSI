@@ -1,4 +1,5 @@
-﻿using Azure.Storage.Blobs;
+﻿using Azure;
+using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Specialized;
 using Opsi.AzureStorage.Types;
 using Opsi.Common;
@@ -7,11 +8,13 @@ namespace Opsi.AzureStorage;
 
 internal class BlobService : StorageServiceBase, IBlobService
 {
-    private const string ContainerName = "resources";
+    private const string ContainerName = "resources2";
     private const string FolderNameVersions = "versions";
+    private readonly Lazy<BlobContainerClient> _containerClient;
 
     public BlobService(ISettingsProvider settingsProvider) : base(settingsProvider)
     {
+        _containerClient = new Lazy<BlobContainerClient>(GetContainerClient);
     }
 
     public async Task DeleteAsync(string fullName)
@@ -39,6 +42,30 @@ internal class BlobService : StorageServiceBase, IBlobService
         var containerClient = GetContainerClient();
 
         return containerClient.GetBlobClient(fullName);
+    }
+
+    public async Task SetMetadataAsync(string fullName, IDictionary<string, string> metadata)
+    {
+        if (!metadata.Any())
+        {
+            return;
+        }
+
+        var blobClient = _containerClient.Value.GetBlobClient(fullName);
+
+        await blobClient.SetMetadataAsync(metadata);
+    }
+
+    public async Task SetTagAsync(string fullName, string tagName, string? tagValue = null)
+    {
+        await SetTagsAsync(fullName, new Dictionary<string, string> { { tagName, tagValue ?? String.Empty } });
+    }
+
+    public async Task SetTagsAsync(string fullName, IDictionary<string, string> tags)
+    {
+        var blobClient = _containerClient.Value.GetBlobClient(fullName);
+
+        await blobClient.SetTagsAsync(tags);
     }
 
     public async Task StoreAsync(string fullName, Stream content)

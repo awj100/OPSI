@@ -20,6 +20,12 @@ public interface IBlobService
     /// <seealso cref="RetrieveContentAsync">This method returns only the blob's contents as a stream.</seealso>
     BlobBaseClient RetrieveBlob(string fullName);
 
+    Task SetMetadataAsync(string fullName, IDictionary<string, string> metadata);
+
+    Task SetTagAsync(string fullName, string tagName, string? tagValue = null);
+
+    Task SetTagsAsync(string fullName, IDictionary<string, string> tags);
+
     Task StoreAsync(string fullName, Stream content);
 
     Task<string> StoreVersionedFileAsync(VersionedResourceStorageInfo resourceStorageInfo);
