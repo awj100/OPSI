@@ -17,6 +17,8 @@ public interface IProjectsService
 
     Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId);
 
+    Task InitProjectAsync(Project project);
+
     Task<bool> IsNewProjectAsync(Guid projectId);
 
     Task RevokeUserAsync(UserAssignment userAssignment);

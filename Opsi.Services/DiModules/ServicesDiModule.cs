@@ -37,6 +37,7 @@ public static class ServicesDiModule
             .AddSingleton<IProjectUploadService, ProjectUploadService>()
             .AddSingleton<IResourceDispatcher, ResourceDispatcher>()
             .AddSingleton<IResourceService, ResourceService>()
+            .AddSingleton<ITagUtilities, TagUtilities>()
             .AddSingleton<Func<Stream, IUnzipService>>(serviceProvider => stream => new UnzipService(stream))
             .AddSingleton<IUnzipServiceFactory, UnzipServiceFactory>()
             .AddTransient<IUserProvider, UserProvider>()

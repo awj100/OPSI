@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Common.Exceptions;
@@ -10,7 +11,10 @@ using Opsi.Services.TableServices;
 
 namespace Opsi.Services;
 
-public class ProjectsService(IProjectsTableService _projectsTableService, IWebhookQueueService _webhookQueueService) : IProjectsService
+public class ProjectsService(IProjectsTableService _projectsTableService,
+                             IBlobService _blobService,
+                             ITagUtilities _tagUtilities,
+                             IWebhookQueueService _webhookQueueService) : IProjectsService
 {
     public async Task AssignUserAsync(UserAssignment userAssignment)
     {
@@ -183,6 +187,92 @@ public class ProjectsService(IProjectsTableService _projectsTableService, IWebho
         }
 
         return project.Value.WebhookSpecification;
+    }
+
+    public async Task InitProjectAsync(Project project)
+    {
+#pragma warning disable CA2208 // Instantiate argument exceptions correctly
+        if (String.IsNullOrWhiteSpace(project.Name))
+        {
+            throw new ArgumentNullException(nameof(Project.Name));
+        }
+
+        if (String.IsNullOrWhiteSpace(project.Username))
+        {
+            throw new ArgumentNullException(nameof(Project.Username));
+        }
+#pragma warning restore CA2208 // Instantiate argument exceptions correctly
+
+        var fullName = $"{project.Id}/{Tags.TagsHostName}";
+        var initialState = ProjectStates.Initialising;
+        var stream = new MemoryStream(1);
+        stream.WriteByte(0);
+        stream.Position = 0;
+
+        try
+        {
+            await _blobService.StoreAsync(fullName, stream);
+        }
+        catch (Exception exception)
+        {
+            throw new Exception($"Failed to create project with ID \"{project.Id}\": {exception.Message}");
+        }
+
+        var metadata = new Dictionary<string, string>
+        {
+            {Metadata.CreatedBy, project.Username},
+            {Metadata.ProjectId, project.Id.ToString()},
+            {Metadata.ProjectName, project.Name}
+        };
+
+        try
+        {
+            await _blobService.SetMetadataAsync(fullName, metadata);
+        }
+        catch(Exception exception)
+        {
+            try
+            {
+                await _blobService.DeleteAsync(fullName);
+            }
+            catch(Exception)
+            {}
+
+            throw new Exception($"Failed to set initial metadata on project with ID \"{project.Id}\": {exception.Message}");
+        }
+
+        var tags = new Dictionary<string, string>
+        {
+            {Tags.ProjectId, _tagUtilities.GetSafeTagValue(project.Id)},
+            {Tags.ProjectName, _tagUtilities.GetSafeTagValue(project.Name)},
+            {Tags.ProjectState, _tagUtilities.GetSafeTagValue(initialState)}
+        };
+
+        try
+        {
+            await _blobService.SetTagsAsync(fullName, tags);
+        }
+        catch(Exception exception)
+        {
+            try
+            {
+                await _blobService.DeleteAsync(fullName);
+            }
+            catch(Exception)
+            {}
+
+            throw new Exception($"Failed to set initial tags on project with ID \"{project.Id}\": {exception.Message}");
+        }
+
+        if (!String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
+        {
+            await QueueWebhookMessageAsync(project.Id,
+                                           project.Name,
+                                           project.WebhookSpecification.Uri,
+                                           project.WebhookSpecification.CustomProps,
+                                           project.Username,
+                                           Events.Stored);
+        }
     }
 
     public async Task<bool> IsNewProjectAsync(Guid projectId)
