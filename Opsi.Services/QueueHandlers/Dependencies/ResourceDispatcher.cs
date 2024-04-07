@@ -19,22 +19,23 @@ internal class ResourceDispatcher : IResourceDispatcher
                                                          Guid projectId,
                                                          string filePath,
                                                          Stream contentsStream,
-                                                         string username)
+                                                         string username,
+                                                         bool isAdministrator)
     {
         const string mediaTypeHeaderValue = "application/octet-stream";
 
         var fileName = Path.GetFileName(filePath);
 
-        using (var httpClient = _httpClientFactory.CreateClient(HttpClientNames.SelfWithoutAuth))
+        using (var httpClient = _httpClientFactory.CreateClient(HttpClientNames.OneTimeAuth))
         using (var content = new MultipartFormDataContent())
         {
-            httpClient.DefaultRequestHeaders.Authorization = await _oneTimeAuthService.GetAuthenticationHeaderAsync(username);
+            httpClient.DefaultRequestHeaders.Authorization = await _oneTimeAuthService.GetAuthenticationHeaderAsync(username, isAdministrator);
             content.Headers.ContentType = MediaTypeHeaderValue.Parse(mediaTypeHeaderValue);
             using (var streamContent = new StreamContent(contentsStream))
             {
                 content.Add(streamContent, fileName);
 
-                var url = new Uri($"{hostUrl}/projects/{projectId}/resource/{filePath}");
+                var url = new Uri($"{hostUrl}/projects/{projectId}/resources/{filePath}");
 
                 return await httpClient.PostAsync(url, content);
             }

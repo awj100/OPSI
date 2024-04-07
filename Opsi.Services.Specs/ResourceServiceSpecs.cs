@@ -99,7 +99,7 @@ public class ResourceServiceSpecs
             Contents = contentsStream
         };
 
-        A.CallTo(() => _blobService.RetrieveBlob(A<string>._)).Returns(blobClient);
+        A.CallTo(() => _blobService.RetrieveBlobClient(A<string>._)).Returns(blobClient);
 
         var result = await _testee.GetResourceContentAsync(_projectId, RestOfPath);
 
@@ -115,7 +115,7 @@ public class ResourceServiceSpecs
     public async Task GetResourceContentAsync_WhenNoBlobExists_ReturnsOptionOfNone()
     {
         var testBlobClient = new TestBlobClient(String.Empty, false);
-        A.CallTo(() => _blobService.RetrieveBlob(A<string>._)).Returns(testBlobClient);
+        A.CallTo(() => _blobService.RetrieveBlobClient(A<string>._)).Returns(testBlobClient);
 
         var result = await _testee.GetResourceContentAsync(_projectId, RestOfPath);
 
@@ -139,7 +139,7 @@ public class ResourceServiceSpecs
         };
         var webhookSpec = new ConsumerWebhookSpecification();
 
-        A.CallTo(() => _blobService.RetrieveBlob(A<string>._)).Returns(blobClient);
+        A.CallTo(() => _blobService.RetrieveBlobClient(A<string>._)).Returns(blobClient);
         A.CallTo(() => _projectsService.GetWebhookSpecificationAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(webhookSpec);
 
         var result = await _testee.GetResourceContentAsync(_projectId, RestOfPath);
@@ -221,7 +221,7 @@ public class ResourceServiceSpecs
     {
         var blobVersion = Guid.NewGuid().ToString();
 
-        A.CallTo(() => _blobService.StoreVersionedFileAsync(A<VersionedResourceStorageInfo>._)).Returns(blobVersion);
+        A.CallTo(() => _blobService.StoreVersionedResourceAsync(A<VersionedResourceStorageInfo>._)).Returns(blobVersion);
 
         await _testee.StoreResourceAsync(_resourceStorageInfo);
 
@@ -259,7 +259,7 @@ public class ResourceServiceSpecs
     {
         var blobVersion = Guid.NewGuid().ToString();
 
-        A.CallTo(() => _blobService.StoreVersionedFileAsync(A<VersionedResourceStorageInfo>._)).Returns(blobVersion);
+        A.CallTo(() => _blobService.StoreVersionedResourceAsync(A<VersionedResourceStorageInfo>._)).Returns(blobVersion);
 
         A.CallTo(() => _resourcesService.StoreResourceAsync(A<VersionedResourceStorageInfo>._)).Throws<Exception>();
 

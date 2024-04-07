@@ -27,6 +27,7 @@ public class ZippedQueueHandlerSpecs
     private ISettingsProvider _settingsProvider;
     private IUnzipService _unzipService;
     private IUnzipServiceFactory _unzipServiceFactory;
+    private IUserInitialiser _userInitialiser;
     private IWebhookQueueService _webhookQueueService;
     private ZippedQueueHandler _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -58,6 +59,7 @@ public class ZippedQueueHandlerSpecs
         _settingsProvider = A.Fake<ISettingsProvider>();
         _unzipService = A.Fake<IUnzipService>();
         _unzipServiceFactory = A.Fake<IUnzipServiceFactory>();
+        _userInitialiser = A.Fake<IUserInitialiser>();
         _webhookQueueService = A.Fake<IWebhookQueueService>();
 
         A.CallTo(() => _blobService.RetrieveContentAsync(A<string>.That.Matches(s => s.Contains(_manifest.ProjectId.ToString())))).Returns(_nonManifestStream);
@@ -72,6 +74,7 @@ public class ZippedQueueHandlerSpecs
                                          _blobService,
                                          _unzipServiceFactory,
                                          _resourceDispatcher,
+                                         _userInitialiser,
                                          loggerFactory);
     }
 

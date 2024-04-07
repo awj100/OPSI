@@ -4,11 +4,20 @@ namespace Opsi.AzureStorage.Types
 {
     public struct VersionInfo
     {
-        public VersionInfo(int version, string? assignedTo = null)
+        public VersionInfo(int versionIndex, string? assignedTo = null) : this(String.Empty, versionIndex, assignedTo)
+        {}
+        
+        public VersionInfo(string id, int versionIndex, string? assignedTo = null)
         {
             AssignedTo = assignedTo != null ? Option<string>.Some(assignedTo) : Option<string>.None();
-            Index = version;
+            Id = id;
+            Index = versionIndex;
         }
+
+        /// <summary>
+        /// Gets or sets the Azure Storage-provided version ID.
+        /// </summary>
+        public string Id { get; set; }
 
         /// <summary>
         /// Gets or sets the numerical version of a resource.

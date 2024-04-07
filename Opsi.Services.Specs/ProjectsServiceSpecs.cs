@@ -1,6 +1,10 @@
-﻿using Azure.Data.Tables;
+﻿using Azure;
+using Azure.Data.Tables;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
 using FakeItEasy;
 using FluentAssertions;
+using Grpc.Net.Client.Balancer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.AzureStorage;
@@ -39,6 +43,7 @@ public class ProjectsServiceSpecs
     private readonly Guid _projectId = Guid.NewGuid();
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private DateTime _assignedOnUtc;
+    private Dictionary<string, string> _blobMetadata;
     private IBlobService _blobService;
     private string _defaultOrderBy = OrderBy.Desc;
     private OrderedProject _orderedProject;
@@ -204,6 +209,18 @@ public class ProjectsServiceSpecs
         _userProvider = A.Fake<IUserProvider>();
         _webhookQueueService = A.Fake<IWebhookQueueService>();
 
+        _blobMetadata = new Dictionary<string, string> {
+            {Metadata.CreatedBy, _username },
+            {Metadata.ProjectId, _projectId.ToString()},
+            {Metadata.ProjectName, _projectName},
+            {Metadata.WebhookCustomProps, System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>{
+                { _webhookCustomProp1Name, _webhookCustomProp1Value},
+                {_webhookCustomProp2Name, _webhookCustomProp2Value}
+            })},
+            {Metadata.WebhookUri, _webhookUri}
+        };
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(_blobMetadata);
+
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(_project.Id)).Returns(Option<Project>.Some(_project));
         A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Not.Matches(g => g.Equals(_project.Id)))).Returns(nullProject);
         A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_project.Id)).Returns(new List<ITableEntity> {
@@ -219,7 +236,7 @@ public class ProjectsServiceSpecs
         });
         A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
 
-        _testee = new ProjectsService(_projectsTableService, _blobService, _tagUtilities, _webhookQueueService);
+        _testee = new ProjectsService(_projectsTableService, _blobService, _tagUtilities, _userProvider, _webhookQueueService);
     }
 
     [TestMethod]
@@ -245,7 +262,7 @@ public class ProjectsServiceSpecs
 
         await _testee.InitProjectAsync(_project);
 
-        A.CallTo(() => _blobService.StoreAsync(A<string>._, A<Stream>.That.Matches(s => ((MemoryStream)s).Length == expectedStreamLength))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _blobService.StoreResourceAsync(A<string>._, A<Stream>.That.Matches(s => ((MemoryStream)s).Length == expectedStreamLength))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -264,6 +281,52 @@ public class ProjectsServiceSpecs
 
         A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.ProjectName)
                                                                                                                      && dict[Metadata.ProjectName] == _project.Name))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task InitProjectAsync_WhenProjectIsValidAndSpecifiesWebhookUri_PassesWebhookUriInMetadata()
+    {
+        await _testee.InitProjectAsync(_project);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.WebhookUri)
+                                                                                                                     && dict[Metadata.WebhookUri] == _project.WebhookSpecification!.Uri))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task InitProjectAsync_WhenProjectIsValidAndSpecifiesNoWebhookUri_PassesWebhookUriAsEmptyStringInMetadata()
+    {
+        ConsumerWebhookSpecification? webhookSpec = null;
+        var expectedMetadataValue = String.Empty;
+
+        _project.WebhookSpecification = webhookSpec;
+
+        await _testee.InitProjectAsync(_project);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.WebhookUri)
+                                                                                                                     && dict[Metadata.WebhookUri] == expectedMetadataValue))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task InitProjectAsync_WhenProjectIsValidAndSpecifiesWebhookCustomProps_PassesWebhookSerialisedCustomPropsInMetadata()
+    {
+        await _testee.InitProjectAsync(_project);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.WebhookUri)
+                                                                                                                     && dict[Metadata.WebhookUri] == _project.WebhookSpecification!.Uri))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task InitProjectAsync_WhenProjectIsValidAndSpecifiesNoWebhookCustomProps_PassesSerialisedEmptyCustomPropsInMetadata()
+    {
+        Dictionary<string, object> customProps = [];
+        var serialisedCustomProps = System.Text.Json.JsonSerializer.Serialize(customProps);
+
+        _project.WebhookSpecification!.CustomProps = customProps;
+
+        await _testee.InitProjectAsync(_project);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.WebhookCustomProps)
+                                                                                                                     && dict[Metadata.WebhookCustomProps] == serialisedCustomProps))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -307,7 +370,7 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task InitProjectAsync_WhenFailsToStoreBlob_NoWebhookIsSent()
     {
-        A.CallTo(() => _blobService.StoreAsync(A<string>._, A<Stream>._)).ThrowsAsync(new Exception());
+        A.CallTo(() => _blobService.StoreResourceAsync(A<string>._, A<Stream>._)).ThrowsAsync(new Exception());
 
         try
         {
@@ -471,17 +534,6 @@ public class ProjectsServiceSpecs
          .MustHaveHappenedOnceExactly();
     }
 
-    /*[TestMethod]
-    public async Task AssignUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectLevel()
-    {
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
-
-        await _testee.AssignUserAsync(_userAssignment);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Level.Equals(Levels.)), A<ConsumerWebhookSpecification>._))
-         .MustHaveHappenedOnceExactly();
-    }*/
-
     [TestMethod]
     public async Task AssignUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectUsername()
     {
@@ -498,7 +550,7 @@ public class ProjectsServiceSpecs
 
         await _testee.AssignUserAsync(_userAssignmentResource2User1);
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null 
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
                                                                                                                                              && cws.CustomProps.ContainsKey(propNameAssignedUsername)
                                                                                                                                              && cws.CustomProps[propNameAssignedUsername].Equals(_userAssignmentResource2User1.AssigneeUsername))))
          .MustHaveHappenedOnceExactly();
@@ -771,8 +823,6 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhook()
     {
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(Option<Project>.Some(_project));
-
         var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
 
         result.Should().NotBeNull();
@@ -782,8 +832,6 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhookWithExpectedUri()
     {
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(Option<Project>.Some(_project));
-
         var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
 
         result?.Uri.Should().Be(_webhookUri);
@@ -792,14 +840,12 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhookWithExpectedCustomProps()
     {
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(Option<Project>.Some(_project));
-
         var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
 
         result?.CustomProps.Should().NotBeNullOrEmpty();
         result!.CustomProps.Should().HaveCount(_webhookCustomProps.Count);
         result!.CustomProps!.Select(keyValuePair => keyValuePair.Key).Should().Contain(_webhookCustomProp1Name);
-        //result!.CustomProps[_webhookCustomProp1Name].Should().Be(_webhookCustomProp1Value);
+        // result!.CustomProps![_webhookCustomProp1Name].Should().Be(_webhookCustomProp1Value);
         result!.CustomProps!.Select(keyValuePair => keyValuePair.Key).Should().Contain(_webhookCustomProp2Name);
         //result!.CustomProps[_webhookCustomProp2Name].Should().Be(_webhookCustomProp2Value);
     }
@@ -807,8 +853,7 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetWebhookUriAsync_WhenNoMatchingProjectFound_ReturnsNull()
     {
-        Option<Project> projectQueryResult = Option<Project>.None();
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(projectQueryResult);
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(new Dictionary<string, string>(0));
 
         var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
 
@@ -818,12 +863,9 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task GetWebhookUriAsync_WhenMatchingProjectFoundWithNoWebhookUri_ReturnsNull()
     {
-        var project = new Project { Id = Guid.NewGuid() };
+        _blobMetadata[Metadata.WebhookUri] = String.Empty;
 
-        Option<Project> projectQueryResult = Option<Project>.Some(project);
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(project.Id)))).Returns(projectQueryResult);
-
-        var result = await _testee.GetWebhookSpecificationAsync(project.Id);
+        var result = await _testee.GetWebhookSpecificationAsync(_projectId);
 
         result.Should().BeNull();
     }
@@ -831,7 +873,9 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task IsNewProjectAsync_WhenMatchingProjectFound_ReturnsFalse()
     {
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(Option<Project>.Some(_project));
+        var blobClient = new TestBlobClient(true);
+
+        A.CallTo(() => _blobService.RetrieveBlobClient(A<string>._)).Returns(blobClient);
 
         var result = await _testee.IsNewProjectAsync(_project.Id);
 
@@ -841,8 +885,9 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task IsNewProjectAsync_WhenMatchingProjectFound_ReturnsTrue()
     {
-        Option<Project> projectQueryResult = Option<Project>.None();
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_project.Id)))).Returns(projectQueryResult);
+        var blobClient = new TestBlobClient(false);
+
+        A.CallTo(() => _blobService.RetrieveBlobClient(A<string>._)).Returns(blobClient);
 
         var result = await _testee.IsNewProjectAsync(_project.Id);
 
@@ -1077,52 +1122,60 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
-    public async Task UpdateProjectStateAsync_PassesProjectWithNewStateToTableService()
+    public async Task UpdateProjectStateAsync_WhenStateIsChanged_ReturnsTrue()
     {
-        await _testee.UpdateProjectStateAsync(_project.Id, _state2);
+        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
+                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
 
-        A.CallTo(() => _projectsTableService.UpdateProjectStateAsync(_project.Id, _state2)).MustHaveHappenedOnceExactly();
+        var result = await _testee.UpdateProjectStateAsync(_project.Id, _state2);
+
+        result.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenNoMatchingProjectFoundById_ReturnsFalse()
+    {
+        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
+                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(false);
+
+        var result = await _testee.UpdateProjectStateAsync(_projectId, _state2);
+
+        result.Should().BeFalse();
     }
 
     [TestMethod]
     public async Task UpdateProjectStateAsync_WhenNoMatchingProjectFoundById_DoesNotInvokeWebhook()
     {
-        var invalidProjectId = Guid.NewGuid();
+        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
+                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(false);
 
-        await _testee.UpdateProjectStateAsync(invalidProjectId, _state2);
+        await _testee.UpdateProjectStateAsync(_projectId, _state2);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
-    }
-
-    [TestMethod]
-    public async Task UpdateProjectStateAsync_WhenNoMatchingProjectFoundById_DoesNotPassProjectToTableService()
-    {
-        var invalidProjectId = Guid.NewGuid();
-
-        await _testee.UpdateProjectStateAsync(invalidProjectId, _state2);
-
-        A.CallTo(() => _projectsTableService.UpdateProjectAsync(A<Project>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
     public async Task UpdateProjectStateAsync_WhenNoStateChange_DoesNotInvokeWebhook()
     {
+        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
+                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(false);
+
         await _testee.UpdateProjectStateAsync(_project.Id, _state1);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
-    public async Task UpdateProjectStateAsync_WhenNoStateChange_DoesNotPassProjectToTableService()
-    {
-        await _testee.UpdateProjectStateAsync(_project.Id, _state1);
-
-        A.CallTo(() => _projectsTableService.UpdateProjectAsync(A<Project>._)).MustNotHaveHappened();
-    }
-
-    [TestMethod]
     public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectProjectId()
     {
+        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
+                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
+
         await _testee.UpdateProjectStateAsync(_project.Id, _state2);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)),
@@ -1133,6 +1186,10 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectStateTextInEventProperty()
     {
+        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
+                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
+
         await _testee.UpdateProjectStateAsync(_project.Id, _state2);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)
@@ -1145,6 +1202,10 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectCustomProps()
     {
+        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
+                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
+
         await _testee.UpdateProjectStateAsync(_project.Id, _state2);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
@@ -1157,6 +1218,10 @@ public class ProjectsServiceSpecs
     [TestMethod]
     public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectRemoteUri()
     {
+        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
+                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
+
         await _testee.UpdateProjectStateAsync(_project.Id, _state2);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
@@ -1164,5 +1229,15 @@ public class ProjectsServiceSpecs
                                                                                                                          && !String.IsNullOrWhiteSpace(cws.Uri)
                                                                                                                          && cws.Uri.Equals(_webhookUri))))
             .MustHaveHappenedOnceExactly();
+    }
+
+    private class TestBlobClient(bool exists) : BlobBaseClient
+    {
+        private readonly bool _exists = exists;
+
+        public override Task<Response<bool>> ExistsAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(Response.FromValue(_exists, A.Fake<Response>()));
+        }
     }
 }

@@ -2,9 +2,9 @@
 {
     public class Manifest
 	{
-		public Manifest()
-		{
-			PackageName = String.Empty;
+        public Manifest()
+        {
+            PackageName = String.Empty;
 			ProjectId = Guid.Empty;
             ResourceExclusionPaths = new List<string>();
         }
@@ -18,10 +18,5 @@
         public List<string> ResourceExclusionPaths { get; set; }
 
         public ConsumerWebhookSpecification? WebhookSpecification { get; set; }
-
-        public string GetPackagePathForStore()
-		{
-			return $"{ProjectId}/{PackageName}";
-        }
     }
 }

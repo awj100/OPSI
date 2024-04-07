@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 using Opsi.AzureStorage;
 using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
@@ -14,6 +15,7 @@ namespace Opsi.Services;
 public class ProjectsService(IProjectsTableService _projectsTableService,
                              IBlobService _blobService,
                              ITagUtilities _tagUtilities,
+                             IUserProvider _userProvider,
                              IWebhookQueueService _webhookQueueService) : IProjectsService
 {
     public async Task AssignUserAsync(UserAssignment userAssignment)
@@ -113,6 +115,13 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
         return userAssignmentTableEntities.Select(te => te.ToUserAssignment()).ToList();
     }
 
+    public async Task<InternalManifest?> GetManifestAsync(Guid projectId)
+    {
+        var fullName = GetTagsHostFullName(projectId);
+        var contentStream = await _blobService.RetrieveContentAsync(fullName);
+        return JsonSerializer.Deserialize<InternalManifest>(contentStream) ?? throw new ProjectNotFoundException(projectId);
+    }
+
     public async Task<ProjectWithResources> GetProjectAsync(Guid projectId)
     {
         var tableEntities = await _projectsTableService.GetProjectEntitiesAsync(projectId);
@@ -179,50 +188,45 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
 
     public async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)
     {
-        var project = await _projectsTableService.GetProjectByIdAsync(projectId);
+        var internalManifest = await GetManifestAsync(projectId);
 
-        if (project.IsNone || String.IsNullOrWhiteSpace(project.Value.WebhookSpecification?.Uri))
-        {
-            return null;
-        }
-
-        return project.Value.WebhookSpecification;
+        return internalManifest?.WebhookSpecification;
     }
 
-    public async Task InitProjectAsync(Project project)
+    public async Task InitProjectAsync(InternalManifest internalManifest)
     {
 #pragma warning disable CA2208 // Instantiate argument exceptions correctly
-        if (String.IsNullOrWhiteSpace(project.Name))
+        if (String.IsNullOrWhiteSpace(internalManifest.PackageName))
         {
             throw new ArgumentNullException(nameof(Project.Name));
         }
 
-        if (String.IsNullOrWhiteSpace(project.Username))
+        if (String.IsNullOrWhiteSpace(internalManifest.Username))
         {
             throw new ArgumentNullException(nameof(Project.Username));
         }
 #pragma warning restore CA2208 // Instantiate argument exceptions correctly
 
-        var fullName = $"{project.Id}/{Tags.TagsHostName}";
+        var fullName = GetTagsHostFullName(internalManifest.ProjectId);
         var initialState = ProjectStates.Initialising;
-        var stream = new MemoryStream(1);
-        stream.WriteByte(0);
-        stream.Position = 0;
+        var stream = new MemoryStream();
+        await JsonSerializer.SerializeAsync(stream, internalManifest);
+        stream.Seek(0, SeekOrigin.Begin);
 
         try
         {
-            await _blobService.StoreAsync(fullName, stream);
+            await _blobService.StoreResourceAsync(fullName, stream);
         }
         catch (Exception exception)
         {
-            throw new Exception($"Failed to create project with ID \"{project.Id}\": {exception.Message}");
+            throw new Exception($"Failed to create project with ID \"{internalManifest.ProjectId}\": {exception.Message}");
         }
 
         var metadata = new Dictionary<string, string>
         {
-            {Metadata.CreatedBy, project.Username},
-            {Metadata.ProjectId, project.Id.ToString()},
-            {Metadata.ProjectName, project.Name}
+            {Metadata.CreatedBy, internalManifest.Username},
+            {Metadata.ProjectId, internalManifest.ProjectId.ToString()},
+            {Metadata.ProjectName, internalManifest.PackageName}
         };
 
         try
@@ -238,13 +242,13 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
             catch(Exception)
             {}
 
-            throw new Exception($"Failed to set initial metadata on project with ID \"{project.Id}\": {exception.Message}");
+            throw new Exception($"Failed to set initial metadata on project with ID \"{internalManifest.ProjectId}\": {exception.Message}");
         }
 
         var tags = new Dictionary<string, string>
         {
-            {Tags.ProjectId, _tagUtilities.GetSafeTagValue(project.Id)},
-            {Tags.ProjectName, _tagUtilities.GetSafeTagValue(project.Name)},
+            {Tags.ProjectId, _tagUtilities.GetSafeTagValue(internalManifest.ProjectId)},
+            {Tags.ProjectName, _tagUtilities.GetSafeTagValue(internalManifest.PackageName)},
             {Tags.ProjectState, _tagUtilities.GetSafeTagValue(initialState)}
         };
 
@@ -261,25 +265,27 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
             catch(Exception)
             {}
 
-            throw new Exception($"Failed to set initial tags on project with ID \"{project.Id}\": {exception.Message}");
+            throw new Exception($"Failed to set initial tags on project with ID \"{internalManifest.ProjectId}\": {exception.Message}");
         }
 
-        if (!String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
+        if (!String.IsNullOrWhiteSpace(internalManifest.WebhookSpecification?.Uri))
         {
-            await QueueWebhookMessageAsync(project.Id,
-                                           project.Name,
-                                           project.WebhookSpecification.Uri,
-                                           project.WebhookSpecification.CustomProps,
-                                           project.Username,
+            await QueueWebhookMessageAsync(internalManifest.ProjectId,
+                                           internalManifest.PackageName,
+                                           internalManifest.WebhookSpecification.Uri,
+                                           internalManifest.WebhookSpecification.CustomProps,
+                                           internalManifest.Username,
                                            Events.Stored);
         }
     }
 
     public async Task<bool> IsNewProjectAsync(Guid projectId)
     {
-        var project = await _projectsTableService.GetProjectByIdAsync(projectId);
+        // Check if the tags host blob exists.
+        var fullName = GetTagsHostFullName(projectId);
+        var blobClient = _blobService.RetrieveBlobClient(fullName);
 
-        return project.IsNone;
+        return !await blobClient.ExistsAsync();
     }
 
     public async Task RevokeUserAsync(UserAssignment userAssignment)
@@ -346,23 +352,31 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
         }
     }
 
-    public async Task UpdateProjectStateAsync(Guid projectId, string newState)
+    public async Task<bool> UpdateProjectStateAsync(Guid projectId, string newState)
     {
-        var updatedProjectTableEntity = await _projectsTableService.UpdateProjectStateAsync(projectId, newState);
-        if (updatedProjectTableEntity.IsNone)
+        var fullName = GetTagsHostFullName(projectId);
+        var isTagSet = await _blobService.SetTagAsync(fullName, Tags.ProjectState, newState);
+
+        if (!isTagSet)
         {
-            // Nothing was updated.
-            return;
+            return false;
         }
 
-        var project = updatedProjectTableEntity.Value.ToProject();
+        var manifest = await GetManifestAsync(projectId);
+        if (manifest?.WebhookSpecification == null)
+        {
+            return true;
+        }
         var stateChangeEventText = GetStateChangeEventText(Events.StateChange, newState);
-        await QueueWebhookMessageAsync(project.Id,
-                                       project.Name!,
-                                       project.WebhookSpecification?.Uri,
-                                       project.WebhookSpecification?.CustomProps,
-                                       project.Username!,
+
+        await QueueWebhookMessageAsync(projectId,
+                                       manifest.PackageName,
+                                       manifest.WebhookSpecification.Uri,
+                                       manifest.WebhookSpecification.CustomProps,
+                                       _userProvider.Username.Value,
                                        stateChangeEventText);
+
+        return true;
     }
 
     private async Task QueueWebhookMessageAsync(Guid projectId,
@@ -389,6 +403,11 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
     private static string GetStateChangeEventText(string eventText, string newState)
     {
         return $"{eventText}:{newState}";
+    }
+
+    private static string GetTagsHostFullName(Guid projectId)
+    {
+        return $"{projectId}/{Tags.TagsHostName}";
     }
 
     private static bool IsProjectStateRecognised(string projectState)

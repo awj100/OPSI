@@ -2,40 +2,26 @@
 using Opsi.AzureStorage.Types;
 using Opsi.Common;
 using Opsi.Common.Exceptions;
+using Opsi.Constants;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueServices;
 
 namespace Opsi.Services;
 
-internal class ResourceService : IResourceService
+internal class ResourceService(AzureStorage.IResourcesService _resourcesService,
+                       AzureStorage.IBlobService _blobService,
+                       IWebhookQueueService _webhookQueueService,
+                       IProjectsService _projectsService,
+                       IUserProvider _userProvider,
+                       ILoggerFactory loggerFactory) : IResourceService
 {
-    private readonly AzureStorage.IBlobService _blobService;
-    private readonly ILogger<ResourceService> _log;
-    private readonly IProjectsService _projectsService;
-    private readonly AzureStorage.IResourcesService _resourcesService;
-    private readonly IUserProvider _userProvider;
-    private readonly IWebhookQueueService _webhookQueueService;
-
-    public ResourceService(AzureStorage.IResourcesService resourcesService,
-                           AzureStorage.IBlobService blobService,
-                           IWebhookQueueService webhookQueueService,
-                           IProjectsService projectsService,
-                           IUserProvider userProvider,
-                           ILoggerFactory loggerFactory)
-    {
-        _blobService = blobService;
-        _projectsService = projectsService;
-        _log = loggerFactory.CreateLogger<ResourceService>();
-        _resourcesService = resourcesService;
-        _userProvider = userProvider;
-        _webhookQueueService = webhookQueueService;
-    }
+    private readonly ILogger<ResourceService> _log = loggerFactory.CreateLogger<ResourceService>();
 
     public async Task<Option<ResourceContent>> GetResourceContentAsync(Guid projectId, string fullName)
     {
         var blobName = $"{projectId}/{fullName}";
-        var blobClient = _blobService.RetrieveBlob(blobName);
+        var blobClient = _blobService.RetrieveBlobClient(blobName);
 
         if (!await blobClient.ExistsAsync())
         {
@@ -49,7 +35,7 @@ internal class ResourceService : IResourceService
         memoryStream.Position = 0;
         var contentLength = (int)blobProps.Value.ContentLength;
         var bytes = new byte[contentLength];
-        await memoryStream.ReadAsync(bytes, 0, contentLength - 1);
+        await memoryStream.ReadAsync(bytes.AsMemory(0, contentLength - 1));
 
         var resourceStorageInfo = new ResourceStorageInfo(projectId, blobClient.Name, memoryStream, _userProvider.Username.Value);
         await QueueWebhookMessageAsync(projectId, resourceStorageInfo, Events.ResourceDownloaded);
@@ -70,18 +56,40 @@ internal class ResourceService : IResourceService
 
     public async Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo)
     {
-        var currentVersionInfo = await GetVersionInfoAsync(resourceStorageInfo);
-
-        if (!CanUserStoreFile(currentVersionInfo, resourceStorageInfo.Username))
+        if (!await CanUserStoreFile(resourceStorageInfo))
         {
             throw new ResourceLockConflictException(resourceStorageInfo.ProjectId, resourceStorageInfo.FullPath.Value);
         }
 
-        var versionedResourceStorageInfo = resourceStorageInfo.ToVersionedResourceStorageInfo(currentVersionInfo.GetNextVersionInfo());
-
-        await StoreFileDataAndVersionAsync(versionedResourceStorageInfo);
+        await StoreResourceDataAsync(resourceStorageInfo);
 
         await QueueWebhookMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo, Events.Stored);
+    }
+
+    private async Task<bool> CanUserStoreFile(ResourceStorageInfo resourceStorageInfo)
+    {
+        var blobMetadata = await _blobService.RetrieveBlobMetadataAsync(resourceStorageInfo.FullPath.Value, throwIfNotExists: false);
+
+        // Verify that the uploading user has been assigned to the blob.
+        // - i.e., that the uploader is referenced on the resource blob's metadata as 'assignee'.
+        if (blobMetadata.TryGetValue(Metadata.Assignee, out var assignee)
+            && String.Equals(assignee, resourceStorageInfo.Username, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // Verify that the project is still being initialised and that the name of the resource uploader matches the user initialising the project.
+        // - The project state is found as a tag on the manifest blob.
+        // - The user initialising the project can be found in the manifest.
+        var manifestTags = await _blobService.RetrieveTagsAsync(resourceStorageInfo.GetManifestPath(), throwIfNotExists: false);
+        var projectState = GetProjectStateFromManifestTags(manifestTags);
+        if (!projectState.Equals(ProjectStates.Initialising))
+        {
+            return false;
+        }
+
+        var internalManifest = await RetrieveInternalManifestAsync(resourceStorageInfo);
+        return internalManifest != null && internalManifest.Username.Equals(resourceStorageInfo.Username, StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)
@@ -91,51 +99,17 @@ internal class ResourceService : IResourceService
         return webhookSpec;
     }
 
-    private async Task<VersionInfo> GetVersionInfoAsync(ResourceStorageInfo resourceStorageInfo)
+    private async Task<string> StoreResourceDataAsync(ResourceStorageInfo resourceStorageInfo)
     {
         try
         {
-            return await _resourcesService.GetCurrentVersionInfo(resourceStorageInfo.ProjectId, resourceStorageInfo.RestOfPath);
+            return await _blobService.StoreVersionedResourceAsync(resourceStorageInfo);
         }
         catch (Exception ex)
         {
-            throw new Exception($"Unable to obtain version information for {nameof(resourceStorageInfo.ProjectId)} = \"{resourceStorageInfo.ProjectId}\", {nameof(resourceStorageInfo.FullPath)} = \"{resourceStorageInfo.FullPath.Value}\".", ex);
-        }
-    }
-
-    private async Task StoreFileDataAndVersionAsync(VersionedResourceStorageInfo versionedResourceStorageInfo)
-    {
-        try
-        {
-            // Store the blob.
-            versionedResourceStorageInfo.VersionId = await _blobService.StoreVersionedFileAsync(versionedResourceStorageInfo);
-        }
-        catch (Exception ex)
-        {
-            const string errorPackage = "An error was encountered while storing the file data.";
+            const string errorPackage = "An error was encountered while storing a version of the resource.";
             _log.LogError(errorPackage, ex);
             throw new Exception(errorPackage);
-        }
-
-        try
-        {
-            // Record the resource upload in the 'resources' table.
-            await _resourcesService.StoreResourceAsync(versionedResourceStorageInfo);
-        }
-        catch (Exception ex)
-        {
-            try
-            {
-                // Remove the blob before throwing the exception.
-                await _blobService.DeleteAsync(versionedResourceStorageInfo.FullPath.Value);
-            }
-            catch (Exception)
-            {
-            }
-
-            const string errorMessage = "An error was encountered while recording the resource.";
-            _log.LogError(errorMessage, ex);
-            throw new Exception(errorMessage);
         }
     }
 
@@ -157,8 +131,15 @@ internal class ResourceService : IResourceService
         }, webhookSpec);
     }
 
-    private static bool CanUserStoreFile(VersionInfo versionInfo, string username)
+    private async Task<InternalManifest?> RetrieveInternalManifestAsync(ResourceStorageInfo resourceStorageInfo)
     {
-        return versionInfo.AssignedTo.IsNone || versionInfo.AssignedTo.Value == username;
+        using var contentStream = await _blobService.RetrieveContentAsync(resourceStorageInfo.GetManifestPath());
+
+        return await System.Text.Json.JsonSerializer.DeserializeAsync<InternalManifest>(contentStream);
+    }
+
+    private static string GetProjectStateFromManifestTags(IDictionary<string, string> tags)
+    {
+        return tags.TryGetValue(Tags.ProjectState, out string? value) ? value : ProjectStates.Error;
     }
 }

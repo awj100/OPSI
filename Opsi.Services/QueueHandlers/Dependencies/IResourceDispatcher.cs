@@ -6,5 +6,6 @@ public interface IResourceDispatcher
                                             Guid projectId,
                                             string filePath,
                                             Stream contentsStream,
-                                            string username);
+                                            string username,
+                                            bool isAdministrator);
 }

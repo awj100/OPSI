@@ -17,7 +17,7 @@ public interface IProjectsService
 
     Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId);
 
-    Task InitProjectAsync(Project project);
+    Task InitProjectAsync(InternalManifest internalManifest);
 
     Task<bool> IsNewProjectAsync(Guid projectId);
 
@@ -25,5 +25,5 @@ public interface IProjectsService
 
     Task StoreProjectAsync(Project project);
 
-    Task UpdateProjectStateAsync(Guid projectId, string newState);
+    Task<bool> UpdateProjectStateAsync(Guid projectId, string newState);
 }

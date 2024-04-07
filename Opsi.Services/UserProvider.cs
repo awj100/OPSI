@@ -5,7 +5,7 @@ using Opsi.Common.Exceptions;
 
 namespace Opsi.Services;
 
-internal class UserProvider : IUserProvider
+internal class UserProvider : IUserProvider, IUserInitialiser
 {
     private const string ItemNameAuthHeaderValue = "AuthHeaderValue";
     private const string ItemNameClaims = "Claims";
@@ -67,4 +67,10 @@ internal class UserProvider : IUserProvider
 
         return (string)_functionContext.Items[ItemNameUsername];
     });
+
+    public void SetUsername(string username, bool isAdministrator)
+    {
+        _functionContext.Items[ItemNameIsAdministrator] = isAdministrator;
+        _functionContext.Items[ItemNameUsername] = username;
+    }
 }

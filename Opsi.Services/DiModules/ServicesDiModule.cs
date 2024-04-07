@@ -40,6 +40,7 @@ public static class ServicesDiModule
             .AddSingleton<ITagUtilities, TagUtilities>()
             .AddSingleton<Func<Stream, IUnzipService>>(serviceProvider => stream => new UnzipService(stream))
             .AddSingleton<IUnzipServiceFactory, UnzipServiceFactory>()
+            .AddTransient<IUserInitialiser, UserProvider>()
             .AddTransient<IUserProvider, UserProvider>()
             .AddSingleton<Func<FunctionContext, IUserProvider>>(_ => (FunctionContext functionContext) => new UserProvider(functionContext))
             .AddSingleton<QueueHandlers.IZippedQueueHandler, QueueHandlers.ZippedQueueHandler>()
@@ -62,7 +63,7 @@ public static class ServicesDiModule
             httpClient.BaseAddress = new Uri(hostUrl);
             try
             {
-                httpClient.DefaultRequestHeaders.Authorization = await oneTimeAuthService.GetAuthenticationHeaderAsync(userProvider.Username.Value);
+                httpClient.DefaultRequestHeaders.Authorization = await oneTimeAuthService.GetAuthenticationHeaderAsync(userProvider.Username.Value, userProvider.IsAdministrator.Value);
             }
             catch (Exception exception)
             {

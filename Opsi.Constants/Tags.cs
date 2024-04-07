@@ -10,5 +10,5 @@ public static class Tags
 
     public const string ProjectState = nameof(ProjectState);
 
-    public const string TagsHostName = ".tags";
+    public const string TagsHostName = "manifest";
 }

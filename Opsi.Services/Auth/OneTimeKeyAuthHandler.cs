@@ -2,25 +2,19 @@
 
 namespace Opsi.Services.Auth;
 
-internal class OneTimeKeyAuthHandler : AuthHandlerBase, IAuthHandler
+internal class OneTimeKeyAuthHandler(IOneTimeAuthService _oneTimeAuthService) : AuthHandlerBase, IAuthHandler
 {
-    private readonly IOneTimeAuthService _oneTimeAuthService;
-
-    public OneTimeKeyAuthHandler(IOneTimeAuthService oneTimeAuthService)
-    {
-        _oneTimeAuthService = oneTimeAuthService;
-    }
-
     public async Task<bool> AuthenticateAsync(string authHeader, IDictionary<object, object> contextItems)
     {
-        var username = await _oneTimeAuthService.GetUsernameAsync(authHeader);
+        var credentials = await _oneTimeAuthService.GetCredentialsAsync(authHeader);
 
-        if (String.IsNullOrWhiteSpace(username))
+        if (!credentials.IsValid)
         {
             return false;
         }
 
-        contextItems.Add(ItemNameUsername, username);
+        contextItems.Add(ItemNameIsAdministrator, credentials.IsAdministrator);
+        contextItems.Add(ItemNameUsername, credentials.Username);
 
         return true;
     }

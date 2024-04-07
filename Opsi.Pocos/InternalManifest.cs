@@ -1,7 +1,9 @@
 ﻿namespace Opsi.Pocos
 {
     public class InternalManifest : Manifest
-	{
+    {
+        private const string ManifestTagName = "manifest";
+
         // Required for deserialisation.
         public InternalManifest()
         {
@@ -33,5 +35,15 @@
         }
 
 		public string Username { get; set; } = default!;
+
+        public string GetManifestPathForStore()
+        {
+            return $"{ProjectId}/{ManifestTagName}";
+        }
+
+        public string GetNonManifestPathForStore()
+        {
+            return $"{ProjectId}/{PackageName}";
+        }
     }
 }

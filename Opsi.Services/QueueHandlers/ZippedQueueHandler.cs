@@ -18,6 +18,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
     private readonly IResourceDispatcher _resourceDispatcher;
     private readonly ISettingsProvider _settingsProvider;
     private readonly IUnzipServiceFactory _unzipServiceFactory;
+    private readonly IUserInitialiser _userInitialiser;
 
     public ZippedQueueHandler(ISettingsProvider settingsProvider,
                               IProjectsService projectsService,
@@ -25,6 +26,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
                               IBlobService blobService,
                               IUnzipServiceFactory unzipServiceFactory,
                               IResourceDispatcher resourceDispatcher,
+                              IUserInitialiser userInitialiser,
                               ILoggerFactory loggerFactory)
     {
         _blobService = blobService;
@@ -34,26 +36,25 @@ internal class ZippedQueueHandler : IZippedQueueHandler
         _resourceDispatcher = resourceDispatcher;
         _settingsProvider = settingsProvider;
         _unzipServiceFactory = unzipServiceFactory;
+        _userInitialiser = userInitialiser;
     }
 
     public async Task RetrieveAndHandleUploadAsync(InternalManifest internalManifest)
     {
+        _userInitialiser.SetUsername(internalManifest.Username, true);
+
         var isNewProject = await IsNewProjectAsync(internalManifest.ProjectId);
         if (!isNewProject)
         {
-            var webhookMessage = GetProjectConflictWebhookMessage(internalManifest);
-            await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest?.WebhookSpecification);
-            _log.LogWarning($"{webhookMessage.Level}:{webhookMessage.Event}:{webhookMessage.Name}");
+            await HandleProjectConflictAsync(internalManifest);
             return;
         }
 
-        var project = GetProject(internalManifest);
-
-        await _projectsService.StoreProjectAsync(project);
+        await _projectsService.InitProjectAsync(internalManifest);
 
         bool areAllResourcesStored = false;
 
-        using (var zipStream = await _blobService.RetrieveContentAsync(internalManifest.GetPackagePathForStore()))
+        using (var zipStream = await _blobService.RetrieveContentAsync(internalManifest.GetNonManifestPathForStore()))
         using (var unzipService = _unzipServiceFactory.Create(zipStream))
         {
             var filePaths = unzipService.GetFilePathsFromPackage()
@@ -67,7 +68,14 @@ internal class ZippedQueueHandler : IZippedQueueHandler
             ? ProjectStates.InProgress
             : ProjectStates.Error;
 
-        await SetProjectStateAsync(project.Id, newState);
+        await SetProjectStateAsync(internalManifest.ProjectId, newState);
+    }
+
+    private async Task HandleProjectConflictAsync(InternalManifest internalManifest)
+    {
+        var webhookMessage = GetProjectConflictWebhookMessage(internalManifest);
+        await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest?.WebhookSpecification);
+        _log.LogWarning($"{webhookMessage.Level}:{webhookMessage.Event}:{webhookMessage.Name}");
     }
 
     private async Task<bool> IsNewProjectAsync(Guid projectId)
@@ -106,11 +114,14 @@ internal class ZippedQueueHandler : IZippedQueueHandler
                 throw new Exception($"Stream was null for {filePath}.");
             }
 
+            const bool isAdministrator = true;  // Assume that only administrators can upload projects.
+
             return await _resourceDispatcher.DispatchAsync(hostUrl,
                                                            internalManifest.ProjectId,
                                                            filePath,
                                                            fileContentsStream,
-                                                           internalManifest.Username);
+                                                           internalManifest.Username,
+                                                           isAdministrator);
         }
     }
 
@@ -135,11 +146,6 @@ internal class ZippedQueueHandler : IZippedQueueHandler
     private async Task SetProjectStateAsync(Guid projectId, string newState)
     {
         await _projectsService.UpdateProjectStateAsync(projectId, newState);
-    }
-
-    private static Project GetProject(InternalManifest internalManifest)
-    {
-        return new Project(internalManifest, ProjectStates.Initialising);
     }
 
     private static WebhookMessage GetProjectConflictWebhookMessage(InternalManifest internalManifest)

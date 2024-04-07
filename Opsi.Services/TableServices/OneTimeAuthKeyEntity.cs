@@ -23,4 +23,3 @@ public class OneTimeAuthKeyEntity : ITableEntity
 
     public DateTimeOffset? Timestamp { get; set; } = default!;
 }
-

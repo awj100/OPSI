@@ -43,29 +43,13 @@ internal class ProjectUploadService : IProjectUploadService
         }
 
         var manifest = await _manifestService.GetManifestAsync(formCollection);
-
-        await StoreNonManifestUploadAsync(formCollection, manifest);
-
-        await QueueManifestAsync(manifest);
-
-        await QueueWebhookMessageAsync(manifest);
-    }
-
-    private async Task QueueManifestAsync(Manifest manifest)
-    {
-        var queueService = GetQueueServiceForManifest(manifest);
         var internalManifest = new InternalManifest(manifest, _userProvider.Username.Value);
 
-        try
-        {
-            await queueService.AddMessageAsync(internalManifest);
-        }
-        catch (Exception ex)
-        {
-            const string errorManifest = "An error was encountered while queuing the manifest.";
-            _log.LogError(errorManifest, ex);
-            throw new Exception(errorManifest);
-        }
+        await StoreNonManifestUploadAsync(formCollection, internalManifest);
+
+        await QueueManifestAsync(internalManifest);
+
+        await QueueWebhookMessageAsync(manifest);
     }
 
     private IQueueService GetQueueServiceForManifest(Manifest manifest)
@@ -89,6 +73,22 @@ internal class ProjectUploadService : IProjectUploadService
     private bool IsCorrectNumberOfUploads(IFormFileCollection formFiles)
     {
         return formFiles.Count == RequiredNumberOfUploadedObjects;
+    }
+
+    private async Task QueueManifestAsync(InternalManifest internalManifest)
+    {
+        var queueService = GetQueueServiceForManifest(internalManifest);
+
+        try
+        {
+            await queueService.AddMessageAsync(internalManifest);
+        }
+        catch (Exception ex)
+        {
+            const string errorManifest = "An error was encountered while queuing the manifest.";
+            _log.LogError(errorManifest, ex);
+            throw new Exception(errorManifest);
+        }
     }
 
     private async Task QueueWebhookMessageAsync(Manifest manifest)
@@ -117,13 +117,13 @@ internal class ProjectUploadService : IProjectUploadService
         }
     }
 
-    private async Task StoreNonManifestUploadAsync(IFormFileCollection formFiles, Manifest manifest)
+    private async Task StoreNonManifestUploadAsync(IFormFileCollection formFiles, InternalManifest internalManifest)
     {
         using var nonManifestStream = GetNonManifestFormFile(formFiles);
 
         try
         {
-            await _blobService.StoreAsync(manifest.GetPackagePathForStore(), nonManifestStream);
+            await _blobService.StoreResourceAsync(internalManifest.GetNonManifestPathForStore(), nonManifestStream);
         }
         catch (Exception ex)
         {
