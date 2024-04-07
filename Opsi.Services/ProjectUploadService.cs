@@ -8,31 +8,16 @@ using Opsi.Services.QueueServices;
 
 namespace Opsi.Services;
 
-internal class ProjectUploadService : IProjectUploadService
+internal class ProjectUploadService(IManifestService _manifestService,
+                                    IWebhookQueueService _webhookQueueService,
+                                    IQueueServiceFactory _queueServiceFactory,
+                                    IBlobService _blobService,
+                                    IUserProvider _userProvider,
+                                    ILoggerFactory loggerFactory) : IProjectUploadService
 {
-    private readonly IBlobService _blobService;
-    private readonly ILogger<ProjectUploadService> _log;
-    private readonly IManifestService _manifestService;
-    private readonly IQueueServiceFactory _queueServiceFactory;
-    private readonly IUserProvider _userProvider;
-    private readonly IWebhookQueueService _webhookQueueService;
+    private readonly ILogger<ProjectUploadService> _log = loggerFactory.CreateLogger<ProjectUploadService>();
 
-    public int RequiredNumberOfUploadedObjects => 2;
-
-    public ProjectUploadService(IManifestService manifestService,
-                                IWebhookQueueService QueueService,
-                                IQueueServiceFactory queueServiceFactory,
-                                IBlobService blobService,
-                                IUserProvider userProvider,
-                                ILoggerFactory loggerFactory)
-    {
-        _manifestService = manifestService;
-        _queueServiceFactory = queueServiceFactory;
-        _blobService = blobService;
-        _userProvider = userProvider;
-        _log = loggerFactory.CreateLogger<ProjectUploadService>();
-        _webhookQueueService = QueueService;
-    }
+    public static int RequiredNumberOfUploadedObjects => 2;
 
     public async Task StoreInitialProjectUploadAsync(IFormFileCollection formCollection)
     {

@@ -4,17 +4,8 @@ using Opsi.Services.Auth.OneTimeAuth;
 
 namespace Opsi.Services.QueueHandlers.Dependencies;
 
-internal class ResourceDispatcher : IResourceDispatcher
+internal class ResourceDispatcher(IHttpClientFactory _httpClientFactory, IOneTimeAuthService _oneTimeAuthService) : IResourceDispatcher
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IOneTimeAuthService _oneTimeAuthService;
-
-    public ResourceDispatcher(IHttpClientFactory httpClientFactory, IOneTimeAuthService oneTimeAuthService)
-    {
-        _httpClientFactory = httpClientFactory;
-        _oneTimeAuthService = oneTimeAuthService;
-    }
-
     public async Task<HttpResponseMessage> DispatchAsync(string hostUrl,
                                                          Guid projectId,
                                                          string filePath,

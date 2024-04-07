@@ -9,35 +9,16 @@ using Opsi.Services.QueueServices;
 
 namespace Opsi.Services.QueueHandlers;
 
-internal class ZippedQueueHandler : IZippedQueueHandler
+internal class ZippedQueueHandler(ISettingsProvider _settingsProvider,
+                                  IProjectsService _projectsService,
+                                  IWebhookQueueService _queueService,
+                                  IBlobService _blobService,
+                                  IUnzipServiceFactory _unzipServiceFactory,
+                                  IResourceDispatcher _resourceDispatcher,
+                                  IUserInitialiser _userInitialiser,
+                                  ILoggerFactory loggerFactory) : IZippedQueueHandler
 {
-    private readonly IBlobService _blobService;
-    private readonly IWebhookQueueService _QueueService;
-    private readonly ILogger _log;
-    private readonly IProjectsService _projectsService;
-    private readonly IResourceDispatcher _resourceDispatcher;
-    private readonly ISettingsProvider _settingsProvider;
-    private readonly IUnzipServiceFactory _unzipServiceFactory;
-    private readonly IUserInitialiser _userInitialiser;
-
-    public ZippedQueueHandler(ISettingsProvider settingsProvider,
-                              IProjectsService projectsService,
-                              IWebhookQueueService QueueService,
-                              IBlobService blobService,
-                              IUnzipServiceFactory unzipServiceFactory,
-                              IResourceDispatcher resourceDispatcher,
-                              IUserInitialiser userInitialiser,
-                              ILoggerFactory loggerFactory)
-    {
-        _blobService = blobService;
-        _QueueService = QueueService;
-        _log = loggerFactory.CreateLogger<ZippedQueueHandler>();
-        _projectsService = projectsService;
-        _resourceDispatcher = resourceDispatcher;
-        _settingsProvider = settingsProvider;
-        _unzipServiceFactory = unzipServiceFactory;
-        _userInitialiser = userInitialiser;
-    }
+    private readonly ILogger _log = loggerFactory.CreateLogger<ZippedQueueHandler>();
 
     public async Task RetrieveAndHandleUploadAsync(InternalManifest internalManifest)
     {
@@ -74,7 +55,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
     private async Task HandleProjectConflictAsync(InternalManifest internalManifest)
     {
         var webhookMessage = GetProjectConflictWebhookMessage(internalManifest);
-        await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest?.WebhookSpecification);
+        await _queueService.QueueWebhookMessageAsync(webhookMessage, internalManifest?.WebhookSpecification);
         _log.LogWarning($"{webhookMessage.Level}:{webhookMessage.Event}:{webhookMessage.Name}");
     }
 
@@ -99,7 +80,7 @@ internal class ZippedQueueHandler : IZippedQueueHandler
 
         var webhookMessage = GetResourceStorageWebhookMessage(internalManifest, filePath, response);
 
-        await _QueueService.QueueWebhookMessageAsync(webhookMessage, internalManifest.WebhookSpecification);
+        await _queueService.QueueWebhookMessageAsync(webhookMessage, internalManifest.WebhookSpecification);
     }
 
     private async Task<HttpResponseMessage> SendResourceForStoringAsync(string hostUrl,
