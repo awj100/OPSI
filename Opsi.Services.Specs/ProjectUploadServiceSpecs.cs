@@ -58,7 +58,7 @@ public class ProjectUploadServiceSpecs
         _nonManifestStream = new MemoryStream();
         _formFileCollection = new FormFileCollection
         {
-            { ManifestService.ManifestName, _manifestStream },
+            { ManifestService.IncomingManifestName, _manifestStream },
             { "non_manifest_object", _nonManifestStream }
         };
 
@@ -70,7 +70,7 @@ public class ProjectUploadServiceSpecs
         _queueService = A.Fake<IQueueService>();
         _userProvider = A.Fake<IUserProvider>();
 
-        A.CallTo(() => _manifestService.GetManifestAsync(_formFileCollection)).Returns(_manifest);
+        A.CallTo(() => _manifestService.ExtractManifestAsync(_formFileCollection)).Returns(_manifest);
         A.CallTo(() => _queueServiceFactory.Create(A<string>.That.Contains(HandlerQueueName, StringComparison.OrdinalIgnoreCase))).Returns(_queueService);
         A.CallTo(() => _userProvider.AuthHeader).Returns(new Lazy<AuthenticationHeaderValue>(() => new AuthenticationHeaderValue(AuthHeaderScheme, AuthHeaderValue)));
         A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => Username));
@@ -117,7 +117,7 @@ public class ProjectUploadServiceSpecs
     {
         await _testee.StoreInitialProjectUploadAsync(_formFileCollection);
 
-        A.CallTo(() => _manifestService.GetManifestAsync(_formFileCollection)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _manifestService.ExtractManifestAsync(_formFileCollection)).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]

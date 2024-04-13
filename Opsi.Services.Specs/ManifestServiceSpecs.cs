@@ -28,7 +28,7 @@ public class ManifestServiceSpecs
         _nonManifestStream = new MemoryStream();
         _formFileCollection = new FormFileCollection
         {
-            { ManifestService.ManifestName, _manifestStream },
+            { ManifestService.IncomingManifestName, _manifestStream },
             { "non_manifest_object", _nonManifestStream }
         };
 
@@ -45,7 +45,7 @@ public class ManifestServiceSpecs
     [TestMethod]
     public async Task GetManifestAsync_WhenManifestIsPresent_ReturnsExpectedManifest()
     {
-        var retrievedManifest = await _testee.GetManifestAsync(_formFileCollection);
+        var retrievedManifest = await _testee.ExtractManifestAsync(_formFileCollection);
 
         retrievedManifest.Should()
             .NotBeNull()
@@ -55,11 +55,11 @@ public class ManifestServiceSpecs
     [TestMethod]
     public async Task GetManifestAsync_WhenManifestNotPresent_ThrowsMeaningfulException()
     {
-        _formFileCollection.Remove(_formFileCollection.Single(ff => ff.Key == ManifestService.ManifestName));
+        _formFileCollection.Remove(_formFileCollection.Single(ff => ff.Key == ManifestService.IncomingManifestName));
 
-        await _testee.Invoking(t => t.GetManifestAsync(_formFileCollection))
+        await _testee.Invoking(t => t.ExtractManifestAsync(_formFileCollection))
             .Should()
             .ThrowAsync<Exception>()
-            .WithMessage($"*{ManifestService.ManifestName}*");
+            .WithMessage($"*{ManifestService.IncomingManifestName}*");
     }
 }

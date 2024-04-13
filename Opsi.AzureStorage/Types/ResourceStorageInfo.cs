@@ -52,11 +52,6 @@ public record ResourceStorageInfo
 
     public string Username { get; }
 
-    public string GetManifestPath()
-    {
-        return $"{ProjectId}/{Constants.Tags.TagsHostName}";
-    }
-
     public void ResetContentStream()
     {
         ContentStream.Position = 0;

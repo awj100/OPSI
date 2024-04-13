@@ -9,28 +9,15 @@ using Opsi.Pocos;
 
 namespace Opsi.Services.TableServices;
 
-internal class ProjectsTableService : IProjectsTableService
+internal class ProjectsTableService(IProjectKeyPolicies _projectKeyPolicies,
+                                    IResourceKeyPolicies _resourceKeyPolicies,
+                                    ITableServiceFactory tableServiceFactory,
+                                    IKeyPolicyFilterGeneration _keyPolicyFilterGeneration,
+                                    ITableEntityUtilities _tableEntityUtilities) : IProjectsTableService
 {
     private const string PropNameEntityType = "EntityType";
     private const string TableName = "resources";
-    private readonly ITableService _projectsTableService;
-    private readonly IProjectKeyPolicies _projectKeyPolicies;
-    private readonly IResourceKeyPolicies _resourceKeyPolicies;
-    private readonly IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
-    private readonly ITableEntityUtilities _tableEntityUtilities;
-
-    public ProjectsTableService(IProjectKeyPolicies projectKeyPolicies,
-                                IResourceKeyPolicies resourceKeyPolicies,
-                                ITableServiceFactory tableServiceFactory,
-                                IKeyPolicyFilterGeneration keyPolicyFilterGeneration,
-                                ITableEntityUtilities tableEntityUtilities)
-    {
-        _keyPolicyFilterGeneration = keyPolicyFilterGeneration;
-        _projectKeyPolicies = projectKeyPolicies;
-        _projectsTableService = tableServiceFactory.Create(TableName);
-        _resourceKeyPolicies = resourceKeyPolicies;
-        _tableEntityUtilities = tableEntityUtilities;
-    }
+    private readonly ITableService _projectsTableService = tableServiceFactory.Create(TableName);
 
     public async Task AssignUserAsync(UserAssignment userAssignment)
     {

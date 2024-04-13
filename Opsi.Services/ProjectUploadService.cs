@@ -24,10 +24,10 @@ internal class ProjectUploadService(IManifestService _manifestService,
         if (!IsCorrectNumberOfUploads(formCollection))
         {
             _log.LogError($"Request contained {formCollection.Count} file(s).");
-            throw new BadRequestException($"Invalid number of files. Expected {ManifestService.ManifestName} and a package.");
+            throw new BadRequestException($"Invalid number of files. Expected {ManifestService.IncomingManifestName} and a package.");
         }
 
-        var manifest = await _manifestService.GetManifestAsync(formCollection);
+        var manifest = await _manifestService.ExtractManifestAsync(formCollection);
         var internalManifest = new InternalManifest(manifest, _userProvider.Username.Value);
 
         await StoreNonManifestUploadAsync(formCollection, internalManifest);
@@ -132,7 +132,7 @@ internal class ProjectUploadService(IManifestService _manifestService,
     {
         foreach (var formFile in formFiles)
         {
-            if (String.Equals(formFile.Key, ManifestService.ManifestName))
+            if (String.Equals(formFile.Key, ManifestService.IncomingManifestName))
             {
                 continue;
             }

@@ -20,7 +20,7 @@ public static class AzureStorageDiModule
         services
             .AddSingleton<IBlobService, BlobService>()
             .AddSingleton<Common.ISettingsProvider, Common.SettingsProvider>()
-            .AddSingleton<KeyPolicies.IKeyPolicyFilterGeneration, KeyPolicies.KeyPolicyFilterGeneration>()
+            .AddSingleton<IKeyPolicyFilterGeneration, KeyPolicyFilterGeneration>()
             .AddSingleton<Func<string, IQueueService>>(provider => queueName =>
             {
                 var settingsProvider = provider.GetRequiredService<Common.ISettingsProvider>();

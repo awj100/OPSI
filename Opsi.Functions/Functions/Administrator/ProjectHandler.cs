@@ -8,28 +8,19 @@ using Opsi.Services.QueueServices;
 
 namespace Opsi.Functions.Functions.Administrator;
 
-public class ProjectHandler
+public class ProjectHandler(IProjectsService _projectsService,
+                            IUserProvider _userProvider,
+                            IErrorQueueService _errorQueueService,
+                            ILoggerFactory loggerFactory,
+                            IResponseSerialiser _responseSerialiser)
 {
     private const string route = "_admin/projects/{projectId:guid}";
 
-    private readonly IErrorQueueService _errorQueueService;
-    private readonly ILogger<AssignedProjectHandler> _logger;
-    private readonly IProjectsService _projectsService;
-    private readonly IResponseSerialiser _responseSerialiser;
-    private readonly IUserProvider _userProvider;
-
-    public ProjectHandler(IProjectsService projectsService,
-                          IUserProvider userProvider,
-                          IErrorQueueService errorQueueService,
-                          ILoggerFactory loggerFactory,
-                          IResponseSerialiser responseSerialiser)
-    {
-        _errorQueueService = errorQueueService;
-        _logger = loggerFactory.CreateLogger<AssignedProjectHandler>();
-        _projectsService = projectsService;
-        _responseSerialiser = responseSerialiser;
-        _userProvider = userProvider;
-    }
+    private readonly IErrorQueueService _errorQueueService = _errorQueueService;
+    private readonly ILogger<AssignedProjectHandler> _logger = loggerFactory.CreateLogger<AssignedProjectHandler>();
+    private readonly IProjectsService _projectsService = _projectsService;
+    private readonly IResponseSerialiser _responseSerialiser = _responseSerialiser;
+    private readonly IUserProvider _userProvider = _userProvider;
 
     [Function("ProjectHandler")]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = route)] HttpRequestData req,

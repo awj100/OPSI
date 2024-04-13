@@ -1,6 +1,7 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Specialized;
 using Opsi.AzureStorage.Types;
+using Opsi.Common;
 
 namespace Opsi.AzureStorage;
 
@@ -18,7 +19,7 @@ public interface IBlobService
     /// Returns only the blob's contents as a stream.
     /// </summary>
     /// <seealso cref="RetrieveBlobClient">This method returns the <see cref="BlobClient"/>, which should be used if properties/metadata of the blob are also sought.</seealso>
-    Task<Stream> RetrieveContentAsync(string fullName);
+    Task<Stream?> RetrieveContentAsync(string fullName);
 
     /// <summary>
     /// Returns the <see cref="BlobClient"/> object representing the stored blob.
@@ -27,6 +28,8 @@ public interface IBlobService
     BlobBaseClient RetrieveBlobClient(string fullName);
 
     Task<IDictionary<string, string>> RetrieveBlobMetadataAsync(string fullName, bool throwIfNotExists = true);
+
+    Task<PageableResponse<BlobClient>> RetrieveByTagAsync(IDictionary<string, string> tags, int pageSize, string? continuationToken = null);
 
     Task<IDictionary<string, string>> RetrieveTagsAsync(string fullName, bool throwIfNotExists = true);
 

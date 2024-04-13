@@ -16,6 +16,7 @@ internal class ZippedQueueHandler(ISettingsProvider _settingsProvider,
                                   IUnzipServiceFactory _unzipServiceFactory,
                                   IResourceDispatcher _resourceDispatcher,
                                   IUserInitialiser _userInitialiser,
+                                  IErrorQueueService _errorQueueService,
                                   ILoggerFactory loggerFactory) : IZippedQueueHandler
 {
     private readonly ILogger _log = loggerFactory.CreateLogger<ZippedQueueHandler>();
@@ -36,13 +37,21 @@ internal class ZippedQueueHandler(ISettingsProvider _settingsProvider,
         bool areAllResourcesStored = false;
 
         using (var zipStream = await _blobService.RetrieveContentAsync(internalManifest.GetNonManifestPathForStore()))
-        using (var unzipService = _unzipServiceFactory.Create(zipStream))
         {
-            var filePaths = unzipService.GetFilePathsFromPackage()
-                                        .Except(internalManifest.ResourceExclusionPaths)
-                                        .ToList();
+            if (zipStream == null)
+            {
+                await NotifyOfResourceStorageErrorAsync(internalManifest, "No resources could be found for storing.");
+                return;
+            }
 
-            areAllResourcesStored = await SendResourcesForStoringAsync(filePaths, unzipService, internalManifest);
+            using (var unzipService = _unzipServiceFactory.Create(zipStream))
+            {
+                var filePaths = unzipService.GetFilePathsFromPackage()
+                                            .Except(internalManifest.ResourceExclusionPaths)
+                                            .ToList();
+
+                areAllResourcesStored = await SendResourcesForStoringAsync(filePaths, unzipService, internalManifest);
+            }
         }
 
         var newState = areAllResourcesStored
@@ -71,22 +80,35 @@ internal class ZippedQueueHandler(ISettingsProvider _settingsProvider,
         }
     }
 
-    private async Task NotifyOfResourceStorageResponseAsync(InternalManifest internalManifest, string filePath, HttpResponseMessage response)
+    private async Task NotifyOfResourceStorageErrorAsync(InternalManifest internalManifest, string errorMessage)
     {
         if (String.IsNullOrWhiteSpace(internalManifest.WebhookSpecification?.Uri))
         {
             return;
         }
 
-        var webhookMessage = GetResourceStorageWebhookMessage(internalManifest, filePath, response);
+        var webhookMessage = GetResourcesNotFoundWebhookMessage(internalManifest);
+
+        await _errorQueueService.ReportAsync(new Exception(errorMessage), LogLevel.Warning, $"{nameof(ZippedQueueHandler)}.{nameof(RetrieveAndHandleUploadAsync)}");
+        await _queueService.QueueWebhookMessageAsync(webhookMessage, internalManifest.WebhookSpecification);
+    }
+
+    private async Task NotifyOfResourceStorageResponseAsync(InternalManifest internalManifest, string filePath, bool isStored)
+    {
+        if (String.IsNullOrWhiteSpace(internalManifest.WebhookSpecification?.Uri))
+        {
+            return;
+        }
+
+        var webhookMessage = GetResourceStorageWebhookMessage(internalManifest, filePath, isStored);
 
         await _queueService.QueueWebhookMessageAsync(webhookMessage, internalManifest.WebhookSpecification);
     }
 
-    private async Task<HttpResponseMessage> SendResourceForStoringAsync(string hostUrl,
-                                                                        string filePath,
-                                                                        IUnzipService unzipService,
-                                                                        InternalManifest internalManifest)
+    private async Task<bool> SendResourceForStoringAsync(string hostUrl,
+                                                         string filePath,
+                                                         IUnzipService unzipService,
+                                                         InternalManifest internalManifest)
     {
         using (var fileContentsStream = await unzipService.GetContentsAsync(filePath))
         {
@@ -97,12 +119,14 @@ internal class ZippedQueueHandler(ISettingsProvider _settingsProvider,
 
             const bool isAdministrator = true;  // Assume that only administrators can upload projects.
 
-            return await _resourceDispatcher.DispatchAsync(hostUrl,
-                                                           internalManifest.ProjectId,
-                                                           filePath,
-                                                           fileContentsStream,
-                                                           internalManifest.Username,
-                                                           isAdministrator);
+            var response = await _resourceDispatcher.DispatchAsync(hostUrl,
+                                                                   internalManifest.ProjectId,
+                                                                   filePath,
+                                                                   fileContentsStream,
+                                                                   internalManifest.Username,
+                                                                   isAdministrator);
+
+            return response.IsSuccessStatusCode;
         }
     }
 
@@ -114,11 +138,11 @@ internal class ZippedQueueHandler(ISettingsProvider _settingsProvider,
 
         foreach (var filePath in filePaths)
         {
-            var response = await SendResourceForStoringAsync(hostUrl, filePath, unzipService, internalManifest);
+            var isStored = await SendResourceForStoringAsync(hostUrl, filePath, unzipService, internalManifest);
 
-            await NotifyOfResourceStorageResponseAsync(internalManifest, filePath, response);
+            await NotifyOfResourceStorageResponseAsync(internalManifest, filePath, isStored);
 
-            areAllResourcesStored = areAllResourcesStored && response.IsSuccessStatusCode;
+            areAllResourcesStored = areAllResourcesStored && isStored;
         }
 
         return areAllResourcesStored;
@@ -141,11 +165,44 @@ internal class ZippedQueueHandler(ISettingsProvider _settingsProvider,
         };
     }
 
-    private static WebhookMessage GetResourceStorageWebhookMessage(InternalManifest internalManifest, string filePath, HttpResponseMessage response)
+    private static WebhookMessage GetResourceNotFoundWebhookMessage(InternalManifest internalManifest, string resourceName)
     {
         return new WebhookMessage
         {
+            Event = Events.StoreFailure,
+            Level = Levels.Resource,
+            Name = resourceName,
+            ProjectId = internalManifest.ProjectId,
+            Username = internalManifest.Username
+        };
+    }
+
+    private static WebhookMessage GetResourcesNotFoundWebhookMessage(InternalManifest internalManifest)
+    {
+        return new WebhookMessage
+        {
+            Event = Events.StoreFailure,
+            Level = Levels.Project,
+            Name = internalManifest.PackageName,
+            ProjectId = internalManifest.ProjectId,
+            Username = internalManifest.Username
+        };
+    }
+
+    private static WebhookMessage GetResourceStorageWebhookMessage(InternalManifest internalManifest, string filePath, bool isStored)
+    {
+        return isStored
+        ? new WebhookMessage
+        {
             Event = Events.Stored,
+            Level = Levels.Resource,
+            Name = filePath,
+            ProjectId = internalManifest.ProjectId,
+            Username = internalManifest.Username
+        }
+        : new WebhookMessage
+        {
+            Event = Events.StoreFailure,
             Level = Levels.Resource,
             Name = filePath,
             ProjectId = internalManifest.ProjectId,

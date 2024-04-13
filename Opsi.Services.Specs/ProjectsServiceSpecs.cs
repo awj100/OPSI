@@ -343,8 +343,8 @@ public class ProjectsServiceSpecs
     {
         await _testee.InitProjectAsync(_project);
 
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Tags.ProjectId)))).MustHaveHappenedOnceExactly();
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => String.Equals(dict[Tags.ProjectId], _project.Id.ToString())))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Tags.Id)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => String.Equals(dict[Tags.Id], _project.Id.ToString())))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -352,8 +352,8 @@ public class ProjectsServiceSpecs
     {
         await _testee.InitProjectAsync(_project);
 
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Tags.ProjectName)))).MustHaveHappenedOnceExactly();
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => String.Equals(dict[Tags.ProjectName], _project.Name)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Tags.Name)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => String.Equals(dict[Tags.Name], _project.Name)))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -363,8 +363,8 @@ public class ProjectsServiceSpecs
 
         await _testee.InitProjectAsync(_project);
 
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Tags.ProjectState)))).MustHaveHappenedOnceExactly();
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => String.Equals(dict[Tags.ProjectState], expectedProjectState)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Tags.State)))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => String.Equals(dict[Tags.State], expectedProjectState)))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -1125,7 +1125,7 @@ public class ProjectsServiceSpecs
     public async Task UpdateProjectStateAsync_WhenStateIsChanged_ReturnsTrue()
     {
         A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(Tags.State)),
                                                 A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
 
         var result = await _testee.UpdateProjectStateAsync(_project.Id, _state2);
@@ -1137,7 +1137,7 @@ public class ProjectsServiceSpecs
     public async Task UpdateProjectStateAsync_WhenNoMatchingProjectFoundById_ReturnsFalse()
     {
         A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(Tags.State)),
                                                 A<string>.That.Matches(s => s.Equals(_state2)))).Returns(false);
 
         var result = await _testee.UpdateProjectStateAsync(_projectId, _state2);
@@ -1149,7 +1149,7 @@ public class ProjectsServiceSpecs
     public async Task UpdateProjectStateAsync_WhenNoMatchingProjectFoundById_DoesNotInvokeWebhook()
     {
         A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(Tags.State)),
                                                 A<string>.That.Matches(s => s.Equals(_state2)))).Returns(false);
 
         await _testee.UpdateProjectStateAsync(_projectId, _state2);
@@ -1161,7 +1161,7 @@ public class ProjectsServiceSpecs
     public async Task UpdateProjectStateAsync_WhenNoStateChange_DoesNotInvokeWebhook()
     {
         A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(Tags.State)),
                                                 A<string>.That.Matches(s => s.Equals(_state2)))).Returns(false);
 
         await _testee.UpdateProjectStateAsync(_project.Id, _state1);
@@ -1173,7 +1173,7 @@ public class ProjectsServiceSpecs
     public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectProjectId()
     {
         A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(Tags.State)),
                                                 A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
 
         await _testee.UpdateProjectStateAsync(_project.Id, _state2);
@@ -1187,7 +1187,7 @@ public class ProjectsServiceSpecs
     public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectStateTextInEventProperty()
     {
         A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(Tags.State)),
                                                 A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
 
         await _testee.UpdateProjectStateAsync(_project.Id, _state2);
@@ -1203,7 +1203,7 @@ public class ProjectsServiceSpecs
     public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectCustomProps()
     {
         A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(Tags.State)),
                                                 A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
 
         await _testee.UpdateProjectStateAsync(_project.Id, _state2);
@@ -1219,7 +1219,7 @@ public class ProjectsServiceSpecs
     public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectRemoteUri()
     {
         A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
+                                                A<string>.That.Matches(s => s.Equals(Tags.State)),
                                                 A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
 
         await _testee.UpdateProjectStateAsync(_project.Id, _state2);

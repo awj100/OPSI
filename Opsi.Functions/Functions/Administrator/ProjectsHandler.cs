@@ -9,30 +9,16 @@ using Opsi.Services.QueueServices;
 
 namespace Opsi.Functions.Functions.Administrator;
 
-public class ProjectsHandler
+public class ProjectsHandler(IProjectsService _projectsService,
+                       IResponseSerialiser _responseSerialiser,
+                       IErrorQueueService _errorQueueService,
+                       ILoggerFactory loggerFactory)
 {
     private const int defaultPageSize = 50;
     private const string route = "_admin/projects/{projectState}";
 
     private readonly string defaultOrderBy = OrderBy.Asc;
-    private readonly IErrorQueueService _errorQueueService;
-    private readonly ILogger<ProjectsHandler> _logger;
-    private readonly IProjectsService _projectsService;
-    private readonly IResponseSerialiser _responseSerialiser;
-    private readonly IUserProvider _userProvider;
-
-    public ProjectsHandler(IProjectsService projectsService,
-                           IResponseSerialiser responseSerialiser,
-                           IErrorQueueService errorQueueService,
-                           IUserProvider userProvider,
-                           ILoggerFactory loggerFactory)
-    {
-        _errorQueueService = errorQueueService;
-        _logger = loggerFactory.CreateLogger<ProjectsHandler>();
-        _projectsService = projectsService;
-        _responseSerialiser = responseSerialiser;
-        _userProvider = userProvider;
-    }
+    private readonly ILogger<ProjectsHandler> _logger = loggerFactory.CreateLogger<ProjectsHandler>();
 
     [Function(nameof(ProjectsHandler))]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = route)] HttpRequestData req,
@@ -72,4 +58,3 @@ public class ProjectsHandler
         }
     }
 }
-

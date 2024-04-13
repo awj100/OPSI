@@ -14,7 +14,7 @@ namespace Opsi.Services;
 
 public class ProjectsService(IProjectsTableService _projectsTableService,
                              IBlobService _blobService,
-                             ITagUtilities _tagUtilities,
+                             IManifestService _manifestService,
                              IUserProvider _userProvider,
                              IWebhookQueueService _webhookQueueService) : IProjectsService
 {
@@ -115,13 +115,6 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
         return userAssignmentTableEntities.Select(te => te.ToUserAssignment()).ToList();
     }
 
-    public async Task<InternalManifest?> GetManifestAsync(Guid projectId)
-    {
-        var fullName = GetTagsHostFullName(projectId);
-        var contentStream = await _blobService.RetrieveContentAsync(fullName);
-        return JsonSerializer.Deserialize<InternalManifest>(contentStream) ?? throw new ProjectNotFoundException(projectId);
-    }
-
     public async Task<ProjectWithResources> GetProjectAsync(Guid projectId)
     {
         var tableEntities = await _projectsTableService.GetProjectEntitiesAsync(projectId);
@@ -207,66 +200,7 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
         }
 #pragma warning restore CA2208 // Instantiate argument exceptions correctly
 
-        var fullName = GetTagsHostFullName(internalManifest.ProjectId);
-        var initialState = ProjectStates.Initialising;
-        var stream = new MemoryStream();
-        await JsonSerializer.SerializeAsync(stream, internalManifest);
-        stream.Seek(0, SeekOrigin.Begin);
-
-        try
-        {
-            await _blobService.StoreResourceAsync(fullName, stream);
-        }
-        catch (Exception exception)
-        {
-            throw new Exception($"Failed to create project with ID \"{internalManifest.ProjectId}\": {exception.Message}");
-        }
-
-        var metadata = new Dictionary<string, string>
-        {
-            {Metadata.CreatedBy, internalManifest.Username},
-            {Metadata.ProjectId, internalManifest.ProjectId.ToString()},
-            {Metadata.ProjectName, internalManifest.PackageName}
-        };
-
-        try
-        {
-            await _blobService.SetMetadataAsync(fullName, metadata);
-        }
-        catch(Exception exception)
-        {
-            try
-            {
-                await _blobService.DeleteAsync(fullName);
-            }
-            catch(Exception)
-            {}
-
-            throw new Exception($"Failed to set initial metadata on project with ID \"{internalManifest.ProjectId}\": {exception.Message}");
-        }
-
-        var tags = new Dictionary<string, string>
-        {
-            {Tags.ProjectId, _tagUtilities.GetSafeTagValue(internalManifest.ProjectId)},
-            {Tags.ProjectName, _tagUtilities.GetSafeTagValue(internalManifest.PackageName)},
-            {Tags.ProjectState, _tagUtilities.GetSafeTagValue(initialState)}
-        };
-
-        try
-        {
-            await _blobService.SetTagsAsync(fullName, tags);
-        }
-        catch(Exception exception)
-        {
-            try
-            {
-                await _blobService.DeleteAsync(fullName);
-            }
-            catch(Exception)
-            {}
-
-            throw new Exception($"Failed to set initial tags on project with ID \"{internalManifest.ProjectId}\": {exception.Message}");
-        }
+        await _manifestService.StoreManifestAsync(internalManifest);
 
         if (!String.IsNullOrWhiteSpace(internalManifest.WebhookSpecification?.Uri))
         {
@@ -281,11 +215,8 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
 
     public async Task<bool> IsNewProjectAsync(Guid projectId)
     {
-        // Check if the tags host blob exists.
-        var fullName = GetTagsHostFullName(projectId);
-        var blobClient = _blobService.RetrieveBlobClient(fullName);
-
-        return !await blobClient.ExistsAsync();
+        // Check that no manifest already exists for this project ID.
+        return await GetManifestAsync(projectId) == null;
     }
 
     public async Task RevokeUserAsync(UserAssignment userAssignment)
@@ -354,8 +285,8 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
 
     public async Task<bool> UpdateProjectStateAsync(Guid projectId, string newState)
     {
-        var fullName = GetTagsHostFullName(projectId);
-        var isTagSet = await _blobService.SetTagAsync(fullName, Tags.ProjectState, newState);
+        var manifestName = _manifestService.GetManifestFullName(projectId);
+        var isTagSet = await _blobService.SetTagAsync(manifestName, Tags.State, newState);
 
         if (!isTagSet)
         {
@@ -400,14 +331,14 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
         });
     }
 
+    private async Task<InternalManifest?> GetManifestAsync(Guid projectId)
+    {
+        return await _manifestService.RetrieveManifestAsync(projectId);
+    }
+
     private static string GetStateChangeEventText(string eventText, string newState)
     {
         return $"{eventText}:{newState}";
-    }
-
-    private static string GetTagsHostFullName(Guid projectId)
-    {
-        return $"{projectId}/{Tags.TagsHostName}";
     }
 
     private static bool IsProjectStateRecognised(string projectState)

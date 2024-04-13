@@ -1,4 +1,5 @@
-﻿using Azure.Storage.Blobs;
+﻿using Azure;
+using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using Opsi.AzureStorage.Types;
@@ -9,7 +10,7 @@ namespace Opsi.AzureStorage;
 
 internal class BlobService : StorageServiceBase, IBlobService
 {
-    private const string ContainerName = "resources2";
+    private const string _containerName = "resources2";
     private readonly Lazy<BlobContainerClient> _containerClient;
     private readonly Lazy<BlobServiceClient> _serviceClient;
 
@@ -57,9 +58,13 @@ internal class BlobService : StorageServiceBase, IBlobService
                         .ToList();
     }
 
-    public async Task<Stream> RetrieveContentAsync(string fullName)
+    public async Task<Stream?> RetrieveContentAsync(string fullName)
     {
         var blobClient = RetrieveBlobClient(fullName);
+        if (!await blobClient.ExistsAsync())
+        {
+            return null;
+        }
 
         var memoryStream = new MemoryStream();
         await blobClient.DownloadToAsync(memoryStream);
@@ -89,6 +94,22 @@ internal class BlobService : StorageServiceBase, IBlobService
         var responseBlobProperties = await blobClient.GetPropertiesAsync();
 
         return responseBlobProperties.Value.Metadata;
+    }
+
+    public async Task<PageableResponse<BlobClient>> RetrieveByTagAsync(IDictionary<string, string> tags, int pageSize, string? continuationToken = null)
+    {
+        var containerFilterCondition = $"@container = '{_containerName}'";
+        var filterCondition = $"{containerFilterCondition} {String.Join(" AND ", tags.Select(tag => String.IsNullOrEmpty(tag.Value) ? $"{tag.Key}" : $"{tag.Key} = '{tag.Value}'"))}";
+
+        var blobs = new List<BlobClient>();
+
+        var asyncPageable = _containerClient.Value.FindBlobsByTagsAsync(filterCondition);
+        await foreach (Page<TaggedBlobItem> page in asyncPageable.AsPages(continuationToken, pageSize))
+        {
+            blobs.AddRange(page.Values.Select(taggedBlobItem => _containerClient.Value.GetBlobClient(taggedBlobItem.BlobName)).ToList());
+        }
+
+        return new PageableResponse<BlobClient>(blobs, String.Empty);
     }
 
     public async Task<IDictionary<string, string>> RetrieveTagsAsync(string fullName, bool throwIfNotExists = true)
@@ -178,7 +199,7 @@ internal class BlobService : StorageServiceBase, IBlobService
 
     private BlobContainerClient GetContainerClient()
     {
-        return _serviceClient.Value.GetBlobContainerClient(ContainerName);
+        return _serviceClient.Value.GetBlobContainerClient(_containerName);
     }
 
     private BlobServiceClient GetServiceClient()

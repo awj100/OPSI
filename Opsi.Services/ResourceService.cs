@@ -13,6 +13,7 @@ internal class ResourceService(AzureStorage.IResourcesService _resourcesService,
                        AzureStorage.IBlobService _blobService,
                        IWebhookQueueService _webhookQueueService,
                        IProjectsService _projectsService,
+                       IManifestService _manifestService,
                        IUserProvider _userProvider,
                        ILoggerFactory loggerFactory) : IResourceService
 {
@@ -81,14 +82,15 @@ internal class ResourceService(AzureStorage.IResourcesService _resourcesService,
         // Verify that the project is still being initialised and that the name of the resource uploader matches the user initialising the project.
         // - The project state is found as a tag on the manifest blob.
         // - The user initialising the project can be found in the manifest.
-        var manifestTags = await _blobService.RetrieveTagsAsync(resourceStorageInfo.GetManifestPath(), throwIfNotExists: false);
+        var manifestName = _manifestService.GetManifestFullName(resourceStorageInfo.ProjectId);
+        var manifestTags = await _blobService.RetrieveTagsAsync(manifestName, throwIfNotExists: false);
         var projectState = GetProjectStateFromManifestTags(manifestTags);
         if (!projectState.Equals(ProjectStates.Initialising))
         {
             return false;
         }
 
-        var internalManifest = await RetrieveInternalManifestAsync(resourceStorageInfo);
+        var internalManifest = await _manifestService.RetrieveManifestAsync(resourceStorageInfo.ProjectId);
         return internalManifest != null && internalManifest.Username.Equals(resourceStorageInfo.Username, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -131,15 +133,8 @@ internal class ResourceService(AzureStorage.IResourcesService _resourcesService,
         }, webhookSpec);
     }
 
-    private async Task<InternalManifest?> RetrieveInternalManifestAsync(ResourceStorageInfo resourceStorageInfo)
-    {
-        using var contentStream = await _blobService.RetrieveContentAsync(resourceStorageInfo.GetManifestPath());
-
-        return await System.Text.Json.JsonSerializer.DeserializeAsync<InternalManifest>(contentStream);
-    }
-
     private static string GetProjectStateFromManifestTags(IDictionary<string, string> tags)
     {
-        return tags.TryGetValue(Tags.ProjectState, out string? value) ? value : ProjectStates.Error;
+        return tags.TryGetValue(Tags.State, out string? value) ? value : ProjectStates.Error;
     }
 }
