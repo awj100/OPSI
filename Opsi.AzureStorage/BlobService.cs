@@ -4,6 +4,7 @@ using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using Opsi.AzureStorage.Types;
 using Opsi.Common;
+using Opsi.Common.Exceptions;
 using Opsi.Constants;
 
 namespace Opsi.AzureStorage;
@@ -58,6 +59,137 @@ internal class BlobService : StorageServiceBase, IBlobService
                         .ToList();
     }
 
+    public async Task<bool> RemovePropertiesAsync(string fullName, IEnumerable<string> propertyNames, bool shouldThrowIfNotExists = true)
+    {
+        var properties = await RetrieveBlobMetadataAsync(fullName, shouldThrowIfNotExists);
+
+        var needsPersisted = true;
+        foreach (var propertyName in propertyNames)
+        {
+            needsPersisted = needsPersisted && properties.Remove(propertyName);
+        }
+
+        if (needsPersisted)
+        {
+            var blobClient = _containerClient.Value.GetBlobClient(fullName);
+            await blobClient.SetMetadataAsync(properties);
+        }
+
+        return true;
+    }
+
+    public async Task<bool> RemovePropertyAsync(string fullName, string propertyName, bool shouldThrowIfNotExists = true)
+    {
+        return await RemovePropertiesAsync(fullName, [propertyName], shouldThrowIfNotExists);
+    }
+
+    public async Task<bool> RemoveTagAsync(string fullName, string tagName, bool shouldThrowIfNotExists = true)
+    {
+        var blobClient = _containerClient.Value.GetBlobClient(fullName);
+
+        if (!await blobClient.ExistsAsync())
+        {
+            if (shouldThrowIfNotExists)
+            {
+                throw new ResourceNotFoundException(Guid.Empty, fullName);
+            }
+
+            return false;
+        }
+
+        var existingTags = (await blobClient.GetTagsAsync()).Value.Tags;
+        if (!existingTags.Remove(tagName))
+        {
+            return false;
+        }
+
+        var response = await blobClient.SetTagsAsync(existingTags);
+
+        return !response.IsError;
+    }
+
+    public BlobBaseClient RetrieveBlobClient(string fullName)
+    {
+        return _containerClient.Value.GetBlobClient(fullName);
+    }
+
+    public async Task<IReadOnlyCollection<BlobItem>> RetrieveBlobItemsInFolderAsync(string folderPath)
+    {
+        var blobItems = new List<BlobItem>();
+        await foreach (var blobItem in _containerClient.Value.GetBlobsAsync(prefix: folderPath,
+                                                                            states: BlobStates.Version,
+                                                                            traits: BlobTraits.Metadata | BlobTraits.Tags))
+        {
+            blobItems.Add(blobItem);
+        }
+
+        return blobItems;
+    }
+
+    public async Task<IDictionary<string, string>> RetrieveBlobMetadataAsync(string fullName, bool shouldThrowIfNotExists = true)
+    {
+        var blobClient = RetrieveBlobClient(fullName);
+        if (!await blobClient.ExistsAsync())
+        {
+            if (shouldThrowIfNotExists)
+            {
+                throw new ResourceNotFoundException(Guid.Empty, $"No blob could be found with the name \"{fullName}\".");
+            }
+
+            return new Dictionary<string, string>(0);
+        }
+
+        var responseBlobProperties = await blobClient.GetPropertiesAsync();
+
+        return responseBlobProperties.Value.Metadata;
+    }
+
+    public async Task<PageableResponse<BlobWithAttributes>> RetrieveByTagAsync(string tagName, string tagValue, int pageSize, string? continuationToken = null)
+    {
+        return await RetrieveByTagsAsync(new Dictionary<string, string> { { tagName, tagValue } }, pageSize, continuationToken);
+    }
+
+    public async Task<PageableResponse<BlobWithAttributes>> RetrieveByTagsAsync(IDictionary<string, string> tags, int pageSize, string? continuationToken = null)
+    {
+        var filterCondition = $"{String.Join(" AND ", tags.Select(tag => String.IsNullOrEmpty(tag.Value) ? $"{tag.Key}" : $"{tag.Key} = '{tag.Value}'"))}";
+
+        var blobNames = new List<string>();
+        string? thisPageContinuationToken = null;
+        AsyncPageable<TaggedBlobItem> asyncPageable;
+        try
+        {
+            asyncPageable = _containerClient.Value.FindBlobsByTagsAsync(filterCondition);
+        }
+        catch (Exception exception)
+        {
+            throw new Exception($"Unable to retrieve by tag: {exception.Message}");
+        }
+
+        await foreach (Page<TaggedBlobItem> page in asyncPageable.AsPages(continuationToken, pageSize))
+        {
+            blobNames.AddRange(page.Values.Select(taggedBlobItem => taggedBlobItem.BlobName).ToList());
+            thisPageContinuationToken = page.ContinuationToken;
+        }
+
+        var blobsWithAttributes = blobNames.Select(blobName => new BlobWithAttributes(blobName)).ToList();
+
+        var tasksPopulateTags = blobsWithAttributes.Select(async blobWithAttributes =>
+        {
+            blobWithAttributes.Tags = await RetrieveTagsAsync(blobWithAttributes.Name);
+        });
+
+        await Task.WhenAll(tasksPopulateTags);
+
+        var tasksPopulateMetadata = blobsWithAttributes.Select(async blobWithAttributes =>
+        {
+            blobWithAttributes.Metadata = await RetrieveBlobMetadataAsync(blobWithAttributes.Name);
+        });
+
+        await Task.WhenAll(tasksPopulateMetadata);
+
+        return new PageableResponse<BlobWithAttributes>(blobsWithAttributes, thisPageContinuationToken);
+    }
+
     public async Task<Stream?> RetrieveContentAsync(string fullName)
     {
         var blobClient = RetrieveBlobClient(fullName);
@@ -73,51 +205,12 @@ internal class BlobService : StorageServiceBase, IBlobService
         return memoryStream;
     }
 
-    public BlobBaseClient RetrieveBlobClient(string fullName)
-    {
-        return _containerClient.Value.GetBlobClient(fullName);
-    }
-
-    public async Task<IDictionary<string, string>> RetrieveBlobMetadataAsync(string fullName, bool throwIfNotExists = true)
+    public async Task<IDictionary<string, string>> RetrieveTagsAsync(string fullName, bool shouldThrowIfNotExists = true)
     {
         var blobClient = RetrieveBlobClient(fullName);
         if (!await blobClient.ExistsAsync())
         {
-            if (throwIfNotExists)
-            {
-                throw new Exception($"No blob could be found with the name \"{fullName}\".");
-            }
-
-            return new Dictionary<string, string>(0);
-        }
-
-        var responseBlobProperties = await blobClient.GetPropertiesAsync();
-
-        return responseBlobProperties.Value.Metadata;
-    }
-
-    public async Task<PageableResponse<BlobClient>> RetrieveByTagAsync(IDictionary<string, string> tags, int pageSize, string? continuationToken = null)
-    {
-        var containerFilterCondition = $"@container = '{_containerName}'";
-        var filterCondition = $"{containerFilterCondition} {String.Join(" AND ", tags.Select(tag => String.IsNullOrEmpty(tag.Value) ? $"{tag.Key}" : $"{tag.Key} = '{tag.Value}'"))}";
-
-        var blobs = new List<BlobClient>();
-
-        var asyncPageable = _containerClient.Value.FindBlobsByTagsAsync(filterCondition);
-        await foreach (Page<TaggedBlobItem> page in asyncPageable.AsPages(continuationToken, pageSize))
-        {
-            blobs.AddRange(page.Values.Select(taggedBlobItem => _containerClient.Value.GetBlobClient(taggedBlobItem.BlobName)).ToList());
-        }
-
-        return new PageableResponse<BlobClient>(blobs, String.Empty);
-    }
-
-    public async Task<IDictionary<string, string>> RetrieveTagsAsync(string fullName, bool throwIfNotExists = true)
-    {
-        var blobClient = RetrieveBlobClient(fullName);
-        if (!await blobClient.ExistsAsync())
-        {
-            if (throwIfNotExists)
+            if (shouldThrowIfNotExists)
             {
                 throw new Exception($"No blob could be found with the name \"{fullName}\".");
             }
@@ -137,9 +230,15 @@ internal class BlobService : StorageServiceBase, IBlobService
             return;
         }
 
-        var blobClient = _containerClient.Value.GetBlobClient(fullName);
+        var existingMetadata = await RetrieveBlobMetadataAsync(fullName, shouldThrowIfNotExists: true);
 
-        await blobClient.SetMetadataAsync(metadata);
+        foreach (var keyValuePair in metadata)
+        {
+            existingMetadata[keyValuePair.Key] = keyValuePair.Value;
+        }
+
+        var blobClient = _containerClient.Value.GetBlobClient(fullName);
+        await blobClient.SetMetadataAsync(existingMetadata);
     }
 
     public async Task<bool> SetTagAsync(string fullName, string tagName, string? tagValue = null)
@@ -149,21 +248,13 @@ internal class BlobService : StorageServiceBase, IBlobService
 
     public async Task<bool> SetTagsAsync(string fullName, IDictionary<string, string> tags)
     {
-        var blobClient = _containerClient.Value.GetBlobClient(fullName);
-
-        var existingTags = (await blobClient.GetTagsAsync()).Value.Tags;
+        var existingTags = await RetrieveTagsAsync(fullName);
         foreach (var tag in tags)
         {
-            if (!existingTags.ContainsKey(tag.Key))
-            {
-                existingTags.Add(tag);
-            }
-            else
-            {
-                existingTags[tag.Key] = tag.Value;
-            }
+            existingTags[tag.Key] = tag.Value;
         }
 
+        var blobClient = _containerClient.Value.GetBlobClient(fullName);
         var response = await blobClient.SetTagsAsync(existingTags);
 
         return !response.IsError;
@@ -215,13 +306,16 @@ internal class BlobService : StorageServiceBase, IBlobService
 
         resourceStorageInfo.ResetContentStream();
 
+        Response<BlobContentInfo> response;
         try
         {
-            return (await blobClient.UploadAsync(resourceStorageInfo.ContentStream, true)).Value.VersionId;
+            response = await blobClient.UploadAsync(resourceStorageInfo.ContentStream, true);
         }
         catch (Exception exception)
         {
             throw new Exception($"Unable to update the blob to a new version: {exception.Message}");
         }
+
+        return response.Value.VersionId;
     }
 }

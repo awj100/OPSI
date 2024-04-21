@@ -106,9 +106,9 @@ internal class ManifestService(IBlobService _blobService, ITagUtilities _tagUtil
 
         var tags = new Dictionary<string, string>
         {
-            {Tags.Id, _tagUtilities.GetSafeTagValue(internalManifest.ProjectId)},
-            {Tags.Name, _tagUtilities.GetSafeTagValue(internalManifest.PackageName)},
-            {Tags.State, _tagUtilities.GetSafeTagValue(initialState)}
+            {Tags.ProjectId, _tagUtilities.GetSafeTagValue(internalManifest.ProjectId)},
+            {Tags.ProjectName, _tagUtilities.GetSafeTagValue(internalManifest.PackageName)},
+            {Tags.ProjectState, _tagUtilities.GetSafeTagValue(initialState)}
         };
 
         try

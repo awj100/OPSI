@@ -25,7 +25,7 @@ public class ResourceTableEntitySpecs
             AssignedTo = _assignedTo,
             FullName = _fullName,
             ProjectId = _projectId,
-            Username = _username
+            CreatedBy = _username
         };
 
         var resource = resourceTableEntity.ToResource();
@@ -34,6 +34,6 @@ public class ResourceTableEntitySpecs
         resource.AssignedBy.Should().Be(_assignedBy);
         resource.AssignedOnUtc.Should().Be(_assignedOnUtc);
         resource.AssignedTo.Should().Be(_assignedTo);
-        resource.Username.Should().Be(_username);
+        resource.CreatedBy.Should().Be(_username);
     }
 }

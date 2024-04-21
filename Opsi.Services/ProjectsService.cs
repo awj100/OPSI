@@ -1,182 +1,229 @@
 ﻿using System.Reflection;
-using System.Text.Json;
+using System.Reflection.Metadata.Ecma335;
 using Opsi.AzureStorage;
-using Opsi.AzureStorage.TableEntities;
-using Opsi.Common;
 using Opsi.Common.Exceptions;
 using Opsi.Constants;
 using Opsi.Constants.Webhooks;
 using Opsi.Pocos;
 using Opsi.Services.QueueServices;
-using Opsi.Services.TableServices;
 
 namespace Opsi.Services;
 
-public class ProjectsService(IProjectsTableService _projectsTableService,
-                             IBlobService _blobService,
+public class ProjectsService(IBlobService _blobService,
                              IManifestService _manifestService,
                              IUserProvider _userProvider,
+                             ITagUtilities _tagUtilities,
                              IWebhookQueueService _webhookQueueService) : IProjectsService
 {
     public async Task AssignUserAsync(UserAssignment userAssignment)
     {
-        var project = await GetProjectAsync(userAssignment.ProjectId);
+        // User assignments are stored as:
+        // - 'AssignedBy' on the resource blob's metadata
+        // - 'AssignedOn' on the resoure blob's metadata
+        // - 'Assignee' on the resource blob's metadata
+        // - 'Assignee' on the resource blob's tags
 
-        var assingmentsOnRequestedResource = project.Resources
-                                                    .Where(resource => resource.FullName.Equals(userAssignment.ResourceFullName, StringComparison.OrdinalIgnoreCase) && resource.AssignedTo != null)
-                                                    .ToList();
+        var targetBlobMetadata = await _blobService.RetrieveBlobMetadataAsync(userAssignment.ResourceFullName, true);
 
-        // Is the resource assigned to another user?
-        if (assingmentsOnRequestedResource.Any(resource => !resource.AssignedTo!.Equals(userAssignment.AssigneeUsername, StringComparison.OrdinalIgnoreCase)))
+        if (targetBlobMetadata.ContainsKey(Metadata.Assignee))
         {
-            throw new UserAssignmentException(userAssignment.ProjectId,
-                                              userAssignment.ResourceFullName,
-                                              "The specified resource is already assigned to another user.");
+            var assignee = targetBlobMetadata[Metadata.Assignee];
+
+            // Is the resource assigned to another user?
+            if (!assignee.Equals(userAssignment.AssigneeUsername))
+            {
+                throw new UserAssignmentException(userAssignment.ProjectId,
+                                                  userAssignment.ResourceFullName,
+                                                  "The specified resource is already assigned to another user.");
+            }
+
+            // Is the resource already assigned to the same user?
+            if (assignee.Equals(userAssignment.AssigneeUsername))
+            {
+                return;
+            }
         }
 
-        // Is the resource already assigned to the same user?
-        if (assingmentsOnRequestedResource.Any(resource => resource.AssignedTo!.Equals(userAssignment.AssigneeUsername, StringComparison.OrdinalIgnoreCase)))
+        // Set the property/metadata on the resource blob.
+        var propertiesToSet = new Dictionary<string, string>
+        {
+            { Metadata.AssignedBy, userAssignment.AssignedByUsername},
+            { Metadata.AssignedOnUtc, userAssignment.AssignedOnUtc.ToString("u")},
+            { Metadata.Assignee, userAssignment.AssigneeUsername}
+        };
+
+        await _blobService.SetMetadataAsync(userAssignment.ResourceFullName, propertiesToSet);
+
+        // Set the 'Assignee' tag on the resource blob.
+        var tagSafeUsername = _tagUtilities.GetSafeTagValue(userAssignment.AssigneeUsername);
+        await _blobService.SetTagAsync(userAssignment.ResourceFullName, Tags.Assignee, tagSafeUsername);
+
+        var manifest = await _manifestService.RetrieveManifestAsync(userAssignment.ProjectId) ?? throw new ManifestNotFoundException(userAssignment.ProjectId);
+
+        if (String.IsNullOrWhiteSpace(manifest.WebhookSpecification?.Uri))
         {
             return;
         }
 
-        userAssignment.ProjectName = project.Name;
+        const string propNameAssignedUsername = "assignedUsername";
+        const string propNameResourceFullName = "resourceFullName";
 
-        var webhookSpecification = await GetWebhookSpecificationAsync(userAssignment.ProjectId);
+        // Add the username of the assigned user to the custom props.
+        var additionalProps = manifest.WebhookSpecification.CustomProps ?? new Dictionary<string, object>();
+        additionalProps.Add(propNameAssignedUsername, userAssignment.AssigneeUsername);
+        additionalProps.Add(propNameResourceFullName, userAssignment.ResourceFullName);
 
-        if (webhookSpecification == null)
-        {
-            return;
-        }
-
-        await _projectsTableService.AssignUserAsync(userAssignment);
-
-        if (!String.IsNullOrWhiteSpace(webhookSpecification?.Uri))
-        {
-            const string propNameAssignedUsername = "assignedUsername";
-            const string propNameResourceFullName = "resourceFullName";
-
-            // Add the username of the assigned user to the custom props.
-            var additionalProps = webhookSpecification.CustomProps ?? new Dictionary<string, object>();
-            additionalProps.Add(propNameAssignedUsername, userAssignment.AssigneeUsername);
-            additionalProps.Add(propNameResourceFullName, userAssignment.ResourceFullName);
-
-            await QueueWebhookMessageAsync(project.Id,
-                                           project.Name,
-                                           webhookSpecification.Uri,
-                                           additionalProps,
-                                           userAssignment.AssignedByUsername,
-                                           Events.UserAssigned);
-        }
+        await QueueWebhookMessageAsync(manifest.ProjectId,
+                                       manifest.PackageName,
+                                       manifest.WebhookSpecification.Uri,
+                                       additionalProps,
+                                       userAssignment.AssignedByUsername,
+                                       Events.UserAssigned);
     }
 
     public async Task<ProjectWithResources> GetAssignedProjectAsync(Guid projectId, string assigneeUsername)
     {
-        var tableEntities = await _projectsTableService.GetProjectEntitiesAsync(projectId, assigneeUsername);
+        const int pageSize = 100;
 
-        if (!tableEntities.Any())
+        var blobsWithAttributes = new List<BlobWithAttributes>();
+        var pageableResponse = await _blobService.RetrieveByTagAsync(Tags.ProjectId, projectId.ToString(), pageSize);
+        blobsWithAttributes.AddRange(pageableResponse.Items);
+        var continuationToken = pageableResponse.ContinuationToken;
+
+        while (!String.IsNullOrWhiteSpace(continuationToken))
+        {
+            pageableResponse = await _blobService.RetrieveByTagAsync(Tags.ProjectId, projectId.ToString(), pageSize, continuationToken);
+            blobsWithAttributes.AddRange(pageableResponse.Items);
+            continuationToken = pageableResponse.ContinuationToken;
+        }
+
+        if (blobsWithAttributes.Count == 0)
         {
             // No project with the specified ID.
             throw new ProjectNotFoundException();
         }
 
-        if (!tableEntities.Any(entity => entity.GetType() == typeof(UserAssignmentTableEntity)))
+        if (!blobsWithAttributes.Any(blobWithAttribute => blobWithAttribute.Metadata[Metadata.Assignee].Equals(assigneeUsername, StringComparison.OrdinalIgnoreCase)))
         {
             // The specified assignee has not been assigned to this project.
             throw new UnassignedToProjectException();
         }
 
-        if (tableEntities.SingleOrDefault(entity => entity.GetType() == typeof(ProjectTableEntity)) is not ProjectTableEntity projectTableEntity)
+        var project = new ProjectWithResources
         {
-            throw new ProjectNotFoundException();
-        }
+            Id = projectId,
+            Name = blobsWithAttributes.First().Metadata[Metadata.ProjectName],
+            Username = blobsWithAttributes.First().Metadata[Metadata.CreatedBy]
+        };
 
-        var project = projectTableEntity.ToProject();
-        var projectWithResources = ProjectWithResources.FromProjectBase(project);
+        var manifestName = _manifestService.GetManifestFullName(projectId);
+        var manifestBlob = blobsWithAttributes.SingleOrDefault(blobWithAttributes => blobWithAttributes.Name.Equals(manifestName));
+
+        if (manifestBlob == null)
+        {
+            // No manifest can be found.
+            throw new ManifestNotFoundException(projectId);
+        }
 
         if (!project.State.Equals(ProjectStates.InProgress, StringComparison.OrdinalIgnoreCase))
         {
             throw new ProjectStateException();
         }
 
-        projectWithResources.Resources = tableEntities.Where(entity => entity.GetType() == typeof(ResourceTableEntity))
-                                                      .Cast<ResourceTableEntity>()
-                                                      .Select(resourceTableEntity => resourceTableEntity.ToResource())
-                                                      .DistinctBy(resource => resource.FullName)
-                                                      .ToList();
+        project.Resources = blobsWithAttributes.Where(blobWithAttributes => !blobWithAttributes.Name.Equals(manifestName))
+                                               .Select(blobWithAttributes => new Resource
+                                               {
+                                                   AssignedBy = blobWithAttributes.Metadata[Metadata.AssignedBy],
+                                                   AssignedOnUtc = DateTime.Parse(blobWithAttributes.Metadata[Metadata.AssignedOnUtc]),
+                                                   AssignedTo = blobWithAttributes.Metadata[Metadata.Assignee],
+                                                   CreatedBy = blobWithAttributes.Metadata[Metadata.CreatedBy],
+                                                   FullName = blobWithAttributes.Name,
+                                                   ProjectId = projectId
+                                               })
+                                               .ToList();
 
-        return projectWithResources;
+        return project;
     }
 
-    public async Task<IReadOnlyCollection<UserAssignment>> GetAssignedProjectsAsync(string assigneeUsername)
+    public async Task<IReadOnlyCollection<ProjectSummary>> GetAssignedProjectsAsync(string assigneeUsername)
     {
-        var userAssignmentTableEntities = await _projectsTableService.GetAssignedProjectsAsync(assigneeUsername);
+        const int pageSize = 100;
+        var tagSafeUsername = _tagUtilities.GetSafeTagValue(assigneeUsername);
 
-        return userAssignmentTableEntities.Select(te => te.ToUserAssignment()).ToList();
+        var assignedBlobsWithAttributes = new List<BlobWithAttributes>();
+        var pageableResponse = await _blobService.RetrieveByTagAsync(Tags.Assignee, tagSafeUsername, pageSize);
+        assignedBlobsWithAttributes.AddRange(pageableResponse.Items);
+        var continuationToken = pageableResponse.ContinuationToken;
+
+        while (!String.IsNullOrWhiteSpace(continuationToken))
+        {
+            pageableResponse = await _blobService.RetrieveByTagAsync(Tags.Assignee, tagSafeUsername, pageSize, continuationToken);
+            assignedBlobsWithAttributes.AddRange(pageableResponse.Items);
+            continuationToken = pageableResponse.ContinuationToken;
+        }
+
+        var tasksAllGetManifestTags = assignedBlobsWithAttributes.Select(blobWithAttributes => blobWithAttributes.Name.Split('/').First())
+                                                                 .Distinct()
+                                                                 .Select(projectIdAsString =>
+                                                                 {
+                                                                     var projectId = Guid.Parse(projectIdAsString);
+                                                                     var manifestName = _manifestService.GetManifestFullName(projectId);
+
+                                                                     return _blobService.RetrieveTagsAsync(manifestName);
+                                                                 })
+                                                                 .ToList();
+
+        var allManifestTags = await Task.WhenAll(tasksAllGetManifestTags);
+
+        return allManifestTags.Select(manifestTags => new ProjectSummary
+        {
+            Id = Guid.Parse(manifestTags[Tags.ProjectId]),
+            Name = manifestTags[Tags.ManifestName],
+            State = manifestTags[Tags.ProjectState]
+        }).ToList();
     }
 
     public async Task<ProjectWithResources> GetProjectAsync(Guid projectId)
     {
-        var tableEntities = await _projectsTableService.GetProjectEntitiesAsync(projectId);
+        var blobItems = await _blobService.RetrieveBlobItemsInFolderAsync(projectId.ToString());
 
-        if (!tableEntities.Any())
+        if (blobItems.Count == 0)
         {
-            // No project with the specified ID.
-            throw new ProjectNotFoundException();
+            // Looks like there's no project with the specified ID.
+            throw new ProjectNotFoundException(projectId);
         }
 
-        if (tableEntities.SingleOrDefault(entity => entity.GetType() == typeof(ProjectTableEntity)) is not ProjectTableEntity projectTableEntity)
+        var manifestName = _manifestService.GetManifestFullName(projectId);
+        var manifestBlobItem = blobItems.SingleOrDefault(blobItem => blobItem.Name.Equals(manifestName)) ?? throw new ManifestNotFoundException(projectId);
+
+        return new ProjectWithResources
         {
-            throw new ProjectNotFoundException();
-        }
-
-        var project = projectTableEntity.ToProject();
-        var projectWithResources = ProjectWithResources.FromProjectBase(project);
-
-        var userAssignments = tableEntities.OfType<UserAssignmentTableEntity>()
-                                           .Select(userAssignment => userAssignment.ToUserAssignment())
-                                           .ToList();
-
-        var resourceVersions = tableEntities.OfType<ResourceVersionTableEntity>()
-                                            .Select(resourceVersion => resourceVersion.ToResourceVersion())
-                                            .ToList() ?? new List<ResourceVersion>(0);
-
-        projectWithResources.Resources = tableEntities.OfType<ResourceTableEntity>()
-                                                      .Select(GetAssignmentPopulatedResource)
-                                                      .Select(GetVersionPopulatedResource)
-                                                      .ToList();
-
-        return projectWithResources;
-
-        Resource GetAssignmentPopulatedResource(Resource resource)
-        {
-            var userAssignment = userAssignments?.SingleOrDefault(ua => ua.ResourceFullName.Equals(resource.FullName, StringComparison.OrdinalIgnoreCase));
-            if (userAssignment != null)
-            {
-                resource.AssignedBy = userAssignment.AssignedByUsername;
-                resource.AssignedOnUtc = userAssignment.AssignedOnUtc;
-                resource.AssignedTo = userAssignment.AssigneeUsername;
-            }
-
-            return resource;
-        }
-
-        Resource GetVersionPopulatedResource(Resource resource)
-        {
-            resource.ResourceVersions.AddRange(resourceVersions!.Where(resourceVersion => resourceVersion.FullName.Equals(resource.FullName, StringComparison.OrdinalIgnoreCase)));
-
-            return resource;
-        }
-    }
-
-    public async Task<PageableResponse<OrderedProject>> GetProjectsAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null)
-    {
-        if (!IsProjectStateRecognised(projectState))
-        {
-            throw new ArgumentException("Unrecognised value", nameof(projectState));
-        }
-
-        return await _projectsTableService.GetProjectsByStateAsync(projectState, orderBy, pageSize, continuationToken);
+            Id = projectId,
+            Name = manifestBlobItem.Tags[Tags.ProjectName],
+            Resources = blobItems.DistinctBy(blobItem => blobItem.Name)
+                                 .Select(blobItem => new Resource
+                                 {
+                                     AssignedBy = blobItem.Metadata[Metadata.AssignedBy],
+                                     AssignedOnUtc = DateTime.Parse(blobItem.Metadata[Metadata.AssignedOnUtc]),
+                                     AssignedTo = blobItem.Metadata[Metadata.Assignee],
+                                     CreatedBy = blobItem.Metadata[Metadata.CreatedBy],
+                                     FullName = blobItem.Name,
+                                     ProjectId = projectId,
+                                     ResourceVersions = blobItems.Where(bi => !bi.Name.Equals(manifestName))
+                                                                 .Select((blobItem, idx) => new ResourceVersion
+                                                                 {
+                                                                     FullName = blobItem.Name,
+                                                                     ProjectId = projectId,
+                                                                     Username = blobItem.Metadata[Metadata.CreatedBy],
+                                                                     VersionId = blobItem.VersionId,
+                                                                     VersionIndex = idx
+                                                                 })
+                                                                 .ToList()
+                                 })
+                                 .ToList(),
+            State = manifestBlobItem.Tags[Tags.ProjectState],
+            Username = manifestBlobItem.Metadata[Metadata.CreatedBy],
+        };
     }
 
     public async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)
@@ -221,72 +268,51 @@ public class ProjectsService(IProjectsTableService _projectsTableService,
 
     public async Task RevokeUserAsync(UserAssignment userAssignment)
     {
-        var optProject = await _projectsTableService.GetProjectByIdAsync(userAssignment.ProjectId);
-        if (optProject.IsNone)
+        // User assignments are stored as:
+        // - 'AssignedBy' on the resource blob's metadata
+        // - 'AssignedOn' on the resoure blob's metadata
+        // - 'Assignee' on the resource blob's metadata
+        // - 'Assignee' on the resource blob's tags
+
+        var resourceFullName = userAssignment.ResourceFullName;
+
+        // Remove the properties/metadata on the resource blob.
+        await _blobService.RemovePropertiesAsync(resourceFullName, [
+                                                                       Metadata.AssignedBy,
+                                                                       Metadata.AssignedOnUtc,
+                                                                       Metadata.Assignee
+                                                                   ]);
+
+        // Remove the 'Assignee' tag on the resource blob.
+        await _blobService.RemoveTagAsync(userAssignment.ResourceFullName, Tags.Assignee);
+
+        var manifest = await _manifestService.RetrieveManifestAsync(userAssignment.ProjectId) ?? throw new ManifestNotFoundException(userAssignment.ProjectId);
+
+        if (String.IsNullOrWhiteSpace(manifest.WebhookSpecification?.Uri))
         {
-            throw new ArgumentException("Invalid project ID");
-        }
-        var project = optProject.Value;
-
-        userAssignment.ProjectName = optProject.Value.Name;
-
-        await _projectsTableService.RevokeUserAsync(userAssignment);
-
-        if (!String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
-        {
-            const string propNameAssignedUsername = "revokedUsername";
-            const string propNameResourceFullName = "resourceFullName";
-
-            // Add the username of the revoked user to the custom props.
-            var additionalProps = project.WebhookSpecification.CustomProps ?? new Dictionary<string, object>();
-            additionalProps.Add(propNameAssignedUsername, userAssignment.AssigneeUsername);
-            additionalProps.Add(propNameResourceFullName, userAssignment.ResourceFullName);
-
-            await QueueWebhookMessageAsync(project.Id,
-                                           project.Name,
-                                           project.WebhookSpecification.Uri,
-                                           additionalProps,
-                                           userAssignment.AssignedByUsername,
-                                           Events.UserRevoked);
-        }
-    }
-
-    public async Task StoreProjectAsync(Project project)
-    {
-#pragma warning disable CA2208 // Instantiate argument exceptions correctly
-        if (String.IsNullOrWhiteSpace(project.Name))
-        {
-            throw new ArgumentNullException(nameof(Project.Name));
+            return;
         }
 
-        if (String.IsNullOrWhiteSpace(project.State))
-        {
-            throw new ArgumentNullException(nameof(Project.State));
-        }
+        const string propNameAssignedUsername = "revokedUsername";
+        const string propNameResourceFullName = "resourceFullName";
 
-        if (String.IsNullOrWhiteSpace(project.Username))
-        {
-            throw new ArgumentNullException(nameof(Project.Username));
-        }
-#pragma warning restore CA2208 // Instantiate argument exceptions correctly
+        // Add the username of the revoked user to the custom props.
+        var additionalProps = manifest.WebhookSpecification.CustomProps ?? new Dictionary<string, object>();
+        additionalProps.Add(propNameAssignedUsername, userAssignment.AssigneeUsername);
+        additionalProps.Add(propNameResourceFullName, userAssignment.ResourceFullName);
 
-        await _projectsTableService.StoreProjectAsync(project);
-
-        if (!String.IsNullOrWhiteSpace(project.WebhookSpecification?.Uri))
-        {
-            await QueueWebhookMessageAsync(project.Id,
-                                           project.Name,
-                                           project.WebhookSpecification.Uri,
-                                           project.WebhookSpecification.CustomProps,
-                                           project.Username,
-                                           Events.Stored);
-        }
+        await QueueWebhookMessageAsync(manifest.ProjectId,
+                                       manifest.PackageName,
+                                       manifest.WebhookSpecification.Uri,
+                                       additionalProps,
+                                       userAssignment.AssignedByUsername,
+                                       Events.UserRevoked);
     }
 
     public async Task<bool> UpdateProjectStateAsync(Guid projectId, string newState)
     {
         var manifestName = _manifestService.GetManifestFullName(projectId);
-        var isTagSet = await _blobService.SetTagAsync(manifestName, Tags.State, newState);
+        var isTagSet = await _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState);
 
         if (!isTagSet)
         {

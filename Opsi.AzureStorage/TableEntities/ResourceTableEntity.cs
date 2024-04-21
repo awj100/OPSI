@@ -28,7 +28,7 @@ public class ResourceTableEntity : Resource, ITableEntity
             AssignedTo = AssignedTo,
             FullName = FullName,
             ProjectId = ProjectId,
-            Username = Username
+            CreatedBy = CreatedBy
         };
     }
 
@@ -48,7 +48,7 @@ public class ResourceTableEntity : Resource, ITableEntity
             PartitionKey = partitionKey,
             ProjectId = resource.ProjectId,
             RowKey = rowKey,
-            Username = resource.Username
+            CreatedBy = resource.CreatedBy
         };
     }
 

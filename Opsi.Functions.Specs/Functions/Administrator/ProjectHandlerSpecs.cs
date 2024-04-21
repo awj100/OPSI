@@ -109,7 +109,7 @@ public class ProjectHandlerSpecs
             {
                 FullName = $"TEST RESOURCE {i}",
                 ProjectId = _validProjectId,
-                Username = _username
+                CreatedBy = _username
             };
         }
     }

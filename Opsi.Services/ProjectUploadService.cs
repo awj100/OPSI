@@ -50,7 +50,7 @@ internal class ProjectUploadService(IManifestService _manifestService,
         catch (Exception ex)
         {
             var errorManifest = $"An error was encountered while resolving a queue service for \"{manifest.HandlerQueue}\".";
-            _log.LogError(errorManifest, ex);
+            _log.LogError(ex, errorManifest);
             throw new Exception(errorManifest);
         }
     }
@@ -71,7 +71,7 @@ internal class ProjectUploadService(IManifestService _manifestService,
         catch (Exception ex)
         {
             const string errorManifest = "An error was encountered while queuing the manifest.";
-            _log.LogError(errorManifest, ex);
+            _log.LogError(ex, errorManifest);
             throw new Exception(errorManifest);
         }
     }
@@ -97,7 +97,7 @@ internal class ProjectUploadService(IManifestService _manifestService,
         catch (Exception ex)
         {
             const string errorManifest = "An error was encountered while queuing the  message.";
-            _log.LogError(errorManifest, ex);
+            _log.LogError(ex, errorManifest);
             throw new Exception(errorManifest);
         }
     }
@@ -112,9 +112,9 @@ internal class ProjectUploadService(IManifestService _manifestService,
         }
         catch (Exception ex)
         {
-            const string errorPackage = "An error was encountered while storing the package.";
-            _log.LogError(errorPackage, ex);
-            throw new Exception(errorPackage);
+            const string errorMessage = "An error was encountered while storing the package.";
+            _log.LogError(ex, errorMessage);
+            throw new Exception(errorMessage);
         }
     }
 

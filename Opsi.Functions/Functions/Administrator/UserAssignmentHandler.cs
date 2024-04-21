@@ -11,7 +11,7 @@ namespace Opsi.Functions.Functions.Administrator;
 
 public class UserAssignmentHandler
 {
-    private const string route = "_admin/users/{assigneeUsername}/projects/{projectId:guid}/resource/{*resourceFullName}";
+    private const string route = "_admin/users/{assigneeUsername}/projects/{projectId:guid}/resource/{*resourceName}";
 
     private readonly IErrorQueueService _errorQueueService;
     private readonly ILogger<UserAssignmentHandler> _logger;
@@ -33,13 +33,13 @@ public class UserAssignmentHandler
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", "PUT", Route = route)] HttpRequestData req,
                                             string assigneeUsername,
                                             Guid projectId,
-                                            string resourceFullName)
+                                            string resourceName)
     {
         _logger.LogInformation(nameof(UserAssignmentHandler));
 
         try
         {
-            var userAssignment = GetUserAssignment(assigneeUsername, projectId, resourceFullName);
+            var userAssignment = GetUserAssignment(assigneeUsername, projectId, resourceName);
 
             if (req.Method == HttpMethod.Put.Method)
             {
@@ -67,7 +67,7 @@ public class UserAssignmentHandler
         }
     }
 
-    private UserAssignment GetUserAssignment(string assigneeUsername, Guid projectId, string resourceFullName)
+    private UserAssignment GetUserAssignment(string assigneeUsername, Guid projectId, string resourceName)
     {
         return new UserAssignment
         {
@@ -75,8 +75,7 @@ public class UserAssignmentHandler
             AssignedOnUtc = DateTime.UtcNow,
             AssigneeUsername = assigneeUsername,
             ProjectId = projectId,
-            ResourceFullName = resourceFullName
+            ResourceFullName = $"{projectId}/{resourceName}"
         };
     }
 }
-

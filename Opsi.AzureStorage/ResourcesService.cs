@@ -95,9 +95,9 @@ internal class ResourcesService(IResourceKeyPolicies _keyPolicies,
                              PartitionKey = keyPolicy.PartitionKey,
                              ProjectId = versionedResourceStorageInfo.ProjectId,
                              RowKey = keyPolicy.RowKey.Value,
-                             Username = versionedResourceStorageInfo.Username
-                            //  VersionId = resourceStorageInfo.VersionId,
-                            //  VersionIndex = resourceStorageInfo.VersionInfo.Index
+                             CreatedBy = versionedResourceStorageInfo.Username
+                             //  VersionId = resourceStorageInfo.VersionId,
+                             //  VersionIndex = resourceStorageInfo.VersionInfo.Index
                          }).ToList();
 
         await _tableService.StoreTableEntitiesAsync(resources);

@@ -64,12 +64,16 @@ internal class ResourceService(AzureStorage.IResourcesService _resourcesService,
 
         await StoreResourceDataAsync(resourceStorageInfo);
 
+        await StoreMetadataAsync(resourceStorageInfo);
+
+        await StoreTagsAsync(resourceStorageInfo);
+
         await QueueWebhookMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo, Events.Stored);
     }
 
     private async Task<bool> CanUserStoreFile(ResourceStorageInfo resourceStorageInfo)
     {
-        var blobMetadata = await _blobService.RetrieveBlobMetadataAsync(resourceStorageInfo.FullPath.Value, throwIfNotExists: false);
+        var blobMetadata = await _blobService.RetrieveBlobMetadataAsync(resourceStorageInfo.FullPath.Value, shouldThrowIfNotExists: false);
 
         // Verify that the uploading user has been assigned to the blob.
         // - i.e., that the uploader is referenced on the resource blob's metadata as 'assignee'.
@@ -83,7 +87,7 @@ internal class ResourceService(AzureStorage.IResourcesService _resourcesService,
         // - The project state is found as a tag on the manifest blob.
         // - The user initialising the project can be found in the manifest.
         var manifestName = _manifestService.GetManifestFullName(resourceStorageInfo.ProjectId);
-        var manifestTags = await _blobService.RetrieveTagsAsync(manifestName, throwIfNotExists: false);
+        var manifestTags = await _blobService.RetrieveTagsAsync(manifestName, shouldThrowIfNotExists: false);
         var projectState = GetProjectStateFromManifestTags(manifestTags);
         if (!projectState.Equals(ProjectStates.Initialising))
         {
@@ -101,6 +105,26 @@ internal class ResourceService(AzureStorage.IResourcesService _resourcesService,
         return webhookSpec;
     }
 
+    private async Task StoreMetadataAsync(ResourceStorageInfo resourceStorageInfo)
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            {Metadata.CreatedBy, resourceStorageInfo.Username},
+            {Metadata.ProjectId, resourceStorageInfo.ProjectId.ToString()}
+        };
+
+        try
+        {
+            await _blobService.SetMetadataAsync(resourceStorageInfo.BlobName.Value, metadata);
+        }
+        catch (Exception ex)
+        {
+            const string errorMessage = "An error was encountered while setting metadata on a version of the resource.";
+            _log.LogError(ex, errorMessage);
+            throw new Exception(errorMessage);
+        }
+    }
+
     private async Task<string> StoreResourceDataAsync(ResourceStorageInfo resourceStorageInfo)
     {
         try
@@ -109,9 +133,28 @@ internal class ResourceService(AzureStorage.IResourcesService _resourcesService,
         }
         catch (Exception ex)
         {
-            const string errorPackage = "An error was encountered while storing a version of the resource.";
-            _log.LogError(errorPackage, ex);
-            throw new Exception(errorPackage);
+            const string errorMessage = "An error was encountered while storing a version of the resource.";
+            _log.LogError(ex, errorMessage);
+            throw new Exception(errorMessage);
+        }
+    }
+
+    private async Task StoreTagsAsync(ResourceStorageInfo resourceStorageInfo)
+    {
+        var tags = new Dictionary<string, string>
+        {
+            { Tags.ProjectId, resourceStorageInfo.ProjectId.ToString()}
+        };
+
+        try
+        {
+            await _blobService.SetTagsAsync(resourceStorageInfo.BlobName.Value, tags);
+        }
+        catch (Exception ex)
+        {
+            const string errorMessage = "An error was encountered while assigning tags to a version of the resource.";
+            _log.LogError(ex, errorMessage);
+            throw new Exception(errorMessage);
         }
     }
 
@@ -135,6 +178,6 @@ internal class ResourceService(AzureStorage.IResourcesService _resourcesService,
 
     private static string GetProjectStateFromManifestTags(IDictionary<string, string> tags)
     {
-        return tags.TryGetValue(Tags.State, out string? value) ? value : ProjectStates.Error;
+        return tags.TryGetValue(Tags.ProjectState, out string? value) ? value : ProjectStates.Error;
     }
 }

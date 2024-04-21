@@ -9,11 +9,9 @@ public interface IProjectsService
 
     Task<ProjectWithResources> GetAssignedProjectAsync(Guid projectId, string assigneeUsername);
 
-    Task<IReadOnlyCollection<UserAssignment>> GetAssignedProjectsAsync(string assigneeUsername);
+    Task<IReadOnlyCollection<ProjectSummary>> GetAssignedProjectsAsync(string assigneeUsername);
 
     Task<ProjectWithResources> GetProjectAsync(Guid projectId);
-
-    Task<PageableResponse<OrderedProject>> GetProjectsAsync(string projectState, string orderBy, int pageSize, string? continuationToken = null);
 
     Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId);
 
@@ -22,8 +20,6 @@ public interface IProjectsService
     Task<bool> IsNewProjectAsync(Guid projectId);
 
     Task RevokeUserAsync(UserAssignment userAssignment);
-
-    Task StoreProjectAsync(Project project);
 
     Task<bool> UpdateProjectStateAsync(Guid projectId, string newState);
 }

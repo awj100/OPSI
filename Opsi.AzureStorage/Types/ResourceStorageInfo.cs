@@ -15,6 +15,18 @@ public record ResourceStorageInfo
         RestOfPath = restOfPath;
         Username = username;
 
+        BlobName = new Lazy<string>(() =>
+        {
+            var blobName = Path.Combine(projectId.ToString(), restOfPath);
+
+            if (String.IsNullOrWhiteSpace(blobName))
+            {
+                throw new Exception($"Unable to build full blob name using {nameof(projectId)} = \"{projectId}\" and {nameof(restOfPath)} = \"{restOfPath}\".");
+            }
+
+            return blobName;
+        });
+
         FileName = new Lazy<string>(() =>
         {
             var fileName = Path.GetFileName(restOfPath);
@@ -40,10 +52,27 @@ public record ResourceStorageInfo
         });
     }
 
+    /// <summary>
+    /// Gets the full name of the resource blob - <em>i.e.</em>, 'directory' and resource name.
+    /// </summary>
+    /// <seealso cref="FileName"/>
+    /// <seealso cref="FilePath"/>
+    public Lazy<string> BlobName { get; }
+
     public Stream ContentStream { get; }
 
+    /// <summary>
+    /// Gets the name of the blob resource without the 'directory'.
+    /// </summary>
+    /// <seealso cref="BlobName"/>
+    /// <seealso cref="FullPath"/>
     public Lazy<string> FileName { get; }
 
+    /// <summary>
+    /// Gets the path to the resource blob's containing 'directory'.
+    /// </summary>
+    /// <seealso cref="BlobName"/>
+    /// <seealso cref="FileName"/>
     public Lazy<string> FullPath { get; }
 
     public Guid ProjectId { get; }

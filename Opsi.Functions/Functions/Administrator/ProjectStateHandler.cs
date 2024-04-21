@@ -13,7 +13,7 @@ public class ProjectStateHandler
     private const string route = "_admin/projects/{projectId:guid}/{newProjectState}";
 
     private readonly IErrorQueueService _errorQueueService;
-    private readonly ILogger<ProjectsHandler> _logger;
+    private readonly ILogger<ProjectStateHandler> _logger;
     private readonly IProjectsService _projectsService;
 
     public ProjectStateHandler(IProjectsService projectsService,
@@ -21,7 +21,7 @@ public class ProjectStateHandler
                                ILoggerFactory loggerFactory)
     {
         _errorQueueService = errorQueueService;
-        _logger = loggerFactory.CreateLogger<ProjectsHandler>();
+        _logger = loggerFactory.CreateLogger<ProjectStateHandler>();
         _projectsService = projectsService;
     }
 
@@ -57,4 +57,3 @@ public class ProjectStateHandler
         }
     }
 }
-

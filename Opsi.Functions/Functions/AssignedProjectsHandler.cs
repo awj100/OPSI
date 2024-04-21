@@ -2,9 +2,6 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using Opsi.Common;
-using Opsi.Constants;
-using Opsi.Pocos;
 using Opsi.Services;
 using Opsi.Services.QueueServices;
 
@@ -40,29 +37,11 @@ public class AssignedProjectsHandler
 
         try
         {
-            var pageableUserAssignments = await _projectsService.GetAssignedProjectsAsync(_userProvider.Username.Value);
-
-            var projectWithResources = pageableUserAssignments.GroupBy(userAssignment => userAssignment.ProjectId)
-                                                                .Select(projectGrouping => new ProjectWithResources
-                                                                {
-                                                                    Id = projectGrouping.Key,
-                                                                    Name = projectGrouping.First().ProjectName,
-                                                                    Resources = projectGrouping.Select(userAssignment => new Resource
-                                                                    {
-                                                                        AssignedBy = userAssignment.AssignedByUsername,
-                                                                        AssignedOnUtc = userAssignment.AssignedOnUtc,
-                                                                        AssignedTo = userAssignment.AssigneeUsername,
-                                                                        FullName = userAssignment.ResourceFullName,
-                                                                        ProjectId = userAssignment.ProjectId
-                                                                    }).ToList(),
-                                                                    State = ProjectStates.InProgress,
-                                                                    Username = pageableUserAssignments.First().AssigneeUsername
-                                                                })
-                                                                .ToList();
+            var allProjectSummaries = await _projectsService.GetAssignedProjectsAsync(_userProvider.Username.Value);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
 
-            _responseSerialiser.WriteJsonToBody(response, projectWithResources);
+            _responseSerialiser.WriteJsonToBody(response, allProjectSummaries);
 
             return response;
         }

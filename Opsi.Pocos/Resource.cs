@@ -10,9 +10,9 @@ public class Resource
 
     public string? AssignedTo { get; set; }
 
-    public Guid ProjectId { get; set; }
+    public string? CreatedBy { get; set; } = default!;
 
-    public string? Username { get; set; } = default!;
+    public Guid ProjectId { get; set; }
 
     public List<ResourceVersion> ResourceVersions { get; set; }
 

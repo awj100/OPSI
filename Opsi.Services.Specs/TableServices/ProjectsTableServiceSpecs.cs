@@ -117,7 +117,7 @@ public class ProjectsTableServiceSpecs
             PartitionKey = PartitionKey,
             ProjectId = _project1Id,
             RowKey = _rowKey1Value,
-            Username = Username
+            CreatedBy = Username
         };
         _tableClient = A.Fake<TableClient>();
         _tableEntityUtilities = A.Fake<ITableEntityUtilities>();
@@ -364,7 +364,7 @@ public class ProjectsTableServiceSpecs
 
         var pages = GetQueryResponse(userAssignments);
         var keyPolicyForGet = _projectKeyPolicies.GetKeyPolicyByUserForUserAssignment(projectId1, assigneeUsername, String.Empty);
-        
+
         A.CallTo(() => _tableClient.QueryAsync<UserAssignmentTableEntity>(A<string>.That.Matches(filter => filter.Equals($"PartitionKey eq '{keyPolicyForGet.PartitionKey}'")),
                                                                           A<int?>._,
                                                                           A<IEnumerable<string>>._,
@@ -506,7 +506,7 @@ public class ProjectsTableServiceSpecs
         A.CallTo(() => _resourceKeyPolicies.GetKeyPolicyForResourceCount(_project1Id, A<string>._)).Returns(new KeyPolicy(_project.Id.ToString(), new RowKey(_project1Id.ToString(), KeyPolicyQueryOperators.Equal)));
 
         var result = await _testee.GetProjectEntitiesAsync(_project1Id, AssigneeUsername1);
-        
+
         result.Should().HaveCount(tableEntities.Count);
         result.Where(tableEntity => tableEntity.GetType().Equals(typeof(ProjectTableEntity))).Should().HaveCount(1);
         result.Where(tableEntity => tableEntity.GetType().Equals(typeof(ResourceTableEntity))).Should().HaveCount(1);
@@ -971,7 +971,7 @@ public class ProjectsTableServiceSpecs
         });
 
         await _testee.UpdateProjectStateAsync(_projectTableEntity1.Id, newState);
-        
+
         foreach (var storeKeyPolicy in storeKeyPolicies)
         {
             usedKeys.Should().Contain(new
