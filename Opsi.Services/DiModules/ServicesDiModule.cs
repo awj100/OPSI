@@ -27,8 +27,6 @@ public static class ServicesDiModule
             .AddScoped<Auth.IAuthService, Auth.AuthService>()
             .AddSingleton(typeof(Auth.OneTimeKeyAuthHandler))
             .AddScoped(typeof(Auth.ReferenceAuthHandler))
-            .AddSingleton<AzureStorage.KeyPolicies.IProjectKeyPolicies, KeyPolicies.ProjectKeyPolicies>()
-            .AddSingleton<AzureStorage.KeyPolicies.IResourceKeyPolicies, KeyPolicies.ResourceKeyPolicies>()
             .AddSingleton<IManifestService, ManifestService>()
             .AddSingleton<IOneTimeAuthService, OneTimeAuthService>()
             .AddSingleton<IOneTimeAuthKeyProvider, OneTimeAuthKeyProvider>()
