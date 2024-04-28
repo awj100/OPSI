@@ -71,7 +71,7 @@ public class UserAssignmentHandler
     {
         return new UserAssignment
         {
-            AssignedByUsername = _userProvider.Username.Value,
+            AssignedByUsername = _userProvider.Username,
             AssignedOnUtc = DateTime.UtcNow,
             AssigneeUsername = assigneeUsername,
             ProjectId = projectId,

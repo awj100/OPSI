@@ -37,7 +37,7 @@ public class UserAssignmentsHandler
 
         try
         {
-            var pageableProjectsResponse = await _projectsService.GetAssignedProjectsAsync(_userProvider.Username.Value);
+            var pageableProjectsResponse = await _projectsService.GetAssignedProjectsAsync(_userProvider.Username);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
 

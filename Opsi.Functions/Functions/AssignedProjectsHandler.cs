@@ -37,7 +37,7 @@ public class AssignedProjectsHandler
 
         try
         {
-            var allProjectSummaries = await _projectsService.GetAssignedProjectsAsync(_userProvider.Username.Value);
+            var allProjectSummaries = await _projectsService.GetAssignedProjectsAsync(_userProvider.Username);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
 

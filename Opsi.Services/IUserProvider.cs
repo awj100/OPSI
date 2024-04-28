@@ -4,11 +4,11 @@ namespace Opsi.Services;
 
 public interface IUserProvider
 {
-    Lazy<AuthenticationHeaderValue> AuthHeader { get; }
+    AuthenticationHeaderValue AuthHeader { get; }
 
-    Lazy<IReadOnlyCollection<string>> Claims { get; }
+    IReadOnlyCollection<string> Claims { get; }
 
-    Lazy<bool> IsAdministrator { get; }
+    bool IsAdministrator { get; }
 
-    Lazy<string> Username { get; }
+    string Username { get; }
 }

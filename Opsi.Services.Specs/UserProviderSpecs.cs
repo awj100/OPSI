@@ -58,7 +58,7 @@ public class UserProviderSpecs
     [TestMethod]
     public void IsAdministrator_WhenIsAdministratorNotSetInFunctionContext_ReturnsFalse()
     {
-        _testee.IsAdministrator.Value
+        _testee.IsAdministrator
                .Should()
                .BeFalse();
     }
@@ -69,14 +69,14 @@ public class UserProviderSpecs
         _items = new Dictionary<object, object> { { ItemNameIsAdministrator, true } };
         A.CallTo(() => _functionContext.Items).Returns(_items);
 
-        _testee.IsAdministrator.Value
+        _testee.IsAdministrator
                .Should()
                .BeTrue();
 
         _items = new Dictionary<object, object> { { ItemNameIsAdministrator, false } };
         A.CallTo(() => _functionContext.Items).Returns(_items);
 
-        _testee.IsAdministrator.Value
+        _testee.IsAdministrator
                .Should()
                .BeFalse();
     }
@@ -84,7 +84,7 @@ public class UserProviderSpecs
     [TestMethod]
     public void Username_WhenNoUserSetInFunctionContext_ThrowsUnauthenticatedException()
     {
-        _testee.Invoking(t => t.Username.Value)
+        _testee.Invoking(t => t.Username)
                .Should()
                .Throw<UnauthenticatedException>();
     }
@@ -97,7 +97,7 @@ public class UserProviderSpecs
         _items = new Dictionary<object, object> { {ItemNameUsername, username } };
         A.CallTo(() => _functionContext.Items).Returns(_items);
 
-        _testee.Username.Value
+        _testee.Username
                .Should()
                .Be(username);
     }

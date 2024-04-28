@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
+using Azure.Storage.Blobs.Models;
 using Opsi.AzureStorage;
 using Opsi.Common.Exceptions;
 using Opsi.Constants;
@@ -106,7 +107,7 @@ public class ProjectsService(IBlobService _blobService,
         if (!blobsWithAttributes.Any(blobWithAttribute => blobWithAttribute.Metadata[Metadata.Assignee].Equals(assigneeUsername, StringComparison.OrdinalIgnoreCase)))
         {
             // The specified assignee has not been assigned to this project.
-            throw new UnassignedToProjectException();
+            throw new UnassignedToResourceException();
         }
 
         var project = new ProjectWithResources
@@ -148,6 +149,7 @@ public class ProjectsService(IBlobService _blobService,
     public async Task<IReadOnlyCollection<ProjectSummary>> GetAssignedProjectsAsync(string assigneeUsername)
     {
         const int pageSize = 100;
+        var requiredProjectState = ProjectStates.InProgress;
         var tagSafeUsername = _tagUtilities.GetSafeTagValue(assigneeUsername);
 
         var assignedBlobsWithAttributes = new List<BlobWithAttributes>();
@@ -180,7 +182,9 @@ public class ProjectsService(IBlobService _blobService,
             Id = Guid.Parse(manifestTags[Tags.ProjectId]),
             Name = manifestTags[Tags.ManifestName],
             State = manifestTags[Tags.ProjectState]
-        }).ToList();
+        })
+        .Where(projectSummary => projectSummary.State.Equals(requiredProjectState))
+        .ToList();
     }
 
     public async Task<ProjectWithResources> GetProjectAsync(Guid projectId)
@@ -311,6 +315,11 @@ public class ProjectsService(IBlobService _blobService,
 
     public async Task<bool> UpdateProjectStateAsync(Guid projectId, string newState)
     {
+        if (!IsProjectStateRecognised(newState))
+        {
+            throw new InvalidProjectStateException(newState);
+        }
+
         var manifestName = _manifestService.GetManifestFullName(projectId);
         var isTagSet = await _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState);
 
@@ -330,7 +339,7 @@ public class ProjectsService(IBlobService _blobService,
                                        manifest.PackageName,
                                        manifest.WebhookSpecification.Uri,
                                        manifest.WebhookSpecification.CustomProps,
-                                       _userProvider.Username.Value,
+                                       _userProvider.Username,
                                        stateChangeEventText);
 
         return true;

@@ -18,8 +18,6 @@ namespace Opsi.AzureStorage
 
         Task<IReadOnlyCollection<ResourceTableEntity>> GetResourcesAsync(Guid projectId);
 
-        Task<bool> HasUserAccessAsync(Guid projectId, string fullName, string requestingUsername);
-
         Task StoreResourceAsync(VersionedResourceStorageInfo versionedResourceStorageInfo);
     }
 }

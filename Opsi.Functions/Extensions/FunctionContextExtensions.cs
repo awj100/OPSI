@@ -14,11 +14,8 @@ public static class FunctionContextExtensions
     public static IFunctionsWorkerApplicationBuilder UseWhenHttpTriggered<T>(this IFunctionsWorkerApplicationBuilder builder) where T : class, IFunctionsWorkerMiddleware
     {
         Func<FunctionContext, bool> predicate = IsHttpTrigger;
-        if (builder == null)
-        {
-            throw new ArgumentNullException(nameof(builder));
-        }
-        builder.Services.AddSingleton<T>();
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.AddScoped<T>();
         builder.Use(delegate (FunctionExecutionDelegate next)
         {
             FunctionExecutionDelegate next2 = next;
@@ -35,11 +32,8 @@ public static class FunctionContextExtensions
     public static IFunctionsWorkerApplicationBuilder UseWhenNotHttpTriggered<T>(this IFunctionsWorkerApplicationBuilder builder) where T : class, IFunctionsWorkerMiddleware
     {
         Func<FunctionContext, bool> predicate = IsNonHttpTrigger;
-        if (builder == null)
-        {
-            throw new ArgumentNullException(nameof(builder));
-        }
-        builder.Services.AddSingleton<T>();
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.AddScoped<T>();
         builder.Use(delegate (FunctionExecutionDelegate next)
         {
             FunctionExecutionDelegate next2 = next;
@@ -56,11 +50,8 @@ public static class FunctionContextExtensions
     public static IFunctionsWorkerApplicationBuilder UseWhenQueueTriggered<T>(this IFunctionsWorkerApplicationBuilder builder) where T : class, IFunctionsWorkerMiddleware
     {
         Func<FunctionContext, bool> predicate = IsQueueTrigger;
-        if (builder == null)
-        {
-            throw new ArgumentNullException(nameof(builder));
-        }
-        builder.Services.AddSingleton<T>();
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.AddScoped<T>();
         builder.Use(delegate (FunctionExecutionDelegate next)
         {
             FunctionExecutionDelegate next2 = next;

@@ -23,50 +23,72 @@ internal class UserProvider : IUserProvider, IUserInitialiser
         _functionContext = functionContext;
     }
 
-    public Lazy<AuthenticationHeaderValue> AuthHeader => new(() =>
+    public AuthenticationHeaderValue AuthHeader
     {
-        if (!_functionContext.Items.ContainsKey(ItemNameAuthHeaderValue))
+        get
         {
-            throw new UnauthenticatedException();
+            if (!_functionContext.Items.TryGetValue(ItemNameAuthHeaderValue, out object? objAuthHeader))
+            {
+                throw new UnauthenticatedException();
+            }
+
+            if (objAuthHeader is not AuthenticationHeaderValue authHeader)
+            {
+                throw new Exception($"The FunctionContext's items collection has been populated with an invalid value for \"{ItemNameAuthHeaderValue}\".");
+            }
+
+            return authHeader;
         }
+    }
 
-        return (AuthenticationHeaderValue)_functionContext.Items[ItemNameAuthHeaderValue];
-    });
-
-    public Lazy<IReadOnlyCollection<string>> Claims => new(() =>
+    public IReadOnlyCollection<string> Claims
     {
-        if (!_functionContext.Items.ContainsKey(ItemNameClaims))
+        get
         {
-            return new List<string>(0);
+            if (!_functionContext.Items.TryGetValue(ItemNameClaims, out object? objClaims))
+            {
+                return [];
+            }
+
+            if (objClaims is not IReadOnlyCollection<string> claims)
+            {
+                throw new Exception($"The FunctionContext's items collection has been populated with an invalid value for \"{ItemNameClaims}\".");
+            }
+
+            return claims;
         }
+    }
 
-        return (IReadOnlyCollection<string>)_functionContext.Items[ItemNameClaims];
-    });
-
-    public Lazy<bool> IsAdministrator => new(() => {
-        if (!_functionContext.Items.ContainsKey(ItemNameIsAdministrator))
-        {
-            return false;
-        }
-
-        var isAdministrator = _functionContext.Items[ItemNameIsAdministrator];
-        if (isAdministrator is not bool)
-        {
-            throw new Exception($"The FunctionContext's items collection has been populated with an invalid (non-boolean) value for \"{ItemNameIsAdministrator}\".");
-        }
-
-        return (bool)isAdministrator;
-    });
-
-    public Lazy<string> Username => new(() =>
+    public bool IsAdministrator
     {
-        if (!_functionContext.Items.ContainsKey(ItemNameUsername))
+        get
         {
-            throw new UnauthenticatedException();
-        }
+            if (!_functionContext.Items.TryGetValue(ItemNameIsAdministrator, out object? objIsAdministrator))
+            {
+                return false;
+            }
 
-        return (string)_functionContext.Items[ItemNameUsername];
-    });
+            if (objIsAdministrator is not bool isAdministrator)
+            {
+                throw new Exception($"The FunctionContext's items collection has been populated with an invalid (non-boolean) value for \"{ItemNameIsAdministrator}\".");
+            }
+
+            return isAdministrator;
+        }
+    }
+
+    public string Username
+    {
+        get
+        {
+            if (!_functionContext.Items.TryGetValue(ItemNameUsername, out object? username))
+            {
+                throw new UnauthenticatedException();
+            }
+
+            return (string)username;
+        }
+    }
 
     public void SetUsername(string username, bool isAdministrator)
     {

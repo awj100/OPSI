@@ -8,28 +8,15 @@ using Opsi.Services.QueueServices;
 
 namespace Opsi.Functions.Functions;
 
-public class AssignedProjectHandler
+public class AssignedProjectHandler(IProjectsService _projectsService,
+                                    IUserProvider _userProvider,
+                                    IErrorQueueService _errorQueueService,
+                                    ILoggerFactory loggerFactory,
+                                    IResponseSerialiser _responseSerialiser)
 {
     private const string route = "projects/{projectId:guid}";
 
-    private readonly IErrorQueueService _errorQueueService;
-    private readonly ILogger<AssignedProjectHandler> _logger;
-    private readonly IProjectsService _projectsService;
-    private readonly IResponseSerialiser _responseSerialiser;
-    private readonly IUserProvider _userProvider;
-
-    public AssignedProjectHandler(IProjectsService projectsService,
-                                  IUserProvider userProvider,
-                                  IErrorQueueService errorQueueService,
-                                  ILoggerFactory loggerFactory,
-                                  IResponseSerialiser responseSerialiser)
-    {
-        _errorQueueService = errorQueueService;
-        _logger = loggerFactory.CreateLogger<AssignedProjectHandler>();
-        _projectsService = projectsService;
-        _responseSerialiser = responseSerialiser;
-        _userProvider = userProvider;
-    }
+    private readonly ILogger<AssignedProjectHandler> _logger = loggerFactory.CreateLogger<AssignedProjectHandler>();
 
     [Function("AssignedProjectHandler")]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = route)] HttpRequestData req,
@@ -39,7 +26,7 @@ public class AssignedProjectHandler
 
         try
         {
-            var projectWithResources = await _projectsService.GetAssignedProjectAsync(projectId, _userProvider.Username.Value);
+            var projectWithResources = await _projectsService.GetAssignedProjectAsync(projectId, _userProvider.Username);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
 
@@ -47,7 +34,7 @@ public class AssignedProjectHandler
 
             return response;
         }
-        catch(UnassignedToProjectException)
+        catch (UnassignedToResourceException)
         {
             _logger.LogWarning($"Returning 401 (Unauthorized) for project \"{projectId}\".");
             return req.CreateResponse(HttpStatusCode.Unauthorized);

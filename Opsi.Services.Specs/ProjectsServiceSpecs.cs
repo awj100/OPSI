@@ -616,7 +616,7 @@ public class ProjectsServiceSpecs
 
         await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1))
                      .Should()
-                     .ThrowAsync<UnassignedToProjectException>();
+                     .ThrowAsync<UnassignedToResourceException>();
     }
 
     [TestMethod]

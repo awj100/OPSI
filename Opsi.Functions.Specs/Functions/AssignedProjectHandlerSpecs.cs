@@ -57,7 +57,7 @@ public class AssignedProjectHandlerSpecs
         A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_completedProjectId)), A<string>.That.Matches(s => s.Equals(_assignedUsername)))).ThrowsAsync(new ProjectStateException());
         A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_validProjectId)), A<string>.That.Matches(s => s.Equals(_assignedUsername)))).Returns(_projectWithResources);
         A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_invalidProjectId)), A<string>.That.Matches(s => s.Equals(_assignedUsername)))).ThrowsAsync(new ProjectNotFoundException());
-        A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_validProjectId)), A<string>.That.Matches(s => s.Equals(_unassignedUsername)))).ThrowsAsync(new UnassignedToProjectException());
+        A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_validProjectId)), A<string>.That.Matches(s => s.Equals(_unassignedUsername)))).ThrowsAsync(new UnassignedToResourceException());
         A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _assignedUsername));
 
         _testee = new AssignedProjectHandler(_projectsService,

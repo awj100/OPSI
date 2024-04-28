@@ -28,7 +28,7 @@ internal class ProjectUploadService(IManifestService _manifestService,
         }
 
         var manifest = await _manifestService.ExtractManifestAsync(formCollection);
-        var internalManifest = new InternalManifest(manifest, _userProvider.Username.Value);
+        var internalManifest = new InternalManifest(manifest, _userProvider.Username);
 
         await StoreNonManifestUploadAsync(formCollection, internalManifest);
 
@@ -91,7 +91,7 @@ internal class ProjectUploadService(IManifestService _manifestService,
                 Level = Levels.Project,
                 Name = manifest.PackageName,
                 ProjectId = manifest.ProjectId,
-                Username = _userProvider.Username.Value
+                Username = _userProvider.Username
             }, manifest.WebhookSpecification);
         }
         catch (Exception ex)

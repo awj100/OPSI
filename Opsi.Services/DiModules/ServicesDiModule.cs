@@ -22,28 +22,28 @@ public static class ServicesDiModule
         services
             .AddHttpClient()
             .AddLogging()
-            .AddSingleton<Func<Type, Auth.IAuthHandler?>>(serviceProvider => (Type type) => serviceProvider.GetRequiredService(type) as Auth.IAuthHandler)
-            .AddSingleton<Auth.IAuthHandlerProvider, Auth.AuthHandlerProvider>()
-            .AddSingleton<Auth.IAuthService, Auth.AuthService>()
+            .AddScoped<Func<Type, Auth.IAuthHandler?>>(serviceProvider => (Type type) => serviceProvider.GetRequiredService(type) as Auth.IAuthHandler)
+            .AddScoped<Auth.IAuthHandlerProvider, Auth.AuthHandlerProvider>()
+            .AddScoped<Auth.IAuthService, Auth.AuthService>()
             .AddSingleton(typeof(Auth.OneTimeKeyAuthHandler))
-            .AddSingleton(typeof(Auth.ReferenceAuthHandler))
+            .AddScoped(typeof(Auth.ReferenceAuthHandler))
             .AddSingleton<AzureStorage.KeyPolicies.IProjectKeyPolicies, KeyPolicies.ProjectKeyPolicies>()
             .AddSingleton<AzureStorage.KeyPolicies.IResourceKeyPolicies, KeyPolicies.ResourceKeyPolicies>()
             .AddSingleton<IManifestService, ManifestService>()
             .AddSingleton<IOneTimeAuthService, OneTimeAuthService>()
             .AddSingleton<IOneTimeAuthKeyProvider, OneTimeAuthKeyProvider>()
             .AddSingleton<IOneTimeAuthService, OneTimeAuthService>()
-            .AddSingleton<IProjectsService, ProjectsService>()
-            .AddSingleton<IProjectUploadService, ProjectUploadService>()
+            .AddScoped<IProjectsService, ProjectsService>()
+            .AddScoped<IProjectUploadService, ProjectUploadService>()
             .AddSingleton<IResourceDispatcher, ResourceDispatcher>()
-            .AddSingleton<IResourceService, ResourceService>()
+            .AddScoped<IResourceService, ResourceService>()
             .AddSingleton<ITagUtilities, TagUtilities>()
             .AddSingleton<Func<Stream, IUnzipService>>(serviceProvider => stream => new UnzipService(stream))
             .AddSingleton<IUnzipServiceFactory, UnzipServiceFactory>()
-            .AddTransient<IUserInitialiser, UserProvider>()
-            .AddTransient<IUserProvider, UserProvider>()
-            .AddSingleton<Func<FunctionContext, IUserProvider>>(_ => (FunctionContext functionContext) => new UserProvider(functionContext))
-            .AddSingleton<QueueHandlers.IZippedQueueHandler, QueueHandlers.ZippedQueueHandler>()
+            .AddScoped<IUserInitialiser, UserProvider>()
+            .AddScoped<IUserProvider, UserProvider>()
+            .AddScoped<Func<FunctionContext, IUserProvider>>(_ => (FunctionContext functionContext) => new UserProvider(functionContext))
+            .AddScoped<QueueHandlers.IZippedQueueHandler, QueueHandlers.ZippedQueueHandler>()
             .AddSingleton<QueueServices.IWebhookQueueService, QueueServices.WebhookQueueService>()
             .AddSingleton<QueueServices.IErrorQueueService, QueueServices.ErrorQueueService>()
             .AddSingleton<TableServices.IOneTimeAuthKeysTableService, TableServices.OneTimeAuthKeysTableService>()
@@ -63,7 +63,7 @@ public static class ServicesDiModule
             httpClient.BaseAddress = new Uri(hostUrl);
             try
             {
-                httpClient.DefaultRequestHeaders.Authorization = await oneTimeAuthService.GetAuthenticationHeaderAsync(userProvider.Username.Value, userProvider.IsAdministrator.Value);
+                httpClient.DefaultRequestHeaders.Authorization = await oneTimeAuthService.GetAuthenticationHeaderAsync(userProvider.Username, userProvider.IsAdministrator);
             }
             catch (Exception exception)
             {
@@ -80,7 +80,7 @@ public static class ServicesDiModule
             var authHeader = userProvider.AuthHeader;
 
             httpClient.BaseAddress = new Uri(hostUrl);
-            httpClient.DefaultRequestHeaders.Authorization = authHeader.Value;
+            httpClient.DefaultRequestHeaders.Authorization = authHeader;
         });
 
         services.AddHttpClient(HttpClientNames.SelfWithoutAuth, (provider, httpClient) =>

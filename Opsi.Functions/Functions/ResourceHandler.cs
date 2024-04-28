@@ -4,58 +4,27 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Opsi.AzureStorage.Types;
+using Opsi.Common.Exceptions;
 using Opsi.Pocos;
 using Opsi.Services;
 using Opsi.Services.QueueServices;
 
 namespace Opsi.Functions.Functions;
 
-public class ResourceHandler
+public class ResourceHandler(IResourceService _resourceService,
+                             IErrorQueueService _errorQueueService,
+                             IUserProvider _userProvider,
+                             ILoggerFactory loggerFactory)
 {
     private const string route = "projects/{projectId:guid}/resources/{*restOfPath}";
 
-    private readonly IErrorQueueService _errorQueueService;
-    private readonly ILogger<ResourceHandler> _logger;
-    private readonly IResponseSerialiser _responseSerialiser;
-    private readonly IResourceService _resourceService;
-    private readonly IUserProvider _userProvider;
-
-    public ResourceHandler(IResourceService resourceService,
-                           IErrorQueueService errorQueueService,
-                           IUserProvider userProvider,
-                           IResponseSerialiser responseSerialiser,
-                           ILoggerFactory loggerFactory)
-    {
-        _errorQueueService = errorQueueService;
-        _logger = loggerFactory.CreateLogger<ResourceHandler>();
-        _responseSerialiser = responseSerialiser;
-        _resourceService = resourceService;
-        _userProvider = userProvider;
-    }
+    private readonly ILogger<ResourceHandler> _logger = loggerFactory.CreateLogger<ResourceHandler>();
 
     [Function(nameof(ResourceHandler))]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = route)] HttpRequestData req,
                                              Guid projectId,
                                              string restOfPath)
     {
-        _logger.LogInformation(nameof(ResourceHandler));
-
-        var accessStatusCode = await HasUserAccessAsync(projectId, restOfPath, _userProvider.Username.Value);
-        HttpResponseData response;
-
-        switch (accessStatusCode)
-        {
-            case HttpStatusCode.InternalServerError:
-                response = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await response.WriteStringAsync($"An exception was thrown while determining your access to the resource. This has been logged.");
-                return response;
-
-            case HttpStatusCode.Unauthorized:
-                response = req.CreateResponse(HttpStatusCode.Unauthorized);
-                await response.WriteStringAsync($"You do not have access to \"{restOfPath}\" in project \"{projectId}\".");
-                return response;
-        }
-
         if (req.Method == HttpMethod.Post.Method)
         {
             return await HandlePostedFileAsync(req, projectId, restOfPath);
@@ -66,6 +35,8 @@ public class ResourceHandler
 
     private async Task<HttpResponseData> HandleGetFileAsync(HttpRequestData req, Guid projectId, string restOfPath)
     {
+        _logger.LogInformation($"Request to retrieve \"{projectId}/{restOfPath}\" for user \"{_userProvider.Username}\".");
+
         HttpResponseData response;
 
         try
@@ -82,15 +53,23 @@ public class ResourceHandler
             response = req.CreateResponse(HttpStatusCode.OK);
             SetResponseHeaders(response, resourceContent.Value);
             await SetResponseContentAsync(response, resourceContent.Value);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An exception was thrown while retrieving a resource.", projectId, restOfPath);
 
-            await _errorQueueService.ReportAsync(ex);
+            _logger.LogInformation($"Retrieved \"{projectId}/{restOfPath}\" for user \"{_userProvider.Username}\".");
+        }
+        catch (UnassignedToResourceException exception)
+        {
+            _logger.LogWarning($"User {_userProvider.Username} illegally attempted to access \"{projectId}/{restOfPath}\".");
+            response = req.CreateResponse(HttpStatusCode.Forbidden);
+            await response.WriteStringAsync(exception.Message);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An exception was thrown while retrieving a resource.", projectId, restOfPath);
+
+            await _errorQueueService.ReportAsync(exception);
 
             response = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await response.WriteStringAsync(ex.Message);
+            await response.WriteStringAsync(exception.Message);
         }
 
         return response;
@@ -143,11 +122,15 @@ public class ResourceHandler
 
     private async Task<HttpResponseData> HandlePostedFileAsync(HttpRequestData req, Guid projectId, string restOfPath)
     {
+        _logger.LogInformation($"Request to store \"{projectId}/{restOfPath}\" for user \"{_userProvider.Username}\".");
+
+        HttpResponseData response;
+
         if (!DoesBodyContainFile(req))
         {
             _logger.LogError($"Request contained invalid content-type (\"{GetContentTypeOfUpload(req)}\") or no body ({req.Body.Length}).");
 
-            var response = req.CreateResponse(HttpStatusCode.BadRequest);
+            response = req.CreateResponse(HttpStatusCode.BadRequest);
             await response.WriteStringAsync($"Invalid upload - attach the file content as the request's body, with Content-Type header set to \"application/octet-stream\".");
             response.Headers.Add("ContentType", new MediaTypeHeaderValue("text/plain").ToString());
 
@@ -157,48 +140,33 @@ public class ResourceHandler
         var resourceStorageInfo = new ResourceStorageInfo(projectId,
                                                           restOfPath,
                                                           req.Body,
-                                                          _userProvider.Username.Value);
+                                                          _userProvider.Username);
 
         try
         {
             await _resourceService.StoreResourceAsync(resourceStorageInfo);
+
+            response = req.CreateResponse(HttpStatusCode.Accepted);
+
+            _logger.LogInformation($"Stored \"{projectId}/{restOfPath}\" for user \"{_userProvider.Username}\".");
         }
-        catch (Exception ex)
+        catch (UnassignedToResourceException exception)
         {
-            _logger.LogError(ex, "An exception was thrown while storing a resource.", projectId, restOfPath);
-
-            await _errorQueueService.ReportAsync(ex);
-
-            var response = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await response.WriteStringAsync(ex.Message);
-
-            return response;
+            _logger.LogWarning($"User {_userProvider.Username} illegally attempted to store \"{projectId}/{restOfPath}\".");
+            response = req.CreateResponse(HttpStatusCode.Forbidden);
+            await response.WriteStringAsync(exception.Message);
         }
-
-        return req.CreateResponse(HttpStatusCode.OK);
-    }
-
-    private async Task<HttpStatusCode> HasUserAccessAsync(Guid projectId, string restOfPath, string username)
-    {
-        try
+        catch (Exception exception)
         {
-            var hasUserAccess = await _resourceService.HasUserAccessAsync(projectId, restOfPath, username);
+            _logger.LogError(exception, "An exception was thrown while storing a resource.", projectId, restOfPath);
 
-            if (!hasUserAccess)
-            {
-                return HttpStatusCode.Unauthorized;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An exception was thrown while determining a user's access to a resource.", projectId, restOfPath, username);
+            await _errorQueueService.ReportAsync(exception);
 
-            await _errorQueueService.ReportAsync(ex);
-
-            return HttpStatusCode.InternalServerError;
+            response = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await response.WriteStringAsync(exception.Message);
         }
 
-        return HttpStatusCode.OK;
+        return response;
     }
 
     private static bool DoesBodyContainFile(HttpRequestData request)
