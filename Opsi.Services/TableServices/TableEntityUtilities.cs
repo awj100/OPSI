@@ -202,14 +202,13 @@ internal class TableEntityUtilities : ITableEntityUtilities
         return instance as ITableEntity;
     }
 
-    private static IReadOnlyCollection<PropertyInfo> GetProperties<TTableEntity>()
+    private static List<PropertyInfo> GetProperties<TTableEntity>()
     {
         return GetProperties(typeof(TTableEntity));
     }
 
-    private static IReadOnlyCollection<PropertyInfo> GetProperties(Type type)
+    private static List<PropertyInfo> GetProperties(Type type)
     {
-        return type.GetProperties()
-                    .ToList();
+        return [.. type.GetProperties()];
     }
 }
