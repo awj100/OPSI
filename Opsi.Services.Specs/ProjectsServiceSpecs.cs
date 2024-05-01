@@ -5,7 +5,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.AzureStorage;
-using Opsi.AzureStorage.TableEntities;
 using Opsi.Common;
 using Opsi.Common.Exceptions;
 using Opsi.Constants;
@@ -45,8 +44,8 @@ public class ProjectsServiceSpecs
     private Project _project;
     private readonly string _state1 = ProjectStates.InProgress;
     private ILoggerFactory _loggerFactory;
-    private ResourceTableEntity _resourceTableEntity;
-    private ResourceVersionTableEntity _resourceVersionTableEntity1;
+    private Resource _resource;
+    private ResourceVersion _resourceVersion1;
     private ITagUtilities _tagUtilities;
     private UserAssignment _userAssignmentResource1User1;
     private UserAssignment _userAssignmentResource1User2;
@@ -119,14 +118,10 @@ public class ProjectsServiceSpecs
         //     Username = _username
         // };
 
-        _resourceTableEntity = new ResourceTableEntity
+        _resource = new Resource
         {
-            EntityType = typeof(ResourceTableEntity).Name,
-            EntityVersion = 1,
             FullName = _resource1FullName,
-            PartitionKey = "TEST PARTITION KEY",
             ProjectId = _projectId,
-            RowKey = "TEST ROW KEY",
             CreatedBy = _username
         };
 
@@ -195,7 +190,7 @@ public class ProjectsServiceSpecs
             ResourceFullName = _resource2FullName
         };
 
-        _resourceVersionTableEntity1 = new ResourceVersionTableEntity
+        _resourceVersion1 = new ResourceVersion
         {
             FullName = _resource1FullName,
             ProjectId = _projectId,

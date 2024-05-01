@@ -4,9 +4,7 @@ using FluentAssertions;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Opsi.AzureStorage.TableEntities;
 using Opsi.Common.Exceptions;
-using Opsi.Functions.Functions;
 using Opsi.Functions.Functions.Administrator;
 using Opsi.Pocos;
 using Opsi.Services;
@@ -97,7 +95,7 @@ public class ProjectHandlerSpecs
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    private IEnumerable<ResourceTableEntity> GenerateResources()
+    private IEnumerable<Resource> GenerateResources()
     {
         var i = 0;
 
@@ -105,7 +103,7 @@ public class ProjectHandlerSpecs
         {
             i++;
 
-            yield return new ResourceTableEntity
+            yield return new Resource
             {
                 FullName = $"TEST RESOURCE {i}",
                 ProjectId = _validProjectId,
