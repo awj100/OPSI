@@ -8,8 +8,9 @@ namespace Opsi.Services.Specs.Auth.OneTimeAuth;
 [TestClass]
 public class OneTimeAuthServiceSpecs
 {
+    private const bool IsAdministrator = true;
     private const string Username = "user@test.com";
-    
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private string _key;
     private IOneTimeAuthKeyProvider _oneTimeAuthKeyProvider;
@@ -36,21 +37,23 @@ public class OneTimeAuthServiceSpecs
     [TestMethod]
     public async Task GeneratedAuthHeaderIsSuccessfullyDecoded()
     {
-        var authHeader = await _testee.GetAuthenticationHeaderAsync(Username);
+        var authHeader = await _testee.GetAuthenticationHeaderAsync(Username, IsAdministrator);
 
         authHeader.Should().NotBeNull();
 
-        var username = await _testee.GetUsernameAsync(authHeader.ToString());
+        var credentials = await _testee.GetCredentialsAsync(authHeader.ToString());
 
-        username.Should().Be(Username);
+        credentials.Should().NotBeNull();
+        credentials.IsAdministrator.Should().Be(IsAdministrator);
+        credentials.Username.Should().Be(Username);
     }
 
     [TestMethod]
-    public async Task GetUsernameAsync_WhenKeyIsValid_DeletesKeyFromStorage()
+    public async Task GetCredentialsAsync_WhenKeyIsValid_DeletesKeyFromStorage()
     {
-        var authHeader = await _testee.GetAuthenticationHeaderAsync(Username);
+        var authHeader = await _testee.GetAuthenticationHeaderAsync(Username, IsAdministrator);
 
-        await _testee.GetUsernameAsync(authHeader.ToString());
+        await _testee.GetCredentialsAsync(authHeader.ToString());
 
         A.CallTo(() => _tableService.DeleteKeyAsync(A<string>.That.Matches(s => s.Equals(Username)),
                                                     A<string>.That.Matches(s => s.Equals(_key))))

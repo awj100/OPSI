@@ -24,7 +24,6 @@ public class ResourceHandlerSpecs
     private IErrorQueueService _errorQueueService;
     private ILoggerFactory _loggerFactory;
     private IResourceService _resourceService;
-    private IResponseSerialiser _responseSerialiser;
     private IUserProvider _userProvider;
     private ResourceHandler _testee;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -35,20 +34,18 @@ public class ResourceHandlerSpecs
         _errorQueueService = A.Fake<IErrorQueueService>();
         _loggerFactory = new NullLoggerFactory();
         _resourceService = A.Fake<IResourceService>();
-        _responseSerialiser = A.Fake<IResponseSerialiser>();
         _userProvider = A.Fake<IUserProvider>();
 
         _testee = new ResourceHandler(_resourceService,
                                               _errorQueueService,
                                               _userProvider,
-                                              _responseSerialiser,
                                               _loggerFactory);
     }
 
     [TestMethod]
     public async Task Run_WhenUserHasNoAccess_ReturnsUnauthorized()
     {
-        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._, A<string>._)).Returns(false);
+        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._)).Returns(false);
         var url = GetUrl();
         var request = TestFactory.CreateHttpRequest(url);
 
@@ -60,7 +57,7 @@ public class ResourceHandlerSpecs
     [TestMethod]
     public async Task Run_WhenNoResourceFound_ReturnsNotFoundWithExplanation()
     {
-        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._, A<string>._)).Returns(true);
+        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._)).Returns(true);
         A.CallTo(() => _resourceService.GetResourceContentAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)), A<string>.That.Matches(s => s.Equals(_restOfPath, StringComparison.OrdinalIgnoreCase)))).Returns(Option<ResourceContent>.None());
         var url = GetUrl();
         var request = TestFactory.CreateHttpRequest(url, HttpMethod.Get);
@@ -91,7 +88,7 @@ public class ResourceHandlerSpecs
                                                   DateTimeOffset.UtcNow,
                                                   etag);
 
-        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._, A<string>._)).Returns(true);
+        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._)).Returns(true);
         A.CallTo(() => _resourceService.GetResourceContentAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)), A<string>.That.Matches(s => s.Equals(_restOfPath, StringComparison.OrdinalIgnoreCase)))).Returns(Option<ResourceContent>.Some(resourceContent));
         var url = GetUrl();
         var request = TestFactory.CreateHttpRequest(url, HttpMethod.Get);
@@ -111,7 +108,7 @@ public class ResourceHandlerSpecs
     public async Task Run_WhenHasUserAccessThrowsException_ExceptionPlacedInErrorQueue()
     {
         var ex = new Exception(nameof(Run_WhenHasUserAccessThrowsException_ExceptionPlacedInErrorQueue));
-        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._, A<string>._)).ThrowsAsync(ex);
+        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._)).ThrowsAsync(ex);
         var url = GetUrl();
         var request = TestFactory.CreateHttpRequest(url);
 
@@ -124,7 +121,7 @@ public class ResourceHandlerSpecs
     public async Task Run_WhenHasUserAccessThrowsException_ReturnsInternalServerError()
     {
         var ex = new Exception(nameof(Run_WhenHasUserAccessThrowsException_ExceptionPlacedInErrorQueue));
-        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._, A<string>._)).ThrowsAsync(ex);
+        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._)).ThrowsAsync(ex);
         var url = GetUrl();
         var request = TestFactory.CreateHttpRequest(url);
 

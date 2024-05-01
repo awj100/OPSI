@@ -1,7 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
-using Opsi.AzureStorage.KeyPolicies;
 
 [assembly: InternalsVisibleTo("Opsi.Services.Specs")]
 [assembly: InternalsVisibleTo("Opsi.AzureStorage.Specs")]
@@ -20,7 +19,6 @@ public static class AzureStorageDiModule
         services
             .AddTransient<IBlobService, BlobService>()
             .AddTransient<Common.ISettingsProvider, Common.SettingsProvider>()
-            .AddTransient<IKeyPolicyFilterGeneration, KeyPolicyFilterGeneration>()
             .AddTransient<Func<string, IQueueService>>(provider => queueName =>
             {
                 var settingsProvider = provider.GetRequiredService<Common.ISettingsProvider>();
@@ -28,9 +26,8 @@ public static class AzureStorageDiModule
             })
             .AddTransient<Func<string, ITableService>>(provider => tableName =>
             {
-                var keyPolicyFilterGeneration = provider.GetRequiredService<IKeyPolicyFilterGeneration>();
                 var settingsProvider = provider.GetRequiredService<Common.ISettingsProvider>();
-                return new TableService(settingsProvider, tableName, keyPolicyFilterGeneration);
+                return new TableService(settingsProvider, tableName);
             })
             .AddTransient<IQueueServiceFactory, QueueServiceFactory>()
             .AddTransient<ITableServiceFactory, TableServiceFactory>();

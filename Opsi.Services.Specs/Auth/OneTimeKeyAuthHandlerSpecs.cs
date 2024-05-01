@@ -8,7 +8,9 @@ namespace Opsi.Services.Specs.Auth;
 [TestClass]
 public class OneTimeKeyAuthHandlerSpecs
 {
+    private const bool IsAdministrator = true;
     private const string Username = "user@test.com";
+    private readonly OneTimeAuthCredentials _credentials = new(Username, IsAdministrator, true);
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     private AuthHandlerBase _authHandler;
     private IDictionary<object, object> _contextItems;
@@ -32,7 +34,7 @@ public class OneTimeKeyAuthHandlerSpecs
     [TestMethod]
     public async Task AuthenticateAsync_WhenDetailsAreValid_PopulatesContextItemsWithUsername()
     {
-        A.CallTo(() => _oneTimeAuthService.GetUsernameAsync(_authenticationHeader)).Returns(Username);
+        A.CallTo(() => _oneTimeAuthService.GetCredentialsAsync(_authenticationHeader)).Returns(_credentials);
 
         await _testee.AuthenticateAsync(_authenticationHeader, _contextItems);
 
@@ -42,7 +44,7 @@ public class OneTimeKeyAuthHandlerSpecs
     [TestMethod]
     public async Task AuthenticateAsync_WhenDetailsAreValid_ReturnsTrue()
     {
-        A.CallTo(() => _oneTimeAuthService.GetUsernameAsync(_authenticationHeader)).Returns(Username);
+        A.CallTo(() => _oneTimeAuthService.GetCredentialsAsync(_authenticationHeader)).Returns(_credentials);
 
         var result = await _testee.AuthenticateAsync(_authenticationHeader, _contextItems);
 

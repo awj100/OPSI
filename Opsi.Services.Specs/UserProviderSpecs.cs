@@ -37,9 +37,7 @@ public class UserProviderSpecs
     [TestMethod]
     public void Claims_WhenNoClaimsSetInFunctionContext_ReturnsEmpty()
     {
-        _testee.Claims.Value
-               .Should()
-               .BeEmpty();
+        _testee.Claims.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -50,9 +48,7 @@ public class UserProviderSpecs
         _items = new Dictionary<object, object> { { ItemNameClaims, claims } };
         A.CallTo(() => _functionContext.Items).Returns(_items);
 
-        _testee.Claims.Value
-               .Should()
-               .Contain(claims);
+        _testee.Claims.Should().Contain(claims);
     }
 
     [TestMethod]

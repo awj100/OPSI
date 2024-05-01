@@ -38,14 +38,13 @@ public class AdministratorEnforcementSpecs
     [TestMethod]
     public async Task Invoke_WhenEntryPointIsInAdministratorNamespaceAndUserIsAdministrator_CallsNext()
     {
-        var lazyIsAdministrator = new Lazy<bool>(() => true);
-        var lazyUsername = new Lazy<string>(() => Username);
+        const bool isAdministrator = true;
 
         var entryPoint = "Opsi.Functions.Functions.Administrator.Something";
 
         A.CallTo(() => _functionDefinition.EntryPoint).Returns(entryPoint);
-        A.CallTo(() => _userProvider.IsAdministrator).Returns(lazyIsAdministrator);
-        A.CallTo(() => _userProvider.Username).Returns(lazyUsername);
+        A.CallTo(() => _userProvider.IsAdministrator).Returns(isAdministrator);
+        A.CallTo(() => _userProvider.Username).Returns(Username);
 
         _testee = new AdministratorEnforcement(_funcUserProvider, _logger);
 
@@ -55,14 +54,13 @@ public class AdministratorEnforcementSpecs
     [TestMethod]
     public async Task Invoke_WhenEntryPointIsInAdministratorNamespaceAndUserIsNotAdministrator_ThrowsUnauthenticatedException()
     {
-        var lazyIsAdministrator = new Lazy<bool>(() => false);
-        var lazyUsername = new Lazy<string>(() => Username);
+        const bool isAdministrator = false;
 
         var entryPoint = "Opsi.Functions.Functions.Administrator.Something";
 
         A.CallTo(() => _functionDefinition.EntryPoint).Returns(entryPoint);
-        A.CallTo(() => _userProvider.IsAdministrator).Returns(lazyIsAdministrator);
-        A.CallTo(() => _userProvider.Username).Returns(lazyUsername);
+        A.CallTo(() => _userProvider.IsAdministrator).Returns(isAdministrator);
+        A.CallTo(() => _userProvider.Username).Returns(Username);
 
         _testee = new AdministratorEnforcement(_funcUserProvider, _logger);
 
@@ -74,14 +72,13 @@ public class AdministratorEnforcementSpecs
     [TestMethod]
     public async Task Invoke_WhenEntryPointIsNotInAdministratorNamespaceAndUserIsAdministrator_CallsNext()
     {
-        var lazyIsAdministrator = new Lazy<bool>(() => true);
-        var lazyUsername = new Lazy<string>(() => Username);
+        const bool isAdministrator = true;
 
         var entryPoint = "Opsi.Functions.Functions.Something";
 
         A.CallTo(() => _functionDefinition.EntryPoint).Returns(entryPoint);
-        A.CallTo(() => _userProvider.IsAdministrator).Returns(lazyIsAdministrator);
-        A.CallTo(() => _userProvider.Username).Returns(lazyUsername);
+        A.CallTo(() => _userProvider.IsAdministrator).Returns(isAdministrator);
+        A.CallTo(() => _userProvider.Username).Returns(Username);
 
         _testee = new AdministratorEnforcement(_funcUserProvider, _logger);
 
@@ -91,14 +88,14 @@ public class AdministratorEnforcementSpecs
     [TestMethod]
     public async Task Invoke_WhenEntryPointIsNotInAdministratorNamespaceAndUserIsNotAdministrator_CallsNext()
     {
-        var lazyIsAdministrator = new Lazy<bool>(() => false);
-        var lazyUsername = new Lazy<string>(() => Username);
+        const bool isAdministrator = false;
 
         var entryPoint = "Opsi.Functions.Functions.Something";
 
         A.CallTo(() => _functionDefinition.EntryPoint).Returns(entryPoint);
-        A.CallTo(() => _userProvider.IsAdministrator).Returns(lazyIsAdministrator);
-        A.CallTo(() => _userProvider.Username).Returns(lazyUsername);
+        A.CallTo(() => _userProvider.IsAdministrator).Returns(isAdministrator);
+        A.CallTo(() => _userProvider.Username).Returns(Username);
+
 
         _testee = new AdministratorEnforcement(_funcUserProvider, _logger);
 

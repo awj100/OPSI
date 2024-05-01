@@ -15,6 +15,7 @@ namespace Opsi.Services.Specs.QueueHandlers;
 [TestClass]
 public class ZippedQueueHandlerSpecs
 {
+    private const bool IsAdministrator = true;
     private const string Username = "user@test.com";
     private const string WebhookUri = "https://a.test.url";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -22,6 +23,7 @@ public class ZippedQueueHandlerSpecs
     private IReadOnlyCollection<string> _nonManifestContentFilePaths;
     private Stream _nonManifestStream;
     private IBlobService _blobService;
+    private IErrorQueueService _errorQueueService;
     private IProjectsService _projectsService;
     private IResourceDispatcher _resourceDispatcher;
     private ISettingsProvider _settingsProvider;
@@ -54,6 +56,7 @@ public class ZippedQueueHandlerSpecs
         _nonManifestStream = GetNonManifestArchiveStream(_nonManifestContentFilePaths);
 
         _blobService = A.Fake<IBlobService>();
+        _errorQueueService = A.Fake<IErrorQueueService>();
         _projectsService = A.Fake<IProjectsService>();
         _resourceDispatcher = A.Fake<IResourceDispatcher>();
         _settingsProvider = A.Fake<ISettingsProvider>();
@@ -75,6 +78,7 @@ public class ZippedQueueHandlerSpecs
                                          _unzipServiceFactory,
                                          _resourceDispatcher,
                                          _userInitialiser,
+                                         _errorQueueService,
                                          loggerFactory);
     }
 
@@ -92,7 +96,7 @@ public class ZippedQueueHandlerSpecs
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
-        A.CallTo(() => _projectsService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
+        A.CallTo(() => _projectsService.InitProjectAsync(A<InternalManifest>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
@@ -107,7 +111,8 @@ public class ZippedQueueHandlerSpecs
                                                          A<Guid>._,
                                                          A<string>._,
                                                          A<Stream>._,
-                                                         A<string>._)).MustNotHaveHappened();
+                                                         A<string>._,
+                                                         A<bool>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
@@ -147,8 +152,8 @@ public class ZippedQueueHandlerSpecs
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
-        A.CallTo(() => _projectsService.StoreProjectAsync(A<Project>.That.Matches(p => p.Id.Equals(_manifest.ProjectId)
-                                                                                       && p.State.Equals(ProjectStates.Initialising))))
+        A.CallTo(() => _projectsService.UpdateProjectStateAsync(A<Guid>.That.Matches(g => g.Equals(_manifest.ProjectId)),
+                                                                A<string>.That.Matches(s => s.Equals(ProjectStates.Initialising))))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -161,6 +166,28 @@ public class ZippedQueueHandlerSpecs
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
         A.CallTo(() => _blobService.RetrieveContentAsync(A<string>.That.Matches(s => s.Contains(_manifest.ProjectId.ToString())))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_StoresResourceAsAdministrator()
+    {
+        const bool isNewProject = true;
+        A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
+        A.CallTo(() => _unzipService.GetFilePathsFromPackage()).Returns(_nonManifestContentFilePaths);
+
+        await _testee.RetrieveAndHandleUploadAsync(_manifest);
+
+        var nonExcludedFilePaths = _nonManifestContentFilePaths.Except(_manifest.ResourceExclusionPaths).ToList();
+
+        foreach (var nonExcludedFilePath in nonExcludedFilePaths)
+        {
+            A.CallTo(() => _resourceDispatcher.DispatchAsync(A<string>._,
+                                                             A<Guid>._,
+                                                             A<string>._,
+                                                             A<Stream>._,
+                                                             A<string>._,
+                                                             IsAdministrator)).MustHaveHappenedOnceExactly();
+        }
     }
 
     [TestMethod]
@@ -180,7 +207,8 @@ public class ZippedQueueHandlerSpecs
                                                              A<Guid>._,
                                                              nonExcludedFilePath,
                                                              A<Stream>._,
-                                                             A<string>._)).MustHaveHappenedOnceExactly();
+                                                             A<string>._,
+                                                             A<bool>._)).MustHaveHappenedOnceExactly();
         }
     }
 
@@ -199,7 +227,8 @@ public class ZippedQueueHandlerSpecs
                                                              A<Guid>._,
                                                              excludedFilePath,
                                                              A<Stream>._,
-                                                             A<string>._)).MustNotHaveHappened();
+                                                             A<string>._,
+                                                             A<bool>._)).MustNotHaveHappened();
         }
     }
 
@@ -234,7 +263,8 @@ public class ZippedQueueHandlerSpecs
                                                                  A<Guid>._,
                                                                  A<string>._,
                                                                  fileSpecificStream,
-                                                                 A<string>._)).MustHaveHappenedOnceExactly();
+                                                                 A<string>._,
+                                                                 A<bool>._)).MustHaveHappenedOnceExactly();
             }
         }
         finally
@@ -276,7 +306,8 @@ public class ZippedQueueHandlerSpecs
                                                          _manifest.ProjectId,
                                                          A<string>._,
                                                          A<Stream>._,
-                                                         A<string>._)).MustHaveHappened();
+                                                         A<string>._,
+                                                         A<bool>._)).MustHaveHappened();
     }
 
     [TestMethod]
@@ -297,7 +328,8 @@ public class ZippedQueueHandlerSpecs
                                                          A<Guid>._,
                                                          A<string>._,
                                                          A<Stream>._,
-                                                         A<string>._)).MustHaveHappened();
+                                                         A<string>._,
+                                                         A<bool>._)).MustHaveHappened();
     }
 
     [TestMethod]
@@ -362,7 +394,8 @@ public class ZippedQueueHandlerSpecs
                                                          A<Guid>._,
                                                          A<string>._,
                                                          A<Stream>._,
-                                                         A<string>._)).Returns(nonSuccessResponse);
+                                                         A<string>._,
+                                                         A<bool>._)).Returns(nonSuccessResponse);
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
@@ -389,7 +422,8 @@ public class ZippedQueueHandlerSpecs
                                                          A<Guid>._,
                                                          A<string>._,
                                                          A<Stream>._,
-                                                         A<string>._)).Returns(successResponse);
+                                                         A<string>._,
+                                                         A<bool>._)).Returns(successResponse);
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
@@ -408,14 +442,15 @@ public class ZippedQueueHandlerSpecs
                                                          A<Guid>._,
                                                          A<string>._,
                                                          A<Stream>._,
-                                                         A<string>._)).Returns(nonSuccessResponse);
+                                                         A<string>._,
+                                                         A<bool>._)).Returns(nonSuccessResponse);
 
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
         A.CallTo(() => _projectsService.UpdateProjectStateAsync(_manifest.ProjectId, expectedNewState)).MustHaveHappenedOnceExactly();
     }
 
-    private static Stream GetNonManifestArchiveStream(IReadOnlyCollection<string> filePaths)
+    private static MemoryStream GetNonManifestArchiveStream(IReadOnlyCollection<string> filePaths)
     {
         static void AddFile(ZipArchive archive, string filePath)
         {

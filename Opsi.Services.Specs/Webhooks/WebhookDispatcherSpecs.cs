@@ -67,8 +67,8 @@ public class WebhookDispatcherSpecs
         _httpClientFactory = A.Fake<IHttpClientFactory>();
         _userProvider = A.Fake<IUserProvider>();
 
-        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
-        
+        A.CallTo(() => _userProvider.Username).Returns(_username);
+
         _testee = new WebhookDispatcher(_httpClientFactory);
     }
 
@@ -103,7 +103,7 @@ public class WebhookDispatcherSpecs
         result.Should().NotBeNull();
         result.IsSuccessful.Should().BeFalse();
     }
-    
+
     [TestMethod]
     public async Task AttemptDeliveryAsync_DeliversDispatchableWebhookMessage()
     {

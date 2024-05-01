@@ -58,7 +58,7 @@ public class AssignedProjectHandlerSpecs
         A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_validProjectId)), A<string>.That.Matches(s => s.Equals(_assignedUsername)))).Returns(_projectWithResources);
         A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_invalidProjectId)), A<string>.That.Matches(s => s.Equals(_assignedUsername)))).ThrowsAsync(new ProjectNotFoundException());
         A.CallTo(() => _projectsService.GetAssignedProjectAsync(A<Guid>.That.Matches(g => g.Equals(_validProjectId)), A<string>.That.Matches(s => s.Equals(_unassignedUsername)))).ThrowsAsync(new UnassignedToResourceException());
-        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _assignedUsername));
+        A.CallTo(() => _userProvider.Username).Returns(_assignedUsername);
 
         _testee = new AssignedProjectHandler(_projectsService,
                                              _userProvider,
@@ -117,7 +117,7 @@ public class AssignedProjectHandlerSpecs
         var url = $"/projects/{_validProjectId}";
         var request = TestFactory.CreateHttpRequest(url);
 
-        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _unassignedUsername));
+        A.CallTo(() => _userProvider.Username).Returns(_unassignedUsername);
 
         var response = await _testee.Run(request, _validProjectId);
 

@@ -55,7 +55,7 @@ public class ProjectHandlerSpecs
 
         A.CallTo(() => _projectsService.GetProjectAsync(A<Guid>.That.Matches(g => g.Equals(_validProjectId)))).Returns(_projectWithResources);
         A.CallTo(() => _projectsService.GetProjectAsync(A<Guid>.That.Matches(g => g.Equals(_invalidProjectId)))).ThrowsAsync(new ProjectNotFoundException());
-        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _username));
+        A.CallTo(() => _userProvider.Username).Returns(_username);
 
         _testee = new ProjectHandler(_projectsService,
                                      _userProvider,

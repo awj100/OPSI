@@ -42,7 +42,7 @@ public class UserAssignmentHandlerSpecs
         _uri = $"/users/{_assigneeUsername}/projects/{_projectId}/resource/{_resourceFullName}";
         _userProvider = A.Fake<IUserProvider>();
 
-        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => _assignedByUsernameValid));
+        A.CallTo(() => _userProvider.Username).Returns(_assignedByUsernameValid);
 
         _testee = new UserAssignmentHandler(_projectsService,
                                             _userProvider,

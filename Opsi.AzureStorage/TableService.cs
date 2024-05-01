@@ -8,17 +8,12 @@ namespace Opsi.AzureStorage;
 
 internal class TableService : StorageServiceBase, ITableService
 {
-    private readonly IKeyPolicyFilterGeneration _keyPolicyFilterGeneration;
-
     public Lazy<TableClient> TableClient { get; }
 
     public string TableName { get; }
 
-    public TableService(ISettingsProvider settingsProvider,
-                        string tableName,
-                        IKeyPolicyFilterGeneration keyPolicyFilterGeneration) : base(settingsProvider)
+    public TableService(ISettingsProvider settingsProvider, string tableName) : base(settingsProvider)
     {
-        _keyPolicyFilterGeneration = keyPolicyFilterGeneration;
         TableName = tableName;
 
         TableClient = new Lazy<TableClient>(() =>

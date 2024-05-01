@@ -14,6 +14,7 @@ public class ResourceDispatcherSpecs
 {
     private const string FilePath = "file/path";
     private const string HostUrl = "https://request.not.sent";
+    private const bool IsAdministrator = true;
     private const string OneTimeAuthHeaderScheme = "OneTime";
     private const string OneTimeAuthHeaderValue = "Test one-time auth header";
     private const string Username = "user@test.com";
@@ -42,7 +43,7 @@ public class ResourceDispatcherSpecs
         _oneTimeAuthService = A.Fake<IOneTimeAuthService>();
         _testUri = new Uri($"{HostUrl}/projects/{_projectId}/resource/{FilePath}");
 
-        A.CallTo(() => _oneTimeAuthService.GetAuthenticationHeaderAsync(Username)).Returns(_oneTimeAuthHeader);
+        A.CallTo(() => _oneTimeAuthService.GetAuthenticationHeaderAsync(Username, IsAdministrator)).Returns(_oneTimeAuthHeader);
 
         _testee = new ResourceDispatcher(_httpClientFactory, _oneTimeAuthService);
     }
@@ -67,7 +68,8 @@ public class ResourceDispatcherSpecs
                                                    _projectId,
                                                    FilePath,
                                                    _testStream,
-                                                   Username);
+                                                   Username,
+                                                   IsAdministrator);
 
         response.StatusCode.Should().Be(httpStatusCode);
     }
@@ -104,7 +106,8 @@ public class ResourceDispatcherSpecs
                                                    _projectId,
                                                    FilePath,
                                                    _testStream,
-                                                   Username);
+                                                   Username,
+                                                   IsAdministrator);
 
         response.StatusCode.Should().Be(httpStatusCode);
     }
@@ -116,10 +119,11 @@ public class ResourceDispatcherSpecs
                                                    _projectId,
                                                    FilePath,
                                                    _testStream,
-                                                   Username);
+                                                   Username,
+                                                   IsAdministrator);
 
         A.CallTo(() => _httpClientFactory.CreateClient(HttpClientNames.SelfWithoutAuth)).MustHaveHappenedOnceExactly();
-        A.CallTo(() => _oneTimeAuthService.GetAuthenticationHeaderAsync(Username)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _oneTimeAuthService.GetAuthenticationHeaderAsync(Username, IsAdministrator)).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -144,7 +148,8 @@ public class ResourceDispatcherSpecs
                                                    _projectId,
                                                    FilePath,
                                                    _testStream,
-                                                   Username);
+                                                   Username,
+                                                   IsAdministrator);
 
         response.StatusCode.Should().Be(httpStatusCode);
     }

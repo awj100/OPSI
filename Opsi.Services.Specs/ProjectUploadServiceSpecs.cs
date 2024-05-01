@@ -72,8 +72,8 @@ public class ProjectUploadServiceSpecs
 
         A.CallTo(() => _manifestService.ExtractManifestAsync(_formFileCollection)).Returns(_manifest);
         A.CallTo(() => _queueServiceFactory.Create(A<string>.That.Contains(HandlerQueueName, StringComparison.OrdinalIgnoreCase))).Returns(_queueService);
-        A.CallTo(() => _userProvider.AuthHeader).Returns(new Lazy<AuthenticationHeaderValue>(() => new AuthenticationHeaderValue(AuthHeaderScheme, AuthHeaderValue)));
-        A.CallTo(() => _userProvider.Username).Returns(new Lazy<string>(() => Username));
+        A.CallTo(() => _userProvider.AuthHeader).Returns(new AuthenticationHeaderValue(AuthHeaderScheme, AuthHeaderValue));
+        A.CallTo(() => _userProvider.Username).Returns(Username);
 
         _testee = new ProjectUploadService(_manifestService,
                                            _QueueService,
@@ -94,7 +94,7 @@ public class ProjectUploadServiceSpecs
     public async Task StoreInitialProjectUploadAsync_WhenUploadedObjectCountGreaterThanRequiredCount_ThrowsBadRequestException()
     {
         var formFilesCollection = A.Fake<IFormFileCollection>();
-        A.CallTo(() => formFilesCollection.Count).Returns(_testee.RequiredNumberOfUploadedObjects + 1);
+        A.CallTo(() => formFilesCollection.Count).Returns(ProjectUploadService.RequiredNumberOfUploadedObjects + 1);
 
         await _testee.Invoking(t => t.StoreInitialProjectUploadAsync(formFilesCollection))
                      .Should()
@@ -105,7 +105,7 @@ public class ProjectUploadServiceSpecs
     public async Task StoreInitialProjectUploadAsync_WhenUploadedObjectCountLessThanRequiredCount_ThrowsBadRequestException()
     {
         var formFilesCollection = A.Fake<IFormFileCollection>();
-        A.CallTo(() => formFilesCollection.Count).Returns(_testee.RequiredNumberOfUploadedObjects - 1);
+        A.CallTo(() => formFilesCollection.Count).Returns(ProjectUploadService.RequiredNumberOfUploadedObjects - 1);
 
         await _testee.Invoking(t => t.StoreInitialProjectUploadAsync(formFilesCollection))
                      .Should()
