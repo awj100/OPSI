@@ -17,8 +17,8 @@ public static class ErrorServicesDiModule
     {
         services
             .AddLogging()
-            .AddSingleton<IErrorEmailService, ErrorEmailService>()
-            .AddSingleton<IErrorService, ErrorService>()
-            .AddSingleton<IErrorStorageService, ErrorStorageService>();
+            .AddTransient<IErrorEmailService, ErrorEmailService>()
+            .AddTransient<IErrorService, ErrorService>()
+            .AddTransient<IErrorStorageService, ErrorStorageService>();
     }
 }

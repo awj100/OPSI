@@ -18,22 +18,21 @@ public static class AzureStorageDiModule
     public static void Configure(IServiceCollection services)
     {
         services
-            .AddSingleton<IBlobService, BlobService>()
-            .AddSingleton<Common.ISettingsProvider, Common.SettingsProvider>()
-            .AddSingleton<IKeyPolicyFilterGeneration, KeyPolicyFilterGeneration>()
-            .AddSingleton<Func<string, IQueueService>>(provider => queueName =>
+            .AddTransient<IBlobService, BlobService>()
+            .AddTransient<Common.ISettingsProvider, Common.SettingsProvider>()
+            .AddTransient<IKeyPolicyFilterGeneration, KeyPolicyFilterGeneration>()
+            .AddTransient<Func<string, IQueueService>>(provider => queueName =>
             {
                 var settingsProvider = provider.GetRequiredService<Common.ISettingsProvider>();
                 return new QueueService(settingsProvider, queueName);
             })
-            .AddSingleton<Func<string, ITableService>>(provider => tableName =>
+            .AddTransient<Func<string, ITableService>>(provider => tableName =>
             {
                 var keyPolicyFilterGeneration = provider.GetRequiredService<IKeyPolicyFilterGeneration>();
                 var settingsProvider = provider.GetRequiredService<Common.ISettingsProvider>();
                 return new TableService(settingsProvider, tableName, keyPolicyFilterGeneration);
             })
-            .AddSingleton<IQueueServiceFactory, QueueServiceFactory>()
-            .AddSingleton<IResourcesService, ResourcesService>()
-            .AddSingleton<ITableServiceFactory, TableServiceFactory>();
+            .AddTransient<IQueueServiceFactory, QueueServiceFactory>()
+            .AddTransient<ITableServiceFactory, TableServiceFactory>();
     }
 }
