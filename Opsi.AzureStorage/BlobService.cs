@@ -75,7 +75,7 @@ internal class BlobService : StorageServiceBase, IBlobService
             await blobClient.SetMetadataAsync(properties);
         }
 
-        return true;
+        return needsPersisted;
     }
 
     public async Task<bool> RemovePropertyAsync(string fullName, string propertyName, bool shouldThrowIfNotExists = true)
@@ -133,7 +133,7 @@ internal class BlobService : StorageServiceBase, IBlobService
         {
             if (shouldThrowIfNotExists)
             {
-                throw new ResourceNotFoundException(Guid.Empty, $"No blob could be found with the name \"{fullName}\".");
+                throw new ResourceNotFoundException(Guid.Empty, fullName);
             }
 
             return new Dictionary<string, string>(0);

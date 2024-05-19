@@ -2,8 +2,6 @@
 using Azure.Storage.Blobs.Specialized;
 using FakeItEasy;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.AzureStorage;
 using Opsi.Common;
 using Opsi.Common.Exceptions;
@@ -19,13 +17,8 @@ public class ProjectsServiceSpecs
 {
     private const string _assignedByUsername = "TEST ASSIGNED BY USERNAME";
     private const string _assigneeUsername1 = "TEST ASSIGNEE USERNAME 1";
-    private const string _assigneeUsername2 = "TEST ASSIGNEE USERNAME 2";
-    private const string _continuationToken = "TEST CONTINUATION TOKEN";
-    private const int _pageSize = 10;
     private const string _projectName = "TEST PROJECT NAME";
     private const string _resource1FullName = "TEST RESOURCE 1 FULL NAME";
-    private const string _resource2FullName = "TEST RESOURCE 2 FULL NAME";
-    private const string _state2 = "TEST STATE 2";
     private const string _username = "TEST USERNAME";
     private const string _webhookCustomProp1Name = nameof(_webhookCustomProp1Name);
     private const string _webhookCustomProp1Value = nameof(_webhookCustomProp1Value);
@@ -37,20 +30,12 @@ public class ProjectsServiceSpecs
     private DateTime _assignedOnUtc;
     private Dictionary<string, string> _blobMetadata;
     private IBlobService _blobService;
-    private string _defaultOrderBy = OrderBy.Desc;
     private InternalManifest _manifest;
     private IManifestService _manifestService;
-    private OrderedProject _orderedProject;
     private Project _project;
     private readonly string _state1 = ProjectStates.InProgress;
-    private ILoggerFactory _loggerFactory;
-    private Resource _resource;
-    private ResourceVersion _resourceVersion1;
     private ITagUtilities _tagUtilities;
     private UserAssignment _userAssignmentResource1User1;
-    private UserAssignment _userAssignmentResource1User2;
-    private UserAssignment _userAssignmentResource2User1;
-    private UserAssignment _userAssignmentResource2User2;
     private IUserProvider _userProvider;
     private IWebhookQueueService _webhookQueueService;
     private Dictionary<string, object> _webhookCustomProps;
@@ -65,6 +50,18 @@ public class ProjectsServiceSpecs
 
         _blobService = A.Fake<IBlobService>();
 
+        _webhookCustomProps = new Dictionary<string, object>
+        {
+            { _webhookCustomProp1Name, _webhookCustomProp1Value },
+            { _webhookCustomProp2Name, _webhookCustomProp2Value },
+        };
+
+        _webhookSpecs = new ConsumerWebhookSpecification
+        {
+            CustomProps = _webhookCustomProps,
+            Uri = _webhookUri
+        };
+
         var manifest = new Manifest
         {
             PackageName = _projectName,
@@ -78,24 +75,6 @@ public class ProjectsServiceSpecs
         A.CallTo(() => _manifestService.RetrieveManifestAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(_manifest);
         A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(_projectId)))).ReturnsLazily((Guid projectId) => $"{projectId}/{Tags.ManifestName}");
 
-        _webhookCustomProps = new Dictionary<string, object>
-        {
-            { _webhookCustomProp1Name, _webhookCustomProp1Value },
-            { _webhookCustomProp2Name, _webhookCustomProp2Value },
-        };
-
-        _webhookSpecs = new ConsumerWebhookSpecification
-        {
-            CustomProps = _webhookCustomProps,
-            Uri = _webhookUri
-        };
-
-        _orderedProject = new OrderedProject
-        {
-            Id = _projectId,
-            Name = _projectName
-        };
-
         _project = new Project
         {
             Id = _projectId,
@@ -105,43 +84,9 @@ public class ProjectsServiceSpecs
             WebhookSpecification = _webhookSpecs
         };
 
-        // TODO: Is this still needed?
-        // _projectTableEntity = new ProjectTableEntity
-        // {
-        //     EntityType = typeof(ProjectTableEntity).Name,
-        //     EntityVersion = 1,
-        //     Id = _projectId,
-        //     Name = _projectName,
-        //     PartitionKey = "TEST PARTITION KEY",
-        //     RowKey = "TEST ROW KEY",
-        //     State = _state1,
-        //     Username = _username
-        // };
-
-        _resource = new Resource
-        {
-            FullName = _resource1FullName,
-            ProjectId = _projectId,
-            CreatedBy = _username
-        };
-
         _tagUtilities = A.Fake<ITagUtilities>();
         A.CallTo(() => _tagUtilities.GetSafeTagValue(A<object>._)).ReturnsLazily((object o) => o?.ToString() ?? String.Empty);
 
-        // TODO: Is this still needed?
-        // _userAssignmentTableEntity1 = new UserAssignmentTableEntity
-        // {
-        //     AssignedByUsername = _assignedByUsername,
-        //     AssignedOnUtc = _assignedOnUtc,
-        //     AssigneeUsername = _assigneeUsername1,
-        //     EntityType = typeof(UserAssignmentTableEntity).Name,
-        //     EntityVersion = 1,
-        //     PartitionKey = "TEST PARTITION KEY",
-        //     ProjectId = _projectId,
-        //     ProjectName = _projectName,
-        //     RowKey = "TEST ROW KEY",
-        //     ResourceFullName = _resource1FullName
-        // };
         _userAssignmentResource1User1 = new UserAssignment
         {
             AssignedByUsername = _assignedByUsername,
@@ -151,57 +96,8 @@ public class ProjectsServiceSpecs
             ResourceFullName = _resource1FullName
         };
 
-        // TODO: Is this still needed?
-        // _userAssignmentTableEntity2 = new UserAssignmentTableEntity
-        // {
-        //     AssignedByUsername = _assignedByUsername,
-        //     AssignedOnUtc = _assignedOnUtc,
-        //     AssigneeUsername = _assigneeUsername2,
-        //     EntityType = typeof(UserAssignmentTableEntity).Name,
-        //     EntityVersion = 1,
-        //     PartitionKey = "TEST PARTITION KEY",
-        //     ProjectId = _projectId,
-        //     ProjectName = _projectName,
-        //     RowKey = "TEST ROW KEY",
-        //     ResourceFullName = _resource2FullName
-        // };
-        _userAssignmentResource1User2 = new UserAssignment
-        {
-            AssignedByUsername = _assignedByUsername,
-            AssignedOnUtc = _assignedOnUtc,
-            AssigneeUsername = _assigneeUsername2,
-            ProjectId = _projectId,
-            ResourceFullName = _resource1FullName
-        };
-        _userAssignmentResource2User2 = new UserAssignment
-        {
-            AssignedByUsername = _assignedByUsername,
-            AssignedOnUtc = _assignedOnUtc,
-            AssigneeUsername = _assigneeUsername2,
-            ProjectId = _projectId,
-            ResourceFullName = _resource2FullName
-        };
-        _userAssignmentResource2User1 = new UserAssignment
-        {
-            AssignedByUsername = _assignedByUsername,
-            AssignedOnUtc = _assignedOnUtc,
-            AssigneeUsername = _assigneeUsername1,
-            ProjectId = _projectId,
-            ResourceFullName = _resource2FullName
-        };
-
-        _resourceVersion1 = new ResourceVersion
-        {
-            FullName = _resource1FullName,
-            ProjectId = _projectId,
-            Username = _assigneeUsername1,
-            VersionId = Guid.NewGuid().ToString(),
-            VersionIndex = 1
-        };
-
         Option<Project> nullProject = Option<Project>.None();
 
-        _loggerFactory = new NullLoggerFactory();
         _userProvider = A.Fake<IUserProvider>();
         _webhookQueueService = A.Fake<IWebhookQueueService>();
 
@@ -223,47 +119,783 @@ public class ProjectsServiceSpecs
     }
 
     [TestMethod]
-    public async Task InitProjectAsync_WhenProjectNameIsEmpty_ThrowsArgumentNullException()
+    public async Task AssignUserAsync_WhenNoProjectWithCorrespondingIdIsFound_ThrowsResourceNotFoundException()
     {
-        _project.Name = String.Empty;
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, true)).Throws((string fullName, bool shouldThrow) => new ResourceNotFoundException(_userAssignmentResource1User1.ProjectId, _userAssignmentResource1User1.ResourceFullName));
 
-        await _testee.Invoking(t => t.InitProjectAsync(_manifest)).Should().ThrowAsync<ArgumentNullException>();
+        await _testee.Invoking(t => t.AssignUserAsync(_userAssignmentResource1User1)).Should().ThrowAsync<ResourceNotFoundException>();
     }
 
     [TestMethod]
-    public async Task InitProjectAsync_WhenProjectUsernameIsEmpty_ThrowsArgumentNullException()
+    public async Task AssignUserAsync_WhenTargetBlobHasExistingAssignment_AndAssignmentIsAnotherUser_ThrowsUserAssignmentException()
     {
-        _project.Username = String.Empty;
+        const string existingAssignedUsername = "ANOTHER USER";
+        var existingMetadata = new Dictionary<string, string>
+        {
+            {Metadata.Assignee, existingAssignedUsername }
+        };
 
-        await _testee.Invoking(t => t.InitProjectAsync(_manifest)).Should().ThrowAsync<ArgumentNullException>();
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.Invoking(t => t.AssignUserAsync(_userAssignmentResource1User1)).Should().ThrowAsync<UserAssignmentException>();
     }
 
     [TestMethod]
-    public async Task InitProjectAsync_WhenProjectIsValid_Passes1ByteStreamToBlobService()
+    public async Task AssignUserAsync_WhenTargetBlobHasExistingAssignment_AndAssignmentIsSameUser_DoesNotSetMetadata()
     {
-        const long expectedStreamLength = 1;
+        var existingMetadata = new Dictionary<string, string>
+        {
+            {Metadata.Assignee, _userAssignmentResource1User1.AssigneeUsername }
+        };
 
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasExistingAssignment_AndAssignmentIsSameUser_DoesNotInvokeWebhook()
+    {
+        var existingMetadata = new Dictionary<string, string>
+        {
+            {Metadata.Assignee, _userAssignmentResource1User1.AssigneeUsername }
+        };
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasNoExistingAssignments_SetsAssigneeFromSpecifiedAssignmentInMetadata()
+    {
+        var existingMetadata = new Dictionary<string, string>();
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(d => d[Metadata.Assignee] == _userAssignmentResource1User1.AssigneeUsername))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasNoExistingAssignments_SetsAssignedByFromSpecifiedAssignmentInMetadata()
+    {
+        var existingMetadata = new Dictionary<string, string>();
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(d => d[Metadata.AssignedBy] == _userAssignmentResource1User1.AssignedByUsername))).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasNoExistingAssignments_SetsMetadataOnBlobUsingAssignmentResourceName()
+    {
+        var existingMetadata = new Dictionary<string, string>();
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(A<string>.That.Matches(s => s.Equals(_userAssignmentResource1User1.ResourceFullName)), A<Dictionary<string, string>>._)).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasNoExistingAssignments_SetsTagSafeAssigneeFromSpecifiedAssignmentInTag()
+    {
+        var existingMetadata = new Dictionary<string, string>();
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+        A.CallTo(() => _tagUtilities.GetSafeTagValue(A<object?>._)).ReturnsLazily((object? obj) => obj?.ToString() ?? String.Empty);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _blobService.SetTagAsync(A<string>._,
+                                                Tags.Assignee,
+                                                A<string>.That.Matches(s => s.Equals(_userAssignmentResource1User1.AssigneeUsername))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasNoExistingAssignments_SetsTagSafeAssigneeUsingAssignmentResourceName()
+    {
+        var existingMetadata = new Dictionary<string, string>();
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+        A.CallTo(() => _tagUtilities.GetSafeTagValue(A<object?>._)).ReturnsLazily((object? obj) => obj?.ToString() ?? String.Empty);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Equals(_userAssignmentResource1User1.ResourceFullName)),
+                                                Tags.Assignee,
+                                                A<string>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasNoExistingAssignments_InvokesWebhookWithCorrectProjectId()
+    {
+        var existingMetadata = new Dictionary<string, string>();
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.ProjectId.Equals(_projectId)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasNoExistingAssignments_InvokesWebhookWithCorrectResourceName()
+    {
+        var existingMetadata = new Dictionary<string, string>();
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Name.Equals(_userAssignmentResource1User1.ResourceFullName)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasNoExistingAssignments_InvokesWebhookWithAssigneeFromSpecifiedAssignment()
+    {
+        var existingMetadata = new Dictionary<string, string>();
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
+                                                                     A<ConsumerWebhookSpecification>.That.Matches(ws => ws != null
+                                                                                                                       && ws.CustomProps != null
+                                                                                                                       && ws.CustomProps.ContainsKey("assignedUsername")
+                                                                                                                       && ws.CustomProps["assignedUsername"].Equals(_userAssignmentResource1User1.AssigneeUsername))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasNoExistingAssignments_InvokesWebhookWithCorrectEvent()
+    {
+        var existingMetadata = new Dictionary<string, string>();
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Event.Equals(Events.UserAssigned)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenTargetBlobHasNoExistingAssignments_InvokesWebhookWithCorrectWebhookUri()
+    {
+        var existingMetadata = new Dictionary<string, string>();
+
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(existingMetadata);
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
+                                                                     A<ConsumerWebhookSpecification>.That.Matches(ws => ws != null
+                                                                                                                 && ws.Uri != null
+                                                                                                                 && ws.Uri.Equals(_webhookUri))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenWebhookSpecIsNull_DoesNotCallWebhookQueueService()
+    {
+        _manifest.WebhookSpecification = null;
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task AssignUserAsync_WhenWebhookSpecUriIsNull_DoesNotCallWebhookQueueService()
+    {
+        _manifest.WebhookSpecification!.Uri = null;
+
+        await _testee.AssignUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenNoBlobIsFound_ThrowsProjectNotFoundException()
+    {
+        var emptyBlobsWithAttributesList = new List<BlobWithAttributes>(0);
+        var emptyPageableResponse = new PageableResponse<BlobWithAttributes>(emptyBlobsWithAttributesList, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.ProjectId,
+                                                       A<string>.That.Matches(s => s.Equals(_projectId.ToString())),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(emptyPageableResponse);
+
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1)).Should().ThrowAsync<ProjectNotFoundException>();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenBlobIsFound_AndNoUserIsAssigned_ThrowsUnassignedToProjectException()
+    {
+        const string blobName = "BLOB NAME";
+        var blobWithAttributes = new BlobWithAttributes(blobName);
+        var blobsWithAttributesList = new List<BlobWithAttributes> { blobWithAttributes };
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributesList, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.ProjectId,
+                                                       A<string>.That.Matches(s => s.Equals(_projectId.ToString())),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1)).Should().ThrowAsync<UnassignedToResourceException>();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenBlobIsFound_AndAnotherUserIsAssigned_ThrowsUnassignedToProjectException()
+    {
+        const string blobName = "BLOB NAME";
+        var blobWithAttributes = new BlobWithAttributes(blobName);
+        blobWithAttributes.Metadata[Metadata.Assignee] = "ANOTHER USER";
+        var blobsWithAttributesList = new List<BlobWithAttributes> { blobWithAttributes };
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributesList, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.ProjectId,
+                                                       A<string>.That.Matches(s => s.Equals(_projectId.ToString())),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1)).Should().ThrowAsync<UnassignedToResourceException>();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenBlobIsFound_AndCorrespondingManifestIsNotFound_ThrowsManifestNotFoundException()
+    {
+        const string blobName = "BLOB NAME";
+        var projectBlob = new BlobWithAttributes(blobName);
+        projectBlob.Metadata[Metadata.Assignee] = _assigneeUsername1;
+        var blobsWithAttributesList = new List<BlobWithAttributes> { projectBlob };
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributesList, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.ProjectId,
+                                                       A<string>.That.Matches(s => s.Equals(_projectId.ToString())),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1)).Should().ThrowAsync<ManifestNotFoundException>();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenBlobIsFound_AndProjectStateIsNotInProgress_ThrowsProjectStateException()
+    {
+        const string createdBy = "CREATED BY";
+        const string projectName = "PROJECT NAME";
+        var projectState = ProjectStates.Initialising;
+
+        var manifestName = "MANIFEST NAME";
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(manifestName);
+        var manifestBlob = new BlobWithAttributes(manifestName);
+        manifestBlob.Metadata[Metadata.CreatedBy] = createdBy;
+        manifestBlob.Metadata[Metadata.ProjectName] = projectName;
+        manifestBlob.Tags[Tags.ProjectState] = projectState;
+
+        const string blobName = "BLOB NAME";
+        var projectBlob = new BlobWithAttributes(blobName);
+        projectBlob.Metadata[Metadata.Assignee] = _assigneeUsername1;
+
+        var blobsWithAttributesList = new List<BlobWithAttributes> {
+                                                                       manifestBlob,
+                                                                       projectBlob
+                                                                   };
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributesList, null);
+
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns(_manifest);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.ProjectId,
+                                                       A<string>.That.Matches(s => s.Equals(_projectId.ToString())),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1)).Should().ThrowAsync<ProjectStateException>();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenBlobIsFound_ReturnsProjectResourcesWithoutManifest()
+    {
+        const string assignedBy = "ASSIGNED BY";
+        const string createdBy = "CREATED BY";
+        var projectState = ProjectStates.InProgress;
+
+        var blobsWithAttributes = GenerateAllProjectResources(numberOfResources: 2,
+                                                           _projectId,
+                                                           _projectName,
+                                                           ProjectStates.InProgress,
+                                                           assignedBy,
+                                                           _assigneeUsername1,
+                                                           createdBy);
+
+        var manifestName = GenerateManifestName(_projectId);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(manifestName);
+
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributes, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.ProjectId,
+                                                       A<string>.That.Matches(s => s.Equals(_projectId.ToString())),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        var result = await _testee.GetAssignedProjectAsync(_projectId, _assigneeUsername1);
+
+        result.Should().NotBeNull();
+        result.Resources.Should().NotContain(resource => resource.FullName.Equals(manifestName));
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenBlobIsFound_ReturnsProjectWithExpectedResources()
+    {
+        const string assignedBy = "ASSIGNED BY";
+        const string createdBy = "CREATED BY";
+        var projectState = ProjectStates.InProgress;
+
+        var blobsWithAttributes = GenerateAllProjectResources(numberOfResources: 2,
+                                                           _projectId,
+                                                           _projectName,
+                                                           ProjectStates.InProgress,
+                                                           assignedBy,
+                                                           _assigneeUsername1,
+                                                           createdBy);
+
+        var manifestName = GenerateManifestName(_projectId);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(manifestName);
+
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributes, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.ProjectId,
+                                                       A<string>.That.Matches(s => s.Equals(_projectId.ToString())),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        var result = await _testee.GetAssignedProjectAsync(_projectId, _assigneeUsername1);
+
+        result.Should().NotBeNull();
+        result.Resources.Should().HaveCount(2);
+        result.Resources.Should().AllSatisfy(resource =>
+        {
+            resource.Should().NotBeNull();
+            resource.AssignedBy.Should().Be(assignedBy);
+            resource.AssignedTo.Should().Be(_assigneeUsername1);
+            resource.CreatedBy.Should().Be(createdBy);
+            resource.ProjectId.Should().Be(_projectId);
+        });
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenBlobIsFound_ReturnsProjectWithExpectedProjectId()
+    {
+        const string assignedBy = "ASSIGNED BY";
+        const string createdBy = "CREATED BY";
+        var projectState = ProjectStates.InProgress;
+
+        var blobsWithAttributes = GenerateAllProjectResources(numberOfResources: 2,
+                                                           _projectId,
+                                                           _projectName,
+                                                           ProjectStates.InProgress,
+                                                           assignedBy,
+                                                           _assigneeUsername1,
+                                                           createdBy);
+
+        var manifestName = GenerateManifestName(_projectId);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(manifestName);
+
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributes, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.ProjectId,
+                                                       A<string>.That.Matches(s => s.Equals(_projectId.ToString())),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        var result = await _testee.GetAssignedProjectAsync(_projectId, _assigneeUsername1);
+
+        result.Should().NotBeNull();
+        result.Id.Should().Be(_projectId);
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenBlobIsFound_ReturnsProjectWithExpectedProjectName()
+    {
+        const string assignedBy = "ASSIGNED BY";
+        const string createdBy = "CREATED BY";
+        var projectState = ProjectStates.InProgress;
+
+        var blobsWithAttributes = GenerateAllProjectResources(numberOfResources: 2,
+                                                           _projectId,
+                                                           _projectName,
+                                                           ProjectStates.InProgress,
+                                                           assignedBy,
+                                                           _assigneeUsername1,
+                                                           createdBy);
+
+        var manifestName = GenerateManifestName(_projectId);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(manifestName);
+
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributes, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.ProjectId,
+                                                       A<string>.That.Matches(s => s.Equals(_projectId.ToString())),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        var result = await _testee.GetAssignedProjectAsync(_projectId, _assigneeUsername1);
+
+        result.Should().NotBeNull();
+        result.Name.Should().Be(_projectName);
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectAsync_WhenBlobIsFound_ReturnsProjectWithExpectedProjectState()
+    {
+        const string assignedBy = "ASSIGNED BY";
+        const string createdBy = "CREATED BY";
+        var projectState = ProjectStates.InProgress;
+
+        var blobsWithAttributes = GenerateAllProjectResources(numberOfResources: 2,
+                                                           _projectId,
+                                                           _projectName,
+                                                           ProjectStates.InProgress,
+                                                           assignedBy,
+                                                           _assigneeUsername1,
+                                                           createdBy);
+
+        var manifestName = GenerateManifestName(_projectId);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(manifestName);
+
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributes, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.ProjectId,
+                                                       A<string>.That.Matches(s => s.Equals(_projectId.ToString())),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        var result = await _testee.GetAssignedProjectAsync(_projectId, _assigneeUsername1);
+
+        result.Should().NotBeNull();
+        result.State.Should().Be(projectState);
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectsAsync_WhenNoProjectsAssigned_ReturnsPageableObjectWithEmptyItems()
+    {
+        var blobsWithAttributes = new List<BlobWithAttributes>(0);
+
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributes, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.Assignee,
+                                                       A<string>.That.Matches(s => s.Equals(_assigneeUsername1)),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        var result = await _testee.GetAssignedProjectsAsync(_assigneeUsername1);
+
+        result.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectsAsync_WhenProjectsAreAssigned_ReturnsPageableObjectWithExpectedNumberOfItems()
+    {
+        var project1Id = Guid.NewGuid();
+        var project1Name = "PROJECT 1 NAME";
+        var project2Id = Guid.NewGuid();
+        var project2Name = "PROJECT 2 NAME";
+        const string assignedBy = "ASSIGNED BY";
+        const string createdBy = "CREATED BY";
+        var projectState = ProjectStates.InProgress;
+
+        var blobsWithAttributes = GenerateProjectResources(project1Id,
+                                                           project1Name,
+                                                           projectState,
+                                                           assignedBy,
+                                                           _assigneeUsername1,
+                                                           createdBy).Take(2).ToList();
+
+        var manifest1Blob = GenerateManifestBlob(project1Id,
+                                                 createdBy,
+                                                 project1Name,
+                                                 projectState);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(project1Id)))).Returns(manifest1Blob.Name);
+        A.CallTo(() => _blobService.RetrieveTagsAsync(A<string>.That.Matches(s => s.Equals(manifest1Blob.Name)), A<bool>._)).Returns(manifest1Blob.Tags);
+
+        blobsWithAttributes.AddRange(GenerateProjectResources(project2Id,
+                                                              project2Name,
+                                                              projectState,
+                                                              assignedBy,
+                                                              _assigneeUsername1,
+                                                              createdBy).Take(2).ToList());
+
+        var manifest2Blob = GenerateManifestBlob(project2Id,
+                                                 createdBy,
+                                                 project2Name,
+                                                 projectState);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(project2Id)))).Returns(manifest2Blob.Name);
+        A.CallTo(() => _blobService.RetrieveTagsAsync(A<string>.That.Matches(s => s.Equals(manifest2Blob.Name)), A<bool>._)).Returns(manifest2Blob.Tags);
+
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributes, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.Assignee,
+                                                       A<string>.That.Matches(s => s.Equals(_assigneeUsername1)),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        var result = await _testee.GetAssignedProjectsAsync(_assigneeUsername1);
+
+        result.Should().NotBeNullOrEmpty();
+        result.Should().HaveCount(2);
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectsAsync_WhenProjectsAreAssigned_ReturnsPageableObjectWithExpectedProjectIds()
+    {
+        var project1Id = Guid.NewGuid();
+        var project1Name = "PROJECT 1 NAME";
+        var project2Id = Guid.NewGuid();
+        var project2Name = "PROJECT 2 NAME";
+        const string assignedBy = "ASSIGNED BY";
+        const string createdBy = "CREATED BY";
+        var projectState = ProjectStates.InProgress;
+
+        var blobsWithAttributes = GenerateProjectResources(project1Id,
+                                                           project1Name,
+                                                           projectState,
+                                                           assignedBy,
+                                                           _assigneeUsername1,
+                                                           createdBy).Take(2).ToList();
+
+        var manifest1Blob = GenerateManifestBlob(project1Id,
+                                                 createdBy,
+                                                 project1Name,
+                                                 projectState);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(project1Id)))).Returns(manifest1Blob.Name);
+        A.CallTo(() => _blobService.RetrieveTagsAsync(A<string>.That.Matches(s => s.Equals(manifest1Blob.Name)), A<bool>._)).Returns(manifest1Blob.Tags);
+
+        blobsWithAttributes.AddRange(GenerateProjectResources(project2Id,
+                                                              project2Name,
+                                                              projectState,
+                                                              assignedBy,
+                                                              _assigneeUsername1,
+                                                              createdBy).Take(2).ToList());
+
+        var manifest2Blob = GenerateManifestBlob(project2Id,
+                                                 createdBy,
+                                                 project2Name,
+                                                 projectState);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(project2Id)))).Returns(manifest2Blob.Name);
+        A.CallTo(() => _blobService.RetrieveTagsAsync(A<string>.That.Matches(s => s.Equals(manifest2Blob.Name)), A<bool>._)).Returns(manifest2Blob.Tags);
+
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributes, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.Assignee,
+                                                       A<string>.That.Matches(s => s.Equals(_assigneeUsername1)),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        var result = await _testee.GetAssignedProjectsAsync(_assigneeUsername1);
+
+        result.Should().NotBeNullOrEmpty();
+        result.Should().ContainSingle(project => project.Id.Equals(project1Id));
+        result.Should().ContainSingle(project => project.Id.Equals(project2Id));
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectsAsync_WhenProjectsAreAssigned_ReturnsPageableObjectWithExpectedProjectNames()
+    {
+        var project1Id = Guid.NewGuid();
+        var project1Name = "PROJECT 1 NAME";
+        var project2Id = Guid.NewGuid();
+        var project2Name = "PROJECT 2 NAME";
+        const string assignedBy = "ASSIGNED BY";
+        const string createdBy = "CREATED BY";
+        var projectState = ProjectStates.InProgress;
+
+        var blobsWithAttributes = GenerateProjectResources(project1Id,
+                                                           project1Name,
+                                                           projectState,
+                                                           assignedBy,
+                                                           _assigneeUsername1,
+                                                           createdBy).Take(2).ToList();
+
+        var manifest1Blob = GenerateManifestBlob(project1Id,
+                                                 createdBy,
+                                                 project1Name,
+                                                 projectState);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(project1Id)))).Returns(manifest1Blob.Name);
+        A.CallTo(() => _blobService.RetrieveTagsAsync(A<string>.That.Matches(s => s.Equals(manifest1Blob.Name)), A<bool>._)).Returns(manifest1Blob.Tags);
+
+        blobsWithAttributes.AddRange(GenerateProjectResources(project2Id,
+                                                              project2Name,
+                                                              projectState,
+                                                              assignedBy,
+                                                              _assigneeUsername1,
+                                                              createdBy).Take(2).ToList());
+
+        var manifest2Blob = GenerateManifestBlob(project2Id,
+                                                 createdBy,
+                                                 project2Name,
+                                                 projectState);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(project2Id)))).Returns(manifest2Blob.Name);
+        A.CallTo(() => _blobService.RetrieveTagsAsync(A<string>.That.Matches(s => s.Equals(manifest2Blob.Name)), A<bool>._)).Returns(manifest2Blob.Tags);
+
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributes, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.Assignee,
+                                                       A<string>.That.Matches(s => s.Equals(_assigneeUsername1)),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        var result = await _testee.GetAssignedProjectsAsync(_assigneeUsername1);
+
+        result.Should().NotBeNullOrEmpty();
+        result.Should().ContainSingle(project => project.Name.Equals(project1Name));
+        result.Should().ContainSingle(project => project.Name.Equals(project2Name));
+    }
+
+    [TestMethod]
+    public async Task GetAssignedProjectsAsync_WhenProjectsAreAssigned_ReturnsProjectsOnlyWithStatusInProgress()
+    {
+        var project1Id = Guid.NewGuid();
+        var project1Name = "PROJECT 1 NAME";
+        var project2Id = Guid.NewGuid();
+        var project2Name = "PROJECT 2 NAME";
+        const string assignedBy = "ASSIGNED BY";
+        const string createdBy = "CREATED BY";
+        var project1State = ProjectStates.InProgress;
+        var project2State = ProjectStates.Initialising;
+
+        var blobsWithAttributes = GenerateProjectResources(project1Id,
+                                                           project1Name,
+                                                           project1State,
+                                                           assignedBy,
+                                                           _assigneeUsername1,
+                                                           createdBy).Take(2).ToList();
+
+        var manifest1Blob = GenerateManifestBlob(project1Id,
+                                                 createdBy,
+                                                 project1Name,
+                                                 project1State);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(project1Id)))).Returns(manifest1Blob.Name);
+        A.CallTo(() => _blobService.RetrieveTagsAsync(A<string>.That.Matches(s => s.Equals(manifest1Blob.Name)), A<bool>._)).Returns(manifest1Blob.Tags);
+
+        blobsWithAttributes.AddRange(GenerateProjectResources(project2Id,
+                                                              project2Name,
+                                                              project2State,
+                                                              assignedBy,
+                                                              _assigneeUsername1,
+                                                              createdBy).Take(2).ToList());
+
+        var manifest2Blob = GenerateManifestBlob(project2Id,
+                                                 createdBy,
+                                                 project2Name,
+                                                 project2State);
+        A.CallTo(() => _manifestService.GetManifestFullName(A<Guid>.That.Matches(g => g.Equals(project2Id)))).Returns(manifest2Blob.Name);
+        A.CallTo(() => _blobService.RetrieveTagsAsync(A<string>.That.Matches(s => s.Equals(manifest2Blob.Name)), A<bool>._)).Returns(manifest2Blob.Tags);
+
+        var pageableResponse = new PageableResponse<BlobWithAttributes>(blobsWithAttributes, null);
+
+        A.CallTo(() => _blobService.RetrieveByTagAsync(Tags.Assignee,
+                                                       A<string>.That.Matches(s => s.Equals(_assigneeUsername1)),
+                                                       A<int>._,
+                                                       A<string?>._)).Returns(pageableResponse);
+
+        var result = await _testee.GetAssignedProjectsAsync(_assigneeUsername1);
+
+        result.Should().NotBeNullOrEmpty();
+        result.Should().ContainSingle(project => project.State.Equals(project1State));
+        result.Should().NotContain(project => project.State.Equals(project2State));
+    }
+
+    [TestMethod]
+    public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhook()
+    {
+        var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
+
+        result.Should().NotBeNull();
+        result!.Uri.Should().Be(_webhookUri);
+    }
+
+    [TestMethod]
+    public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhookWithExpectedUri()
+    {
+        var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
+
+        result?.Uri.Should().Be(_webhookUri);
+    }
+
+    [TestMethod]
+    public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhookWithExpectedCustomProps()
+    {
+        var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
+
+        result?.CustomProps.Should().NotBeNullOrEmpty();
+        result!.CustomProps.Should().HaveCount(_webhookCustomProps.Count);
+        result!.CustomProps!.Select(keyValuePair => keyValuePair.Key).Should().Contain(_webhookCustomProp1Name);
+        // result!.CustomProps![_webhookCustomProp1Name].Should().Be(_webhookCustomProp1Value);
+        result!.CustomProps!.Select(keyValuePair => keyValuePair.Key).Should().Contain(_webhookCustomProp2Name);
+        //result!.CustomProps[_webhookCustomProp2Name].Should().Be(_webhookCustomProp2Value);
+    }
+
+    [TestMethod]
+    public async Task GetWebhookUriAsync_WhenNoMatchingProjectFound_ReturnsNull()
+    {
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(A<Guid>._)).Returns((InternalManifest?)null);
+
+        var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
+
+        result.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task GetWebhookUriAsync_WhenMatchingProjectFoundWithNoWebhookUri_ReturnsNull()
+    {
+        _manifest.WebhookSpecification = null;
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(A<Guid>._)).Returns(_manifest);
+
+        var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
+
+        result.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task InitProjectAsync_WhenProjectNameIsEmpty_ThrowsArgumentException()
+    {
+        _manifest.PackageName = String.Empty;
+
+        await _testee.Invoking(t => t.InitProjectAsync(_manifest)).Should().ThrowAsync<ArgumentException>();
+    }
+
+    [TestMethod]
+    public async Task InitProjectAsync_WhenProjectUsernameIsEmpty_ThrowsArgumentException()
+    {
+        _manifest.Username = String.Empty;
+
+        await _testee.Invoking(t => t.InitProjectAsync(_manifest)).Should().ThrowAsync<ArgumentException>();
+    }
+
+    [TestMethod]
+    public async Task InitProjectAsync_WhenProjectIsValid_StoresManifest()
+    {
         await _testee.InitProjectAsync(_manifest);
 
-        A.CallTo(() => _blobService.StoreResourceAsync(A<string>._, A<Stream>.That.Matches(s => ((MemoryStream)s).Length == expectedStreamLength))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenProjectIsValid_PassesProjectIdInMetadata()
-    {
-        await _testee.InitProjectAsync(_manifest);
-
-        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.ProjectId)
-                                                                                                                     && dict[Metadata.ProjectId] == _project.Id.ToString()))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenProjectIsValid_PassesProjectNameInMetadata()
-    {
-        await _testee.InitProjectAsync(_manifest);
-
-        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.ProjectName)
-                                                                                                                     && dict[Metadata.ProjectName] == _project.Name))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _manifestService.StoreManifestAsync(A<InternalManifest>.That.Matches(m => m == _manifest))).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -271,161 +903,11 @@ public class ProjectsServiceSpecs
     {
         await _testee.InitProjectAsync(_manifest);
 
-        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.WebhookUri)
-                                                                                                                     && dict[Metadata.WebhookUri] == _project.WebhookSpecification!.Uri))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenProjectIsValidAndSpecifiesNoWebhookUri_PassesWebhookUriAsEmptyStringInMetadata()
-    {
-        ConsumerWebhookSpecification? webhookSpec = null;
-        var expectedMetadataValue = String.Empty;
-
-        _project.WebhookSpecification = webhookSpec;
-
-        await _testee.InitProjectAsync(_manifest);
-
-        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.WebhookUri)
-                                                                                                                     && dict[Metadata.WebhookUri] == expectedMetadataValue))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenProjectIsValidAndSpecifiesWebhookCustomProps_PassesWebhookSerialisedCustomPropsInMetadata()
-    {
-        await _testee.InitProjectAsync(_manifest);
-
-        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.WebhookUri)
-                                                                                                                     && dict[Metadata.WebhookUri] == _project.WebhookSpecification!.Uri))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenProjectIsValidAndSpecifiesNoWebhookCustomProps_PassesSerialisedEmptyCustomPropsInMetadata()
-    {
-        Dictionary<string, object> customProps = [];
-        var serialisedCustomProps = System.Text.Json.JsonSerializer.Serialize(customProps);
-
-        _project.WebhookSpecification!.CustomProps = customProps;
-
-        await _testee.InitProjectAsync(_manifest);
-
-        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.WebhookCustomProps)
-                                                                                                                     && dict[Metadata.WebhookCustomProps] == serialisedCustomProps))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenProjectIsValid_PassesCreatedByUsernameInMetadata()
-    {
-        await _testee.InitProjectAsync(_manifest);
-
-        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Metadata.CreatedBy)
-                                                                                                                     && dict[Metadata.CreatedBy] == _project.Username))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenProjectIsValid_PassesProjectIdInTags()
-    {
-        await _testee.InitProjectAsync(_manifest);
-
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Tags.ProjectId)))).MustHaveHappenedOnceExactly();
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => String.Equals(dict[Tags.ProjectId], _project.Id.ToString())))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenProjectIsValid_PassesProjectNameInTags()
-    {
-        await _testee.InitProjectAsync(_manifest);
-
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Tags.ProjectName)))).MustHaveHappenedOnceExactly();
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => String.Equals(dict[Tags.ProjectName], _project.Name)))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenProjectIsValid_PassesInitialStateInTags()
-    {
-        var expectedProjectState = ProjectStates.Initialising;
-
-        await _testee.InitProjectAsync(_manifest);
-
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => dict.ContainsKey(Tags.ProjectState)))).MustHaveHappenedOnceExactly();
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>.That.Matches(dict => String.Equals(dict[Tags.ProjectState], expectedProjectState)))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenFailsToStoreBlob_NoWebhookIsSent()
-    {
-        A.CallTo(() => _blobService.StoreResourceAsync(A<string>._, A<Stream>._)).ThrowsAsync(new Exception());
-
-        try
-        {
-            await _testee.InitProjectAsync(_manifest);
-        }
-        catch(Exception)
-        {}
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>._)).MustNotHaveHappened();
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenFailsToSetMetadata_NoWebhookIsSent()
-    {
-        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>._)).ThrowsAsync(new Exception());
-
-        try
-        {
-            await _testee.InitProjectAsync(_manifest);
-        }
-        catch(Exception)
-        {}
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>._)).MustNotHaveHappened();
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenFailsToSetMetadata_BlobIsDeleted()
-    {
-        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>._)).ThrowsAsync(new Exception());
-
-        try
-        {
-            await _testee.InitProjectAsync(_manifest);
-        }
-        catch(Exception)
-        {}
-
-        A.CallTo(() => _blobService.DeleteAsync(A<string>._)).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenFailsToSetTags_NoWebhookIsSent()
-    {
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>._)).ThrowsAsync(new Exception());
-
-        try
-        {
-            await _testee.InitProjectAsync(_manifest);
-        }
-        catch(Exception)
-        {}
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<InternalWebhookMessage>._)).MustNotHaveHappened();
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
-    }
-
-    [TestMethod]
-    public async Task InitProjectAsync_WhenFailsToSetTags_BlobIsDeleted()
-    {
-        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>._)).ThrowsAsync(new Exception());
-
-        try
-        {
-            await _testee.InitProjectAsync(_manifest);
-        }
-        catch(Exception)
-        {}
-
-        A.CallTo(() => _blobService.DeleteAsync(A<string>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
+                                                                     A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
+                                                                                                                        && cws.Uri != null
+                                                                                                                        && cws.Uri.Equals(_webhookUri))))
+         .MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
@@ -473,777 +955,405 @@ public class ProjectsServiceSpecs
             .MustHaveHappenedOnceExactly();
     }
 
-    // TODO: Update test.
-    [TestMethod]
-    public void AssignUserAsync_WhenNoProjectWithCorrespondingIdIsFound_ThrowsArgumentException()
-    {
-        // A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_userAssignmentResource1User1.ProjectId)).Returns(Enumerable.Empty<ITableEntity>().ToList());
-
-        // await _testee.Invoking(t => t.AssignUserAsync(_userAssignmentResource1User1)).Should().ThrowAsync<ProjectNotFoundException>();
-    }
-
-    // TODO: Update test
-    [TestMethod]
-    public void AssignUserAsync_WhenProjectWithCorrespondingIdIsFound_PassesUserAssignmentWithProjectNameFromRetrievedProject()
-    {
-        // await _testee.AssignUserAsync(_userAssignmentResource2User1);
-
-        // A.CallTo(() => _projectsTableService.AssignUserAsync(A<UserAssignment>.That.Matches(ua => ua.ProjectName.Equals(_userAssignmentResource2User1.ProjectName))))
-        //  .MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task AssignUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectProjectId()
-    {
-        await _testee.AssignUserAsync(_userAssignmentResource2User1);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.ProjectId.Equals(_userAssignmentResource2User1.ProjectId)), A<ConsumerWebhookSpecification>._))
-         .MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task AssignUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectProjectName()
-    {
-        await _testee.AssignUserAsync(_userAssignmentResource2User1);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Name.Equals(_userAssignmentResource2User1.ProjectName)), A<ConsumerWebhookSpecification>._))
-         .MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task AssignUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectEvent()
-    {
-        await _testee.AssignUserAsync(_userAssignmentResource2User1);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Event.Equals(Events.UserAssigned)), A<ConsumerWebhookSpecification>._))
-         .MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task AssignUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectUsername()
-    {
-        await _testee.AssignUserAsync(_userAssignmentResource2User1);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Username.Equals(_userAssignmentResource2User1.AssignedByUsername)), A<ConsumerWebhookSpecification>._))
-         .MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task AssignUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithAssigneeUsernameInCustomProps()
-    {
-        const string propNameAssignedUsername = "assignedUsername";
-
-        await _testee.AssignUserAsync(_userAssignmentResource2User1);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
-                                                                                                                                             && cws.CustomProps.ContainsKey(propNameAssignedUsername)
-                                                                                                                                             && cws.CustomProps[propNameAssignedUsername].Equals(_userAssignmentResource2User1.AssigneeUsername))))
-         .MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task AssignUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithResourceFullNameInCustomProps()
-    {
-        const string propNameResourceFullName = "resourceFullName";
-
-        await _testee.AssignUserAsync(_userAssignmentResource2User1);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
-                                                                                                                                             && cws.CustomProps.ContainsKey(propNameResourceFullName)
-                                                                                                                                             && cws.CustomProps[propNameResourceFullName].Equals(_userAssignmentResource2User1.ResourceFullName))))
-         .MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task AssignUserAsync_WhenResourceIsAssignedToAnotherUser_ThrowsUserAssignmentException()
-    {
-        await _testee.Invoking(t => t.AssignUserAsync(_userAssignmentResource1User2)).Should().ThrowAsync<UserAssignmentException>();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void AssignUserAsync_WhenResourceIsAssignedToSameUser_DoesNotAssignToSameUser()
-    {
-        // await _testee.AssignUserAsync(_userAssignmentResource1User1);
-
-        // A.CallTo(() => _projectsTableService.AssignUserAsync(A<UserAssignment>._)).MustNotHaveHappened();
-    }
-
-    [TestMethod]
-    public async Task AssignUserAsync_WhenResourceIsAssignedToSameUser_DoesNotInvokeWebhook()
-    {
-        await _testee.AssignUserAsync(_userAssignmentResource1User1);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
-    }
-
-    // TODO: Is this test still valid?
-    [TestMethod]
-    public void GetAssignedProjectAsync_WhenNoTableEntitiesAreReturned_ThrowsProjectNotFoundException()
-    {
-        // var tableEntities = new List<ITableEntity>(0);
-
-        // A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername1)).Returns(tableEntities);
-
-        // await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1))
-        //              .Should()
-        //              .ThrowAsync<ProjectNotFoundException>();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void GetAssignedProjectAsync_WhenNoUserAssignmentTableEntityIsReturned_ThrowsUnassignedToProjectException()
-    {
-        // var tableEntities = new List<ITableEntity>
-        // {
-        //     _projectTableEntity,
-        //     _resourceTableEntity
-        // };
-
-        // A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername1)).Returns(tableEntities);
-
-        // await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1))
-        //              .Should()
-        //              .ThrowAsync<UnassignedToResourceException>();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void GetAssignedProjectAsync_WhenNoProjectTableEntityReturned_ThrowsProjectNotFoundException()
-    {
-        // var tableEntities = new List<ITableEntity>
-        // {
-        //     _resourceTableEntity,
-        //     _userAssignmentTableEntity1
-        // };
-
-        // A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername1)).Returns(tableEntities);
-
-        // await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1))
-        //              .Should()
-        //              .ThrowAsync<ProjectNotFoundException>();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void GetAssignedProjectAsync_WhenUserAssignmentAndProjectTableEntitiesReturnedButProjectIsNotInProgress_ThrowsProjectStateException()
-    {
-        // _projectTableEntity.State = ProjectStates.Completed;
-
-        // var tableEntities = new List<ITableEntity>
-        // {
-        //     _projectTableEntity,
-        //     _resourceTableEntity,
-        //     _userAssignmentTableEntity1
-        // };
-
-        // A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername1)).Returns(tableEntities);
-
-        // await _testee.Invoking(t => t.GetAssignedProjectAsync(_projectId, _assigneeUsername1))
-        //              .Should()
-        //              .ThrowAsync<ProjectStateException>();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void GetAssignedProjectAsync_WhenUserAssignmentAndProjectTableEntitiesReturned_ReturnsProjectWithResources()
-    {
-        // var tableEntities = new List<ITableEntity>
-        // {
-        //     _projectTableEntity,
-        //     _resourceTableEntity,
-        //     _userAssignmentTableEntity1
-        // };
-
-        // A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId, _assigneeUsername1)).Returns(tableEntities);
-
-        // var result = await _testee.GetAssignedProjectAsync(_projectId, _assigneeUsername1);
-
-        // result.Should().NotBeNull();
-        // result.Name.Should().Be(_projectName);
-        // result.Id.Should().Be(_projectId);
-        // result.Resources.Should().NotBeNullOrEmpty().And.HaveCount(1);
-        // result.Resources.Single().FullName.Should().Be(_resource1FullName);
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void GetAssignedProjectsAsync_WhenNoUserAssignmentsFound_ReturnsEmptyList()
-    {
-        // const string assigneeUsername = "TEST ASSIGNEE USERNAME";
-        // var userAssignmentTableEntities = new List<UserAssignmentTableEntity>(0);
-
-        // A.CallTo(() => _projectsTableService.GetAssignedProjectsAsync(assigneeUsername)).Returns(userAssignmentTableEntities);
-
-        // var result = await _testee.GetAssignedProjectsAsync(assigneeUsername);
-
-        // result.Should()
-        //     .NotBeNull().And
-        //     .BeEmpty();
-    }
-
-    // TODO: Is this test still valid?
-    [TestMethod]
-    public void GetAssignedProjectsAsync_WhenUserAssignmentsFound_ReturnsMappedUserAssignmentsFromTableService()
-    {
-        // var projectId1 = Guid.NewGuid();
-        // var projectId2 = Guid.NewGuid();
-        // const string assignedByUsername1 = "TEST ASSIGNED BY USERNAME 1";
-        // const string assignedByUsername2 = "TEST ASSIGNED BY USERNAME 2";
-        // const string assigneeUsername = "TEST ASSIGNEE USERNAME";
-        // const string partitionKey = "TEST PARTITION KEY";
-        // const string rowKey1 = "TEST ROW KEY 1";
-        // const string rowKey2 = "TEST ROW KEY 2";
-        // const string projectName1 = "TEST PROJECT NAME 1";
-        // const string projectName2 = "TEST PROJECT NAME 2";
-        // const string resourceFullName1 = "TEST RESOURCE FULL NAME 1";
-        // const string resourceFullName2 = "TEST RESOURCE FULL NAME 2";
-
-        // var userAssignmentTableEntities = new List<UserAssignmentTableEntity>
-        // {
-        //     UserAssignmentTableEntity.FromUserAssignment(new UserAssignment
-        //                                                  {
-        //                                                      AssignedByUsername = assignedByUsername1,
-        //                                                      AssignedOnUtc = DateTime.UtcNow,
-        //                                                      AssigneeUsername = assigneeUsername,
-        //                                                      ProjectId = projectId1,
-        //                                                      ProjectName = projectName1,
-        //                                                      ResourceFullName = resourceFullName1
-        //                                                  }, new KeyPolicy(partitionKey, new RowKey(rowKey1, KeyPolicyQueryOperators.Equal))),
-        //     UserAssignmentTableEntity.FromUserAssignment(new UserAssignment
-        //                                                  {
-        //                                                      AssignedByUsername = assignedByUsername2,
-        //                                                      AssignedOnUtc = DateTime.UtcNow,
-        //                                                      AssigneeUsername = assigneeUsername,
-        //                                                      ProjectId = projectId2,
-        //                                                      ProjectName = projectName2,
-        //                                                      ResourceFullName = resourceFullName2
-        //                                                  }, new KeyPolicy(partitionKey, new RowKey(rowKey2, KeyPolicyQueryOperators.Equal)))
-        // };
-
-        // A.CallTo(() => _projectsTableService.GetAssignedProjectsAsync(assigneeUsername)).Returns(userAssignmentTableEntities);
-
-        // var result = await _testee.GetAssignedProjectsAsync(assigneeUsername);
-
-        // result.Should()
-        //     .NotBeNullOrEmpty().And
-        //     .HaveCount(userAssignmentTableEntities.Count);
-
-        // foreach (var userAssignmentTableEntity in userAssignmentTableEntities)
-        // {
-        //     result.Should().Contain(ua => ua.AssignedByUsername.Equals(userAssignmentTableEntity.AssignedByUsername)
-        //                                   && ua.AssignedOnUtc.Equals(userAssignmentTableEntity.AssignedOnUtc)
-        //                                   && ua.AssigneeUsername.Equals(userAssignmentTableEntity.AssigneeUsername)
-        //                                   && ua.ProjectId.Equals(userAssignmentTableEntity.ProjectId)
-        //                                   && ua.ProjectName.Equals(userAssignmentTableEntity.ProjectName)
-        //                                   && ua.ResourceFullName.Equals(userAssignmentTableEntity.ResourceFullName));
-        // }
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void GetProjectAsync_WhenNoTableEntitiesAreReturned_ThrowsProjectNotFoundException()
-    {
-        // var tableEntities = new List<ITableEntity>(0);
-
-        // A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId)).Returns(tableEntities);
-
-        // await _testee.Invoking(t => t.GetProjectAsync(_projectId))
-        //              .Should()
-        //              .ThrowAsync<ProjectNotFoundException>();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void GetProjectAsync_WhenNoProjectTableEntityReturned_ThrowsProjectNotFoundException()
-    {
-        // var tableEntities = new List<ITableEntity>
-        // {
-        //     _resourceTableEntity,
-        //     _userAssignmentTableEntity1
-        // };
-
-        // A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId)).Returns(tableEntities);
-
-        // await _testee.Invoking(t => t.GetProjectAsync(_projectId))
-        //              .Should()
-        //              .ThrowAsync<ProjectNotFoundException>();
-    }
-
-    // TODO: Is this test still valid?
-    [TestMethod]
-    public void GetProjectAsync_WhenNoUserAssignmentTableEntityIsReturned_ReturnsProjectWithResourcesWhichHaveNoAssignment()
-    {
-        // var tableEntities = new List<ITableEntity>
-        // {
-        //     _projectTableEntity,
-        //     _resourceTableEntity
-        // };
-
-        // A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId)).Returns(tableEntities);
-
-        // var result = await _testee.GetProjectAsync(_projectId);
-
-        // result.Should().NotBeNull();
-        // result.Name.Should().Be(_projectName);
-        // result.Id.Should().Be(_projectId);
-        // result.Resources.Should().NotBeNull().And.HaveCount(1);
-        // result.Resources.Should().AllSatisfy(resource => resource.AssignedTo.Should().BeNullOrEmpty());
-        // result.Resources.Should().AllSatisfy(resource => resource.AssignedBy.Should().BeNullOrEmpty());
-        // result.Resources.Should().AllSatisfy(resource => resource.AssignedOnUtc.HasValue.Should().BeFalse());
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void GetProjectAsync_WhenUserAssignmentAndProjectTableEntitiesReturned_ReturnsProjectWithResourcesWhichHaveAssignmentProperties()
-    {
-        // var tableEntities = new List<ITableEntity>
-        // {
-        //     _projectTableEntity,
-        //     _resourceTableEntity,
-        //     _userAssignmentTableEntity1
-        // };
-
-        // A.CallTo(() => _projectsTableService.GetProjectEntitiesAsync(_projectId)).Returns(tableEntities);
-
-        // var result = await _testee.GetProjectAsync(_projectId);
-
-        // result.Should().NotBeNull();
-        // result.Name.Should().Be(_projectName);
-        // result.Id.Should().Be(_projectId);
-        // result.Resources.Should().NotBeNull().And.HaveCount(1);
-        // result.Resources.Single().AssignedTo.Should().Be(_userAssignmentResource1User1.AssigneeUsername);
-        // result.Resources.Single().AssignedBy.Should().Be(_userAssignmentResource1User1.AssignedByUsername);
-        // result.Resources.Single().AssignedOnUtc.Should().Be(_userAssignmentResource1User1.AssignedOnUtc);
-    }
-
-    [TestMethod]
-    public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhook()
-    {
-        var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
-
-        result.Should().NotBeNull();
-        result!.Uri.Should().Be(_webhookUri);
-    }
-
-    [TestMethod]
-    public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhookWithExpectedUri()
-    {
-        var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
-
-        result?.Uri.Should().Be(_webhookUri);
-    }
-
-    [TestMethod]
-    public async Task GetWebhookAsync_WhenMatchingProjectFound_ReturnsWebhookWithExpectedCustomProps()
-    {
-        var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
-
-        result?.CustomProps.Should().NotBeNullOrEmpty();
-        result!.CustomProps.Should().HaveCount(_webhookCustomProps.Count);
-        result!.CustomProps!.Select(keyValuePair => keyValuePair.Key).Should().Contain(_webhookCustomProp1Name);
-        // result!.CustomProps![_webhookCustomProp1Name].Should().Be(_webhookCustomProp1Value);
-        result!.CustomProps!.Select(keyValuePair => keyValuePair.Key).Should().Contain(_webhookCustomProp2Name);
-        //result!.CustomProps[_webhookCustomProp2Name].Should().Be(_webhookCustomProp2Value);
-    }
-
-    [TestMethod]
-    public async Task GetWebhookUriAsync_WhenNoMatchingProjectFound_ReturnsNull()
-    {
-        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(new Dictionary<string, string>(0));
-
-        var result = await _testee.GetWebhookSpecificationAsync(_project.Id);
-
-        result.Should().BeNull();
-    }
-
-    [TestMethod]
-    public async Task GetWebhookUriAsync_WhenMatchingProjectFoundWithNoWebhookUri_ReturnsNull()
-    {
-        _blobMetadata[Metadata.WebhookUri] = String.Empty;
-
-        var result = await _testee.GetWebhookSpecificationAsync(_projectId);
-
-        result.Should().BeNull();
-    }
-
     [TestMethod]
     public async Task IsNewProjectAsync_WhenMatchingProjectFound_ReturnsFalse()
     {
-        var blobClient = new TestBlobClient(true);
+        var blobClient = new TestBlobClient(false);
 
-        A.CallTo(() => _blobService.RetrieveBlobClient(A<string>._)).Returns(blobClient);
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns(_manifest);
 
-        var result = await _testee.IsNewProjectAsync(_project.Id);
+        var result = await _testee.IsNewProjectAsync(_projectId);
 
         result.Should().BeFalse();
     }
 
     [TestMethod]
-    public async Task IsNewProjectAsync_WhenMatchingProjectFound_ReturnsTrue()
+    public async Task IsNewProjectAsync_WhenNoMatchingProjectFound_ReturnsTrue()
     {
         var blobClient = new TestBlobClient(false);
 
-        A.CallTo(() => _blobService.RetrieveBlobClient(A<string>._)).Returns(blobClient);
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns((InternalManifest?)null);
 
-        var result = await _testee.IsNewProjectAsync(_project.Id);
+        var result = await _testee.IsNewProjectAsync(_projectId);
 
         result.Should().BeTrue();
     }
 
-    // TODO: Update test.
     [TestMethod]
-    public void RevokeUserAsync_WhenNoProjectWithCorrespondingIdIsFound_ThrowsArgumentException()
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsNotFound_ThrowsNoException()
     {
-        // A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.None());
+        A.CallTo(() => _blobService.RemovePropertiesAsync(A<string>.That.Matches(s => s.Equals(_userAssignmentResource1User1.ResourceFullName)),
+                                                          A<IEnumerable<string>>._,
+                                                          true))
+         .Throws(new ResourceNotFoundException(Guid.Empty, _userAssignmentResource1User1.ResourceFullName));
 
-        // await _testee.Invoking(t => t.RevokeUserAsync(_userAssignmentResource1User1)).Should().ThrowAsync<ArgumentException>();
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
     }
 
-    // TODO: Update test.
     [TestMethod]
-    public void RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_PassesUserAssignmentWithProjectNameFromRetrievedProject()
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_RemovesAssignedByMetadataFromBlob()
     {
-        // A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
 
-        // await _testee.RevokeUserAsync(_userAssignmentResource1User1);
-
-        // A.CallTo(() => _projectsTableService.RevokeUserAsync(A<UserAssignment>.That.Matches(ua => ua.ProjectName.Equals(_project.Name))))
-        //  .MustHaveHappenedOnceExactly();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectProjectId()
-    {
-        // A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
-
-        // await _testee.RevokeUserAsync(_userAssignmentResource1User1);
-
-        // A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.ProjectId.Equals(_project.Id)), A<ConsumerWebhookSpecification>._))
-        //  .MustHaveHappenedOnceExactly();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectProjectName()
-    {
-        // A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
-
-        // await _testee.RevokeUserAsync(_userAssignmentResource1User1);
-
-        // A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Name.Equals(_project.Name)), A<ConsumerWebhookSpecification>._))
-        //  .MustHaveHappenedOnceExactly();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectEvent()
-    {
-        // A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
-
-        // await _testee.RevokeUserAsync(_userAssignmentResource1User1);
-
-        // A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Event.Equals(Events.UserRevoked)), A<ConsumerWebhookSpecification>._))
-        //  .MustHaveHappenedOnceExactly();
-    }
-
-    /*[TestMethod]
-    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectLevel()
-    {
-        A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
-
-        await _testee.RevokeUserAsync(_userAssignment);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Level.Equals(Levels.)), A<ConsumerWebhookSpecification>._))
+        A.CallTo(() => _blobService.RemovePropertiesAsync(A<string>.That.Matches(s => s.Equals(_userAssignmentResource1User1.ResourceFullName)),
+                                                          A<IEnumerable<string>>.That.Contains(Metadata.AssignedBy),
+                                                          A<bool>._))
          .MustHaveHappenedOnceExactly();
-    }*/
-
-    // TODO: Update test.
-    [TestMethod]
-    public void RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithCorrectUsername()
-    {
-        // A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
-
-        // await _testee.RevokeUserAsync(_userAssignmentResource1User1);
-
-        // A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Username.Equals(_userAssignmentResource1User1.AssignedByUsername)), A<ConsumerWebhookSpecification>._))
-        //  .MustHaveHappenedOnceExactly();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithAssigneeUsernameInCustomProps()
-    {
-        // const string propNameAssignedUsername = "revokedUsername";
-
-        // A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
-
-        // await _testee.RevokeUserAsync(_userAssignmentResource1User1);
-
-        // A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
-        //     A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
-        //                                                         && cws.CustomProps.ContainsKey(propNameAssignedUsername)
-        //                                                         && cws.CustomProps[propNameAssignedUsername].Equals(_assigneeUsername1))))
-        //  .MustHaveHappenedOnceExactly();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_InvokesWebhookWithResourceFullNameInCustomProps()
-    {
-        // const string propNameResourceFullName = "resourceFullName";
-
-        // A.CallTo(() => _projectsTableService.GetProjectByIdAsync(A<Guid>.That.Matches(g => g.Equals(_projectId)))).Returns(Option<Project>.Some(_project));
-
-        // await _testee.RevokeUserAsync(_userAssignmentResource1User1);
-
-        // A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
-        //     A<ConsumerWebhookSpecification>.That.Matches(cws => cws.CustomProps != null
-        //                                                         && cws.CustomProps.ContainsKey(propNameResourceFullName)
-        //                                                         && cws.CustomProps[propNameResourceFullName].Equals(_resource1FullName))))
-        //  .MustHaveHappenedOnceExactly();
-    }
-
-    // TODO: Is this test still valid?
-    [TestMethod]
-    public void StoreProjectAsync_PassesProjectToTableService()
-    {
-        // await _testee.StoreProjectAsync(_project);
-
-        // A.CallTo(() => _projectsTableService.StoreProjectAsync(_project)).MustHaveHappenedOnceExactly();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void StoreProjectAsync_WhenNameIsEmpty_ThrowsArgumentExceptionWithMeaningfulMessage()
-    {
-        // _project.Name = String.Empty;
-
-        // await _testee.Invoking(t => t.StoreProjectAsync(_project))
-        //              .Should()
-        //              .ThrowAsync<ArgumentNullException>()
-        //              .WithParameterName(nameof(Project.Name));
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void StoreProjectAsync_WhenNameIsEmpty_NoProjectIsPassedToTableService()
-    {
-        // _project.Name = String.Empty;
-
-        // try
-        // {
-        //     await _testee.StoreProjectAsync(_project);
-        // }
-        // catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.Name)))
-        // {
-        // }
-
-        // A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void StoreProjectAsync_WhenStateIsEmpty_ThrowsArgumentExceptionWithMeaningfulMessage()
-    {
-        // _project.State = String.Empty;
-
-        // await _testee.Invoking(t => t.StoreProjectAsync(_project))
-        //              .Should()
-        //              .ThrowAsync<ArgumentNullException>()
-        //              .WithParameterName(nameof(Project.State));
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void StoreProjectAsync_WhenStateIsEmpty_NoProjectIsPassedToTableService()
-    {
-        // _project.State = String.Empty;
-
-        // try
-        // {
-        //     await _testee.StoreProjectAsync(_project);
-        // }
-        // catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.State)))
-        // {
-        // }
-
-        // A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void StoreProjectAsync_WhenUsernameIsEmpty_ThrowsArgumentExceptionWithMeaningfulMessage()
-    {
-        // _project.Username = String.Empty;
-
-        // await _testee.Invoking(t => t.StoreProjectAsync(_project))
-        //              .Should()
-        //              .ThrowAsync<ArgumentNullException>()
-        //              .WithParameterName(nameof(Project.Username));
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void StoreProjectAsync_WhenUsernameIsEmpty_NoProjectIsPassedToTableService()
-    {
-        // _project.Username = String.Empty;
-
-        // try
-        // {
-        //     await _testee.StoreProjectAsync(_project);
-        // }
-        // catch (ArgumentNullException exception) when (exception.ParamName!.Equals(nameof(Project.Username)))
-        // {
-        // }
-
-        // A.CallTo(() => _projectsTableService.StoreProjectAsync(A<Project>._)).MustNotHaveHappened();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void StoreProjectAsync_InvokesWebhookWithCorrectProjectId()
-    {
-        // await _testee.StoreProjectAsync(_project);
-
-        // A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)), A<ConsumerWebhookSpecification>._)).MustHaveHappenedOnceExactly();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void StoreProjectAsync_InvokesWebhookWithCorrectCustomProps()
-    {
-        // await _testee.StoreProjectAsync(_project);
-
-        // A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
-        //                                                              A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
-        //                                                                                                                  && cws.CustomProps != null
-        //                                                                                                                  && cws.CustomProps.Count == _webhookCustomProps.Count)))
-        //     .MustHaveHappenedOnceExactly();
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public void StoreProjectAsync_InvokesWebhookWithCorrectRemoteUri()
-    {
-        // await _testee.StoreProjectAsync(_project);
-
-        // A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
-        //                                                              A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
-        //                                                                                                                  && !String.IsNullOrWhiteSpace(cws.Uri)
-        //                                                                                                                  && cws.Uri.Equals(_webhookUri))))
-        //     .MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
-    public async Task UpdateProjectStateAsync_WhenStateIsChanged_ReturnsTrue()
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_RemovesAssignedOnMetadataFromBlob()
     {
-        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
-                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
 
-        var result = await _testee.UpdateProjectStateAsync(_project.Id, _state2);
-
-        result.Should().BeTrue();
+        A.CallTo(() => _blobService.RemovePropertiesAsync(A<string>.That.Matches(s => s.Equals(_userAssignmentResource1User1.ResourceFullName)),
+                                                          A<IEnumerable<string>>.That.Contains(Metadata.AssignedOnUtc),
+                                                          A<bool>._))
+         .MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
-    public async Task UpdateProjectStateAsync_WhenNoMatchingProjectFoundById_ReturnsFalse()
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_RemovesAssigneeMetadataFromBlob()
     {
-        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
-                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(false);
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
 
-        var result = await _testee.UpdateProjectStateAsync(_projectId, _state2);
+        A.CallTo(() => _blobService.RemovePropertiesAsync(A<string>.That.Matches(s => s.Equals(_userAssignmentResource1User1.ResourceFullName)),
+                                                          A<IEnumerable<string>>.That.Contains(Metadata.Assignee),
+                                                          A<bool>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenProjectWithCorrespondingIdIsFound_RemovesAssigneeTagFromBlob()
+    {
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _blobService.RemoveTagAsync(A<string>.That.Matches(s => s.Equals(_userAssignmentResource1User1.ResourceFullName)),
+                                                   Tags.Assignee,
+                                                   A<bool>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenWebhookUriIsNull_MakesNoAttemptToSendWebhookMessage()
+    {
+        // Test with the WebhookSpecification.Uri as null.
+        _manifest.WebhookSpecification!.Uri = null;
+
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
+
+        // Now test with the entire WebhookSpecification as null.
+        _manifest.WebhookSpecification = null;
+
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenWebhookUriIsSpecified_SendsWebhookMessageToSpecifiedUri()
+    {
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
+                                                                     A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
+                                                                                                                        && cws.Uri != null
+                                                                                                                        && cws.Uri.Equals(_webhookUri))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenWebhookUriIsSpecified_SendsUserRevokedEventInWebhookMessage()
+    {
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Event.Equals(Events.UserRevoked)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenWebhookUriIsSpecified_SendsResourceNameInWebhookMessage()
+    {
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Name.Equals(_userAssignmentResource1User1.ResourceFullName)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenWebhookUriIsSpecified_SendsResourceLevelInWebhookMessage()
+    {
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Level.Equals(Levels.Resource)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenWebhookUriIsSpecified_SendsProjectIdInWebhookMessage()
+    {
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.ProjectId.Equals(_userAssignmentResource1User1.ProjectId)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task RevokeUserAsync_WhenWebhookUriIsSpecified_SendsRevokedByUsernameInWebhookMessage()
+    {
+        await _testee.RevokeUserAsync(_userAssignmentResource1User1);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Username.Equals(_userAssignmentResource1User1.AssignedByUsername)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenStateIsNotRecognised_ThrowsInvalidStateException()
+    {
+        const string invalidState = "INVALID STATE";
+
+        await _testee.Invoking(t => t.UpdateProjectStateAsync(_project.Id, invalidState)).Should().ThrowAsync<InvalidProjectStateException>();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenProjectIsNotFound_ReturnsFalse()
+    {
+        const string manifestName = "MANIFEST NAME";
+        var newState = ProjectStates.Completed;
+
+        A.CallTo(() => _manifestService.GetManifestFullName(_projectId)).Returns(manifestName);
+        A.CallTo(() => _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState)).Returns(false);
+
+        var result = await _testee.UpdateProjectStateAsync(_projectId, newState);
 
         result.Should().BeFalse();
     }
 
     [TestMethod]
-    public async Task UpdateProjectStateAsync_WhenNoMatchingProjectFoundById_DoesNotInvokeWebhook()
+    public async Task UpdateProjectStateAsync_WhenProjectIsFound_SetsNewStateOnManifestTag()
     {
-        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
-                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(false);
+        const string manifestName = "MANIFEST NAME";
+        var newState = ProjectStates.Completed;
 
-        await _testee.UpdateProjectStateAsync(_projectId, _state2);
+        A.CallTo(() => _manifestService.GetManifestFullName(_projectId)).Returns(manifestName);
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns(_manifest);
+        A.CallTo(() => _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState)).Returns(true);
+
+        var result = await _testee.UpdateProjectStateAsync(_projectId, newState);
+
+        A.CallTo(() => _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState)).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenWebhookUriNotSetOnManifest_MakesNoAttemptToSendWebhookMessage()
+    {
+        const string manifestName = "MANIFEST NAME";
+        var newState = ProjectStates.Completed;
+
+        // Set the WebhookSpecification.Uri as null.
+        _manifest.WebhookSpecification!.Uri = null;
+
+        A.CallTo(() => _manifestService.GetManifestFullName(_projectId)).Returns(manifestName);
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns(_manifest);
+        A.CallTo(() => _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState)).Returns(true);
+
+        await _testee.UpdateProjectStateAsync(_projectId, newState);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
+
+        // Now set the WebhookSpecification as null.
+        _manifest.WebhookSpecification = null;
+
+        await _testee.UpdateProjectStateAsync(_projectId, newState);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
     }
 
     [TestMethod]
-    public async Task UpdateProjectStateAsync_WhenNoStateChange_DoesNotInvokeWebhook()
+    public async Task UpdateProjectStateAsync_WhenWebhookUriSetOnManifest_SendsWebhookMessageToSpecifiedUri()
     {
-        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
-                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(false);
+        const string manifestName = "MANIFEST NAME";
+        var newState = ProjectStates.Completed;
 
-        await _testee.UpdateProjectStateAsync(_project.Id, _state1);
+        A.CallTo(() => _manifestService.GetManifestFullName(_projectId)).Returns(manifestName);
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns(_manifest);
+        A.CallTo(() => _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState)).Returns(true);
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).MustNotHaveHappened();
-    }
-
-    [TestMethod]
-    public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectProjectId()
-    {
-        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
-                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
-
-        await _testee.UpdateProjectStateAsync(_project.Id, _state2);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)),
-                                                                     A<ConsumerWebhookSpecification>._))
-            .MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectStateTextInEventProperty()
-    {
-        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
-                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
-
-        await _testee.UpdateProjectStateAsync(_project.Id, _state2);
-
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.ProjectId.Equals(_project.Id)
-                                                                                                          && cm.Event.Contains(Events.StateChange)
-                                                                                                          && cm.Event.Contains(_state2)),
-                                                                     A<ConsumerWebhookSpecification>._))
-            .MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectCustomProps()
-    {
-        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
-                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
-
-        await _testee.UpdateProjectStateAsync(_project.Id, _state2);
+        var result = await _testee.UpdateProjectStateAsync(_projectId, newState);
 
         A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
                                                                      A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
-                                                                                                                         && cws.CustomProps != null
-                                                                                                                         && cws.CustomProps.Count == _webhookCustomProps.Count)))
-            .MustHaveHappenedOnceExactly();
+                                                                                                                        && cws.Uri != null
+                                                                                                                        && cws.Uri.Equals(_webhookUri))))
+         .MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]
-    public async Task UpdateProjectStateAsync_InvokesWebhookWithCorrectRemoteUri()
+    public async Task UpdateProjectStateAsync_WhenWebhookUriSetOnManifest_SendsNewStateInWebhookMessage()
     {
-        A.CallTo(() => _blobService.SetTagAsync(A<string>.That.Matches(s => s.Contains(_projectId.ToString())),
-                                                A<string>.That.Matches(s => s.Equals(Tags.ProjectState)),
-                                                A<string>.That.Matches(s => s.Equals(_state2)))).Returns(true);
+        const string manifestName = "MANIFEST NAME";
+        var newState = ProjectStates.Completed;
 
-        await _testee.UpdateProjectStateAsync(_project.Id, _state2);
+        A.CallTo(() => _manifestService.GetManifestFullName(_projectId)).Returns(manifestName);
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns(_manifest);
+        A.CallTo(() => _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState)).Returns(true);
 
-        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>._,
-                                                                     A<ConsumerWebhookSpecification>.That.Matches(cws => cws != null
-                                                                                                                         && !String.IsNullOrWhiteSpace(cws.Uri)
-                                                                                                                         && cws.Uri.Equals(_webhookUri))))
-            .MustHaveHappenedOnceExactly();
+        var result = await _testee.UpdateProjectStateAsync(_projectId, newState);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Event.Contains(newState)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenWebhookUriSetOnManifest_SendsProjectIdInWebhookMessage()
+    {
+        const string manifestName = "MANIFEST NAME";
+        var newState = ProjectStates.Completed;
+
+        A.CallTo(() => _manifestService.GetManifestFullName(_projectId)).Returns(manifestName);
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns(_manifest);
+        A.CallTo(() => _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState)).Returns(true);
+
+        var result = await _testee.UpdateProjectStateAsync(_projectId, newState);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.ProjectId.Equals(_projectId)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenWebhookUriSetOnManifest_SendsProjectNameInWebhookMessage()
+    {
+        const string manifestName = "MANIFEST NAME";
+        var newState = ProjectStates.Completed;
+
+        A.CallTo(() => _manifestService.GetManifestFullName(_projectId)).Returns(manifestName);
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns(_manifest);
+        A.CallTo(() => _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState)).Returns(true);
+
+        var result = await _testee.UpdateProjectStateAsync(_projectId, newState);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Name.Equals(_manifest.PackageName)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenWebhookUriSetOnManifest_SendsProjectLevelInWebhookMessage()
+    {
+        const string manifestName = "MANIFEST NAME";
+        var newState = ProjectStates.Completed;
+
+        A.CallTo(() => _manifestService.GetManifestFullName(_projectId)).Returns(manifestName);
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns(_manifest);
+        A.CallTo(() => _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState)).Returns(true);
+
+        var result = await _testee.UpdateProjectStateAsync(_projectId, newState);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Level.Equals(Levels.Project)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task UpdateProjectStateAsync_WhenWebhookUriSetOnManifest_SendsUsernameInWebhookMessage()
+    {
+        const string manifestName = "MANIFEST NAME";
+        var newState = ProjectStates.Completed;
+
+        A.CallTo(() => _manifestService.GetManifestFullName(_projectId)).Returns(manifestName);
+        A.CallTo(() => _manifestService.RetrieveManifestAsync(_projectId)).Returns(_manifest);
+        A.CallTo(() => _blobService.SetTagAsync(manifestName, Tags.ProjectState, newState)).Returns(true);
+
+        var result = await _testee.UpdateProjectStateAsync(_projectId, newState);
+
+        A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(wm => wm.Username.Equals(_username)),
+                                                                     A<ConsumerWebhookSpecification>._))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    private static string GenerateManifestName(Guid projectId)
+    {
+        return $"MANIFEST NAME {projectId}";
+    }
+
+    private static List<BlobWithAttributes> GenerateAllProjectResources(int numberOfResources,
+                                                                        Guid projectId,
+                                                                        string projectName,
+                                                                        string projectState,
+                                                                        string assignedBy,
+                                                                        string assignee,
+                                                                        string createdBy)
+    {
+        var blobsWithAttributes = new List<BlobWithAttributes>(numberOfResources + 1);
+
+        var manifestBlob = GenerateManifestBlob(projectId,
+                                                createdBy,
+                                                projectName,
+                                                projectState);
+
+        blobsWithAttributes.Add(manifestBlob);
+
+        blobsWithAttributes.AddRange(GenerateProjectResources(projectId,
+                                                                 projectName,
+                                                                 projectState,
+                                                                 assignedBy,
+                                                                 assignee,
+                                                                 createdBy).Take(numberOfResources)
+                                                                           .ToList());
+
+        return blobsWithAttributes;
+    }
+
+    private static BlobWithAttributes GenerateManifestBlob(Guid projectId,
+                                                           string createdBy,
+                                                           string projectName,
+                                                           string projectState)
+    {
+        var manifestName = GenerateManifestName(projectId);
+        var manifestBlob = new BlobWithAttributes(manifestName);
+        manifestBlob.Metadata[Metadata.CreatedBy] = createdBy;
+        manifestBlob.Metadata[Metadata.ProjectName] = projectName;
+        manifestBlob.Tags[Tags.ProjectId] = projectId.ToString();
+        manifestBlob.Tags[Tags.ProjectName] = projectName;
+        manifestBlob.Tags[Tags.ProjectState] = projectState;
+
+        return manifestBlob;
+    }
+
+    private static IEnumerable<BlobWithAttributes> GenerateProjectResources(Guid projectId,
+                                                                            string projectName,
+                                                                            string projectState,
+                                                                            string assignedBy,
+                                                                            string assignee,
+                                                                            string createdBy)
+    {
+        var i = 0;
+
+        while (true)
+        {
+            var blobWithAttributes = new BlobWithAttributes($"{projectId}/BLOB {i++} NAME");
+            blobWithAttributes.Metadata[Metadata.AssignedBy] = assignedBy;
+            blobWithAttributes.Metadata[Metadata.AssignedOnUtc] = DateTime.UtcNow.ToString();
+            blobWithAttributes.Metadata[Metadata.Assignee] = assignee;
+            blobWithAttributes.Metadata[Metadata.CreatedBy] = createdBy;
+            blobWithAttributes.Metadata[Metadata.ProjectId] = projectId.ToString();
+            blobWithAttributes.Metadata[Metadata.ProjectName] = projectName;
+            blobWithAttributes.Tags[Tags.Assignee] = assignee;
+            blobWithAttributes.Tags[Tags.ProjectId] = projectId.ToString();
+            blobWithAttributes.Tags[Tags.ProjectName] = projectName;
+            blobWithAttributes.Tags[Tags.ProjectState] = projectState;
+
+            yield return blobWithAttributes;
+        }
     }
 
     private class TestBlobClient(bool exists) : BlobBaseClient

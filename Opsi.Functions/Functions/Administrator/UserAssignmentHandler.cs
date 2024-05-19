@@ -54,14 +54,22 @@ public class UserAssignmentHandler
         }
         catch (ArgumentException exception)
         {
+            _logger.LogWarning($"Invalid assignment request: {exception.Message}");
             return req.BadRequest($"Invalid {exception.ParamName}.");
         }
-        catch(UserAssignmentException exception)
+        catch (ResourceNotFoundException exception)
         {
+            _logger.LogWarning($"Invalid assignment request: {exception.Message}");
+            return req.BadRequest("No resource could be found with the specified name.");
+        }
+        catch (UserAssignmentException exception)
+        {
+            _logger.LogWarning($"Invalid assignment request: {exception.Message}");
             return req.BadRequest(exception.Message);
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, $"Exception during assignment request.");
             await _errorQueueService.ReportAsync(exception);
             return req.InternalServerError(exception.Message);
         }

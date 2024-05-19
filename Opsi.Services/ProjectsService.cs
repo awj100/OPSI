@@ -1,6 +1,4 @@
 ﻿using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
-using Azure.Storage.Blobs.Models;
 using Opsi.AzureStorage;
 using Opsi.Common.Exceptions;
 using Opsi.Constants;
@@ -67,15 +65,14 @@ public class ProjectsService(IBlobService _blobService,
         }
 
         const string propNameAssignedUsername = "assignedUsername";
-        const string propNameResourceFullName = "resourceFullName";
 
         // Add the username of the assigned user to the custom props.
-        var additionalProps = manifest.WebhookSpecification.CustomProps ?? new Dictionary<string, object>();
+        var additionalProps = manifest.WebhookSpecification.CustomProps ?? [];
         additionalProps.Add(propNameAssignedUsername, userAssignment.AssigneeUsername);
-        additionalProps.Add(propNameResourceFullName, userAssignment.ResourceFullName);
 
         await QueueWebhookMessageAsync(manifest.ProjectId,
-                                       manifest.PackageName,
+                                       Levels.Resource,
+                                       userAssignment.ResourceFullName,
                                        manifest.WebhookSpecification.Uri,
                                        additionalProps,
                                        userAssignment.AssignedByUsername,
@@ -104,18 +101,12 @@ public class ProjectsService(IBlobService _blobService,
             throw new ProjectNotFoundException();
         }
 
-        if (!blobsWithAttributes.Any(blobWithAttribute => blobWithAttribute.Metadata[Metadata.Assignee].Equals(assigneeUsername, StringComparison.OrdinalIgnoreCase)))
+        if (!blobsWithAttributes.Any(blobWithAttribute => blobWithAttribute.Metadata.ContainsKey(Metadata.Assignee)
+                                                          && blobWithAttribute.Metadata[Metadata.Assignee].Equals(assigneeUsername, StringComparison.OrdinalIgnoreCase)))
         {
             // The specified assignee has not been assigned to this project.
             throw new UnassignedToResourceException();
         }
-
-        var project = new ProjectWithResources
-        {
-            Id = projectId,
-            Name = blobsWithAttributes.First().Metadata[Metadata.ProjectName],
-            Username = blobsWithAttributes.First().Metadata[Metadata.CreatedBy]
-        };
 
         var manifestName = _manifestService.GetManifestFullName(projectId);
         var manifestBlob = blobsWithAttributes.SingleOrDefault(blobWithAttributes => blobWithAttributes.Name.Equals(manifestName));
@@ -125,6 +116,14 @@ public class ProjectsService(IBlobService _blobService,
             // No manifest can be found.
             throw new ManifestNotFoundException(projectId);
         }
+
+        var project = new ProjectWithResources
+        {
+            Id = projectId,
+            Name = manifestBlob.Metadata[Metadata.ProjectName],
+            State = manifestBlob.Tags[Tags.ProjectState],
+            Username = manifestBlob.Metadata[Metadata.CreatedBy]
+        };
 
         if (!project.State.Equals(ProjectStates.InProgress, StringComparison.OrdinalIgnoreCase))
         {
@@ -153,7 +152,7 @@ public class ProjectsService(IBlobService _blobService,
         var tagSafeUsername = _tagUtilities.GetSafeTagValue(assigneeUsername);
 
         var assignedBlobsWithAttributes = new List<BlobWithAttributes>();
-        var pageableResponse = await _blobService.RetrieveByTagAsync(Tags.Assignee, tagSafeUsername, pageSize);
+        var pageableResponse = await _blobService.RetrieveByTagAsync(Tags.Assignee, tagSafeUsername, pageSize, continuationToken: null);
         assignedBlobsWithAttributes.AddRange(pageableResponse.Items);
         var continuationToken = pageableResponse.ContinuationToken;
 
@@ -180,7 +179,7 @@ public class ProjectsService(IBlobService _blobService,
         return allManifestTags.Select(manifestTags => new ProjectSummary
         {
             Id = Guid.Parse(manifestTags[Tags.ProjectId]),
-            Name = manifestTags[Tags.ManifestName],
+            Name = manifestTags[Tags.ProjectName],
             State = manifestTags[Tags.ProjectState]
         })
         .Where(projectSummary => projectSummary.State.Equals(requiredProjectState))
@@ -242,12 +241,12 @@ public class ProjectsService(IBlobService _blobService,
 #pragma warning disable CA2208 // Instantiate argument exceptions correctly
         if (String.IsNullOrWhiteSpace(internalManifest.PackageName))
         {
-            throw new ArgumentNullException(nameof(Project.Name));
+            throw new ArgumentException(nameof(Project.Name));
         }
 
         if (String.IsNullOrWhiteSpace(internalManifest.Username))
         {
-            throw new ArgumentNullException(nameof(Project.Username));
+            throw new ArgumentException(nameof(Project.Username));
         }
 #pragma warning restore CA2208 // Instantiate argument exceptions correctly
 
@@ -256,6 +255,7 @@ public class ProjectsService(IBlobService _blobService,
         if (!String.IsNullOrWhiteSpace(internalManifest.WebhookSpecification?.Uri))
         {
             await QueueWebhookMessageAsync(internalManifest.ProjectId,
+                                           Levels.Project,
                                            internalManifest.PackageName,
                                            internalManifest.WebhookSpecification.Uri,
                                            internalManifest.WebhookSpecification.CustomProps,
@@ -281,14 +281,23 @@ public class ProjectsService(IBlobService _blobService,
         var resourceFullName = userAssignment.ResourceFullName;
 
         // Remove the properties/metadata on the resource blob.
-        await _blobService.RemovePropertiesAsync(resourceFullName, [
-                                                                       Metadata.AssignedBy,
-                                                                       Metadata.AssignedOnUtc,
-                                                                       Metadata.Assignee
-                                                                   ]);
+        try
+        {
+            await _blobService.RemovePropertiesAsync(resourceFullName, [
+                                                                           Metadata.AssignedBy,
+                                                                           Metadata.AssignedOnUtc,
+                                                                           Metadata.Assignee
+                                                                       ]);
+        }
+        catch (ResourceNotFoundException)
+        {
+            // There is no resource.
+            // No need to throw an exception, just return.
+            return;
+        }
 
         // Remove the 'Assignee' tag on the resource blob.
-        await _blobService.RemoveTagAsync(userAssignment.ResourceFullName, Tags.Assignee);
+        await _blobService.RemoveTagAsync(userAssignment.ResourceFullName, Tags.Assignee, shouldThrowIfNotExists: false);
 
         var manifest = await _manifestService.RetrieveManifestAsync(userAssignment.ProjectId) ?? throw new ManifestNotFoundException(userAssignment.ProjectId);
 
@@ -298,15 +307,14 @@ public class ProjectsService(IBlobService _blobService,
         }
 
         const string propNameAssignedUsername = "revokedUsername";
-        const string propNameResourceFullName = "resourceFullName";
 
         // Add the username of the revoked user to the custom props.
-        var additionalProps = manifest.WebhookSpecification.CustomProps ?? new Dictionary<string, object>();
+        var additionalProps = manifest.WebhookSpecification.CustomProps ?? [];
         additionalProps.Add(propNameAssignedUsername, userAssignment.AssigneeUsername);
-        additionalProps.Add(propNameResourceFullName, userAssignment.ResourceFullName);
 
         await QueueWebhookMessageAsync(manifest.ProjectId,
-                                       manifest.PackageName,
+                                       Levels.Resource,
+                                       userAssignment.ResourceFullName,
                                        manifest.WebhookSpecification.Uri,
                                        additionalProps,
                                        userAssignment.AssignedByUsername,
@@ -329,13 +337,14 @@ public class ProjectsService(IBlobService _blobService,
         }
 
         var manifest = await GetManifestAsync(projectId);
-        if (manifest?.WebhookSpecification == null)
+        if (String.IsNullOrWhiteSpace(manifest?.WebhookSpecification?.Uri))
         {
             return true;
         }
         var stateChangeEventText = GetStateChangeEventText(Events.StateChange, newState);
 
         await QueueWebhookMessageAsync(projectId,
+                                       Levels.Project,
                                        manifest.PackageName,
                                        manifest.WebhookSpecification.Uri,
                                        manifest.WebhookSpecification.CustomProps,
@@ -346,7 +355,8 @@ public class ProjectsService(IBlobService _blobService,
     }
 
     private async Task QueueWebhookMessageAsync(Guid projectId,
-                                                string projectName,
+                                                string level,
+                                                string name,
                                                 string? webhookRemoteUri,
                                                 Dictionary<string, object>? webhookCustomProps,
                                                 string username,
@@ -355,8 +365,8 @@ public class ProjectsService(IBlobService _blobService,
         await _webhookQueueService.QueueWebhookMessageAsync(new WebhookMessage
         {
             Event = eventText,
-            Level = Levels.Project,
-            Name = projectName,
+            Level = level,
+            Name = name,
             ProjectId = projectId,
             Username = username
         }, new ConsumerWebhookSpecification
