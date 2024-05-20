@@ -139,8 +139,7 @@ public class ResourceHandler(IResourceService _resourceService,
 
         var resourceStorageInfo = new ResourceStorageInfo(projectId,
                                                           restOfPath,
-                                                          req.Body,
-                                                          _userProvider.Username);
+                                                          req.Body);
 
         try
         {

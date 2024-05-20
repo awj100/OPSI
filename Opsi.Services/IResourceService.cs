@@ -10,5 +10,5 @@ public interface IResourceService
 
     Task<bool> HasUserAccessAsync(Guid projectId, string fullName);
 
-    Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo);
+    Task<string> StoreResourceAsync(ResourceStorageInfo resourceStorageInfo);
 }

@@ -6,14 +6,12 @@ public record ResourceStorageInfo
 
     public ResourceStorageInfo(Guid projectId,
                                string restOfPath,
-                               Stream contentStream,
-                               string username)
+                               Stream contentStream)
     {
         _restOfPath = restOfPath;
         ContentStream = contentStream;
         ProjectId = projectId;
         RestOfPath = restOfPath;
-        Username = username;
 
         BlobName = new Lazy<string>(() =>
         {
@@ -79,8 +77,6 @@ public record ResourceStorageInfo
 
     public string RestOfPath { get; }
 
-    public string Username { get; }
-
     public void ResetContentStream()
     {
         ContentStream.Position = 0;
@@ -91,7 +87,6 @@ public record ResourceStorageInfo
         return new VersionedResourceStorageInfo(ProjectId,
                                                 _restOfPath,
                                                 ContentStream,
-                                                Username,
                                                 versionInfo);
     }
 }

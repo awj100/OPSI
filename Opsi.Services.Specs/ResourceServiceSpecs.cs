@@ -10,10 +10,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.AzureStorage;
 using Opsi.AzureStorage.Types;
-using Opsi.Common;
 using Opsi.Common.Exceptions;
+using Opsi.Constants;
 using Opsi.Pocos;
 using Opsi.Services.QueueServices;
+using Metadata = Opsi.Constants.Metadata;
 
 namespace Opsi.Services.Specs;
 
@@ -28,8 +29,6 @@ public class ResourceServiceSpecs
     private const string RemoteUriAsString = "https://a.url.com";
     private const string RestOfPath = "rest/of/path";
     private const string Username = "test@username";
-    private const int VersionIndex = 123;
-    private VersionInfo _versionInfo = new(VersionIndex);
 
     private IBlobService _blobService;
     private IManifestService _manifestService;
@@ -44,6 +43,8 @@ public class ResourceServiceSpecs
     [TestInitialize]
     public void TestInit()
     {
+        const string manifestName = "MANIFEST NAME";
+
         _blobService = A.Fake<IBlobService>();
         _queueService = A.Fake<IWebhookQueueService>();
         _loggerFactory = new NullLoggerFactory();
@@ -51,13 +52,20 @@ public class ResourceServiceSpecs
         _projectsService = A.Fake<IProjectsService>();
         _userProvider = A.Fake<IUserProvider>();
 
-        A.CallTo(() => _projectsService.GetWebhookSpecificationAsync(_projectId)).Returns(new ConsumerWebhookSpecification { Uri = RemoteUriAsString });
-        A.CallTo(() => _userProvider.Username).Returns(Username);
-
         _resourceStorageInfo = new ResourceStorageInfo(_projectId,
                                                        RestOfPath,
-                                                       new MemoryStream(),
-                                                       Username);
+                                                       new MemoryStream());
+
+        A.CallTo(() => _manifestService.GetManifestFullName(_projectId)).Returns(manifestName);
+        A.CallTo(() => _projectsService.GetWebhookSpecificationAsync(_projectId)).Returns(new ConsumerWebhookSpecification { Uri = RemoteUriAsString });
+        A.CallTo(() => _userProvider.Username).Returns(Username);
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(new Dictionary<string, string> {
+            {Metadata.Assignee, Username }
+        });
+        A.CallTo(() => _blobService.RetrieveTagsAsync(manifestName, A<bool>._)).Returns(new Dictionary<string, string> {
+            { Tags.ProjectState, ProjectStates.InProgress }
+        });
+        A.CallTo(() => _userProvider.Username).Returns(Username);
 
         _testee = new ResourceService(_blobService,
                                       _queueService,
@@ -160,47 +168,114 @@ public class ResourceServiceSpecs
     [TestMethod]
     public async Task HasUserAccessAsync_WhenUserIsNotAdminAndHasNoAccess_ReturnsFalse()
     {
+        const string differentUsername = "DIFFERENT USERNAME";
+
         A.CallTo(() => _userProvider.IsAdministrator).Returns(false);
+        A.CallTo(() => _userProvider.Username).Returns(differentUsername);
 
         var result = await _testee.HasUserAccessAsync(_projectId, RestOfPath);
 
         result.Should().BeFalse();
     }
 
-    // TODO: Is this test still valid?
     [TestMethod]
-    public void StoreResourceAsync_DeterminesVersionInfo()
+    public async Task StoreResourceAsync_StoresAsNewVersion()
     {
+        await _testee.StoreResourceAsync(_resourceStorageInfo);
+
+        A.CallTo(() => _blobService.StoreVersionedResourceAsync(_resourceStorageInfo)).MustHaveHappenedOnceExactly();
     }
 
-    // TODO: Update test.
+    [TestMethod]
+    public async Task StoreResourceAsync_SetsCreatedByMetadataOnNewVersion()
+    {
+        await _testee.StoreResourceAsync(_resourceStorageInfo);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(_resourceStorageInfo.BlobName.Value,
+                                                     A<Dictionary<string, string>>.That.Matches(d => d.ContainsKey(Metadata.CreatedBy)
+                                                     && d[Metadata.CreatedBy].Equals(_userProvider.Username))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task StoreResourceAsync_SetsProjectIdMetadataOnNewVersion()
+    {
+        await _testee.StoreResourceAsync(_resourceStorageInfo);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.BlobName.Value)),
+                                                     A<Dictionary<string, string>>.That.Matches(d => d.ContainsKey(Metadata.ProjectId)
+                                                                                                     && d[Metadata.ProjectId].Equals(_resourceStorageInfo.ProjectId.ToString()))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task StoreResourceAsync_SetsProjectIdTagOnNewVersion()
+    {
+        await _testee.StoreResourceAsync(_resourceStorageInfo);
+
+        A.CallTo(() => _blobService.SetTagsAsync(A<string>.That.Matches(s => s.Equals(_resourceStorageInfo.BlobName.Value)),
+                                                 A<Dictionary<string, string>>.That.Matches(d => d.ContainsKey(Tags.ProjectId)
+                                                                                                 && d[Tags.ProjectId].Equals(_resourceStorageInfo.ProjectId.ToString()))))
+         .MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task StoreResourceAsync_WhenSettingMetadataFails_DeletesBlobVersionAndRethrowsException()
+    {
+        const string exceptionMessage = "EXCEPTION MESSAGE";
+        const string versionId = "VERSION ID";
+
+        A.CallTo(() => _blobService.StoreVersionedResourceAsync(_resourceStorageInfo)).Returns(versionId);
+
+        A.CallTo(() => _blobService.SetMetadataAsync(A<string>._, A<Dictionary<string, string>>._)).Throws(new Exception(exceptionMessage));
+
+        await _testee.Invoking(t => t.StoreResourceAsync(_resourceStorageInfo)).Should().ThrowAsync<Exception>();
+
+        A.CallTo(() => _blobService.DeleteVersionAsync(A<string>._, versionId)).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task StoreResourceAsync_WhenSettingTagsFails_DeletesBlobVersionAndRethrowsException()
+    {
+        const string exceptionMessage = "EXCEPTION MESSAGE";
+        const string versionId = "VERSION ID";
+
+        A.CallTo(() => _blobService.StoreVersionedResourceAsync(_resourceStorageInfo)).Returns(versionId);
+
+        A.CallTo(() => _blobService.SetTagsAsync(A<string>._, A<Dictionary<string, string>>._)).Throws(new Exception(exceptionMessage));
+
+        await _testee.Invoking(t => t.StoreResourceAsync(_resourceStorageInfo)).Should().ThrowAsync<Exception>();
+
+        A.CallTo(() => _blobService.DeleteVersionAsync(A<string>._, versionId)).MustHaveHappenedOnceExactly();
+    }
+
+    [TestMethod]
+    public async Task StoreResourceAsync_WhenQueuingWebhookMessageFails_DeletesBlobVersionAndRethrowsException()
+    {
+        const string exceptionMessage = "EXCEPTION MESSAGE";
+        const string versionId = "VERSION ID";
+
+        A.CallTo(() => _blobService.StoreVersionedResourceAsync(_resourceStorageInfo)).Returns(versionId);
+
+        A.CallTo(() => _queueService.QueueWebhookMessageAsync(A<WebhookMessage>._, A<ConsumerWebhookSpecification>._)).Throws(new Exception(exceptionMessage));
+
+        await _testee.Invoking(t => t.StoreResourceAsync(_resourceStorageInfo)).Should().ThrowAsync<Exception>();
+
+        A.CallTo(() => _blobService.DeleteVersionAsync(A<string>._, versionId)).MustHaveHappenedOnceExactly();
+    }
+
     [TestMethod]
     public async Task StoreResourceAsync_WhenResourceIsLockedToAnotherUser_ThrowsException()
     {
-        _versionInfo.AssignedTo = Option<string>.Some($"another_{Username}");
+        const string differentUser = "DIFFERENT USER";
 
-        await _testee.Invoking(y => y.StoreResourceAsync(_resourceStorageInfo))
+        A.CallTo(() => _blobService.RetrieveBlobMetadataAsync(A<string>._, A<bool>._)).Returns(new Dictionary<string, string> {
+            {Metadata.Assignee, differentUser }
+        });
+
+        await _testee.Invoking(t => t.StoreResourceAsync(_resourceStorageInfo))
                      .Should()
-                     .ThrowAsync<ResourceLockConflictException>();
-    }
-
-    // TODO: Is this test still valid?
-    [TestMethod]
-    public void StoreResourceAsync_WhenResourceIsStored_StoredResourceHasIncrementedVersionIndex()
-    {
-    }
-
-    // TODO: Update test.
-    [TestMethod]
-    public async Task StoreResourceAsync_WhenResourceIsStored_BlobVersionIsStoredInResourcesTable()
-    {
-        var blobVersion = Guid.NewGuid().ToString();
-
-        A.CallTo(() => _blobService.StoreVersionedResourceAsync(A<VersionedResourceStorageInfo>._)).Returns(blobVersion);
-
-        await _testee.StoreResourceAsync(_resourceStorageInfo);
-
-        // A.CallTo(() => _resourcesService.StoreResourceAsync(A<VersionedResourceStorageInfo>.That.Matches(vrsi => vrsi.VersionId == blobVersion))).MustHaveHappenedOnceExactly();
+                     .ThrowAsync<UnassignedToResourceException>();
     }
 
     [TestMethod]

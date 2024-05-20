@@ -5,11 +5,9 @@ public record VersionedResourceStorageInfo : ResourceStorageInfo
     public VersionedResourceStorageInfo(Guid projectId,
                                         string restOfPath,
                                         Stream contentStream,
-                                        string username,
                                         VersionInfo versionInfo) : base(projectId,
                                                                         restOfPath,
-                                                                        contentStream,
-                                                                        username)
+                                                                        contentStream)
     {
         VersionInfo = versionInfo;
     }

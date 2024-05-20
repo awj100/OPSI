@@ -43,7 +43,7 @@ internal class ResourceService(AzureStorage.IBlobService _blobService,
         var bytes = new byte[contentLength];
         await memoryStream.ReadAsync(bytes.AsMemory(0, contentLength - 1));
 
-        var resourceStorageInfo = new ResourceStorageInfo(projectId, blobClient.Name, memoryStream, _userProvider.Username);
+        var resourceStorageInfo = new ResourceStorageInfo(projectId, blobClient.Name, memoryStream);
         await QueueWebhookMessageAsync(projectId, resourceStorageInfo, Events.ResourceDownloaded);
 
         return Option<ResourceContent>.Some(new ResourceContent(blobClient.Name,
@@ -87,20 +87,42 @@ internal class ResourceService(AzureStorage.IBlobService _blobService,
         return internalManifest != null && internalManifest.Username.Equals(_userProvider.Username, StringComparison.OrdinalIgnoreCase);
     }
 
-    public async Task StoreResourceAsync(ResourceStorageInfo resourceStorageInfo)
+    public async Task<string> StoreResourceAsync(ResourceStorageInfo resourceStorageInfo)
     {
         if (!await HasUserAccessAsync(resourceStorageInfo.ProjectId, resourceStorageInfo.BlobName.Value))
         {
             throw new UnassignedToResourceException();
         }
 
-        await StoreResourceDataAsync(resourceStorageInfo);
+        var versionInfo = await StoreResourceDataAsync(resourceStorageInfo);
 
-        await StoreMetadataAsync(resourceStorageInfo);
+        try
+        {
+            await StoreMetadataAsync(resourceStorageInfo);
 
-        await StoreTagsAsync(resourceStorageInfo);
+            await StoreTagsAsync(resourceStorageInfo);
 
-        await QueueWebhookMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo, Events.Stored);
+            await QueueWebhookMessageAsync(resourceStorageInfo.ProjectId, resourceStorageInfo, Events.Stored);
+        }
+        catch (Exception)
+        {
+            try
+            {
+                var fullName = _blobService.GetBlobFullName(resourceStorageInfo);
+                await DeleteResourceAsync(fullName, versionInfo);
+            }
+            catch (Exception)
+            { }
+
+            throw;
+        }
+
+        return versionInfo;
+    }
+
+    private async Task DeleteResourceAsync(string fullName, string versionId)
+    {
+        await _blobService.DeleteVersionAsync(fullName, versionId);
     }
 
     private async Task<ConsumerWebhookSpecification?> GetWebhookSpecificationAsync(Guid projectId)
@@ -114,7 +136,7 @@ internal class ResourceService(AzureStorage.IBlobService _blobService,
     {
         var metadata = new Dictionary<string, string>
         {
-            {Metadata.CreatedBy, resourceStorageInfo.Username},
+            {Metadata.CreatedBy, _userProvider.Username},
             {Metadata.ProjectId, resourceStorageInfo.ProjectId.ToString()}
         };
 

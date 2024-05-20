@@ -10,6 +10,10 @@ public interface IBlobService
 {
     Task DeleteAsync(string fullName);
 
+    Task DeleteVersionAsync(string fullName, string versionId);
+
+    string GetBlobFullName(ResourceStorageInfo resourceStorageInfo);
+
     /// <summary>
     /// Returns a collection of <see cref="VersionInfo"/> objects, ordered chronologically.
     /// </summary>

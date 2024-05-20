@@ -27,7 +27,23 @@ internal class BlobService : StorageServiceBase, IBlobService
 
         var blobClient = containerClient.GetBlobClient(fullName);
 
-        await blobClient.DeleteIfExistsAsync(Azure.Storage.Blobs.Models.DeleteSnapshotsOption.IncludeSnapshots);
+        await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots);
+    }
+
+    public async Task DeleteVersionAsync(string fullName, string versionId)
+    {
+        var containerClient = GetContainerClient();
+
+        var blobClient = containerClient.GetBlobClient(fullName);
+
+        var requestConditions = new BlobRequestConditions { IfMatch = new ETag(versionId) };
+
+        await blobClient.DeleteAsync(DeleteSnapshotsOption.None, requestConditions);
+    }
+
+    public string GetBlobFullName(ResourceStorageInfo resourceStorageInfo)
+    {
+        return Path.Combine(resourceStorageInfo.ProjectId.ToString(), resourceStorageInfo.RestOfPath);
     }
 
     public async Task<IReadOnlyCollection<VersionInfo>> GetVersionInfos(string fullName)
@@ -298,9 +314,9 @@ internal class BlobService : StorageServiceBase, IBlobService
         return new BlobServiceClient(StorageConnectionString.Value);
     }
 
-    private static async Task<string> StoreAsLatestAsync(BlobContainerClient containerClient, ResourceStorageInfo resourceStorageInfo)
+    private async Task<string> StoreAsLatestAsync(BlobContainerClient containerClient, ResourceStorageInfo resourceStorageInfo)
     {
-        var blobName = Path.Combine(resourceStorageInfo.ProjectId.ToString(), resourceStorageInfo.RestOfPath);
+        var blobName = GetBlobFullName(resourceStorageInfo);
 
         var blobClient = containerClient.GetBlobClient(blobName);
 
