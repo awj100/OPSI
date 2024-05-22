@@ -9,25 +9,17 @@ using Opsi.Services.QueueServices;
 
 namespace Opsi.Functions.Functions.Administrator;
 
-public class UserAssignmentHandler
+public class UserAssignmentHandler(IProjectsService _projectsService,
+                                   IUserProvider _userProvider,
+                                   IErrorQueueService _errorQueueService,
+                                   ILoggerFactory _loggerFactory)
 {
     private const string route = "_admin/users/{assigneeUsername}/projects/{projectId:guid}/resource/{*resourceName}";
 
-    private readonly IErrorQueueService _errorQueueService;
-    private readonly ILogger<UserAssignmentHandler> _logger;
-    private readonly IProjectsService _projectsService;
-    private readonly IUserProvider _userProvider;
-
-    public UserAssignmentHandler(IProjectsService projectsService,
-                                 IUserProvider userProvider,
-                                 IErrorQueueService errorQueueService,
-                                 ILoggerFactory loggerFactory)
-    {
-        _errorQueueService = errorQueueService;
-        _logger = loggerFactory.CreateLogger<UserAssignmentHandler>();
-        _projectsService = projectsService;
-        _userProvider = userProvider;
-    }
+    private readonly IErrorQueueService _errorQueueService = _errorQueueService;
+    private readonly ILogger<UserAssignmentHandler> _logger = _loggerFactory.CreateLogger<UserAssignmentHandler>();
+    private readonly IProjectsService _projectsService = _projectsService;
+    private readonly IUserProvider _userProvider = _userProvider;
 
     [Function(nameof(UserAssignmentHandler))]
     public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", "PUT", Route = route)] HttpRequestData req,

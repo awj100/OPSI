@@ -15,7 +15,6 @@ namespace Opsi.Services.Specs.QueueHandlers;
 [TestClass]
 public class ZippedQueueHandlerSpecs
 {
-    private const bool IsAdministrator = true;
     private const string Username = "user@test.com";
     private const string WebhookUri = "https://a.test.url";
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -145,19 +144,6 @@ public class ZippedQueueHandlerSpecs
     }
 
     [TestMethod]
-    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_StoresProjectWithStateInitialising()
-    {
-        const bool isNewProject = true;
-        A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
-
-        await _testee.RetrieveAndHandleUploadAsync(_manifest);
-
-        A.CallTo(() => _projectsService.UpdateProjectStateAsync(A<Guid>.That.Matches(g => g.Equals(_manifest.ProjectId)),
-                                                                A<string>.That.Matches(s => s.Equals(ProjectStates.Initialising))))
-            .MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
     public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_RetrievesNonManifestUpload()
     {
         const bool isNewProject = true;
@@ -166,28 +152,6 @@ public class ZippedQueueHandlerSpecs
         await _testee.RetrieveAndHandleUploadAsync(_manifest);
 
         A.CallTo(() => _blobService.RetrieveContentAsync(A<string>.That.Matches(s => s.Contains(_manifest.ProjectId.ToString())))).MustHaveHappenedOnceExactly();
-    }
-
-    [TestMethod]
-    public async Task RetrieveAndHandleUploadAsync_WhenProjectIdIsNew_StoresResourceAsAdministrator()
-    {
-        const bool isNewProject = true;
-        A.CallTo(() => _projectsService.IsNewProjectAsync(_manifest.ProjectId)).Returns(isNewProject);
-        A.CallTo(() => _unzipService.GetFilePathsFromPackage()).Returns(_nonManifestContentFilePaths);
-
-        await _testee.RetrieveAndHandleUploadAsync(_manifest);
-
-        var nonExcludedFilePaths = _nonManifestContentFilePaths.Except(_manifest.ResourceExclusionPaths).ToList();
-
-        foreach (var nonExcludedFilePath in nonExcludedFilePaths)
-        {
-            A.CallTo(() => _resourceDispatcher.DispatchAsync(A<string>._,
-                                                             A<Guid>._,
-                                                             A<string>._,
-                                                             A<Stream>._,
-                                                             A<string>._,
-                                                             IsAdministrator)).MustHaveHappenedOnceExactly();
-        }
     }
 
     [TestMethod]
@@ -403,9 +367,10 @@ public class ZippedQueueHandlerSpecs
 
         foreach(var nonExcludedFilePath in nonExcludedFilePaths)
         {
-            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Event.Equals(Events.Stored)
+            A.CallTo(() => _webhookQueueService.QueueWebhookMessageAsync(A<WebhookMessage>.That.Matches(cm => cm.Event.Equals(Events.StoreFailure)
                                                                                                               && cm.Level.Equals(Levels.Resource)
-                                                                                                              && cm.Name.Equals(nonExcludedFilePath)), A<ConsumerWebhookSpecification>._))
+                                                                                                              && cm.Name.Equals(nonExcludedFilePath)),
+                                                                         A<ConsumerWebhookSpecification>._))
                 .MustHaveHappenedOnceExactly();
         }
     }

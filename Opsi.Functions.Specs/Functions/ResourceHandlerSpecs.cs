@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.Common;
+using Opsi.Common.Exceptions;
 using Opsi.Functions.Functions;
 using Opsi.Pocos;
 using Opsi.Services;
@@ -43,15 +44,15 @@ public class ResourceHandlerSpecs
     }
 
     [TestMethod]
-    public async Task Run_WhenUserHasNoAccess_ReturnsUnauthorized()
+    public async Task Run_WhenUserHasNoAccess_ReturnsForbidden()
     {
-        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._)).Returns(false);
+        A.CallTo(() => _resourceService.GetResourceContentAsync(_projectId, A<string>._)).ThrowsAsync(new UnassignedToResourceException());
         var url = GetUrl();
         var request = TestFactory.CreateHttpRequest(url);
 
         var response = await _testee.Run(request, _projectId, _restOfPath);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [TestMethod]
@@ -105,10 +106,10 @@ public class ResourceHandlerSpecs
     }
 
     [TestMethod]
-    public async Task Run_WhenHasUserAccessThrowsException_ExceptionPlacedInErrorQueue()
+    public async Task Run_WhenFetchingResourceThrowsException_ExceptionPlacedInErrorQueue()
     {
-        var ex = new Exception(nameof(Run_WhenHasUserAccessThrowsException_ExceptionPlacedInErrorQueue));
-        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._)).ThrowsAsync(ex);
+        var ex = new Exception(nameof(Run_WhenFetchingResourceThrowsException_ExceptionPlacedInErrorQueue));
+        A.CallTo(() => _resourceService.GetResourceContentAsync(A<Guid>._, A<string>._)).ThrowsAsync(ex);
         var url = GetUrl();
         var request = TestFactory.CreateHttpRequest(url);
 
@@ -118,10 +119,10 @@ public class ResourceHandlerSpecs
     }
 
     [TestMethod]
-    public async Task Run_WhenHasUserAccessThrowsException_ReturnsInternalServerError()
+    public async Task Run_WhenFetchingResourceThrowsException_ReturnsInternalServerError()
     {
-        var ex = new Exception(nameof(Run_WhenHasUserAccessThrowsException_ExceptionPlacedInErrorQueue));
-        A.CallTo(() => _resourceService.HasUserAccessAsync(A<Guid>._, A<string>._)).ThrowsAsync(ex);
+        var ex = new Exception(nameof(Run_WhenFetchingResourceThrowsException_ReturnsInternalServerError));
+        A.CallTo(() => _resourceService.GetResourceContentAsync(A<Guid>._, A<string>._)).ThrowsAsync(ex);
         var url = GetUrl();
         var request = TestFactory.CreateHttpRequest(url);
 

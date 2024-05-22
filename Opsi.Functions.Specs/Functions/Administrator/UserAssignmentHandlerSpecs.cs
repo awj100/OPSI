@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using FakeItEasy;
 using FluentAssertions;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using Opsi.Common.Exceptions;
 using Opsi.Functions.Functions.Administrator;
@@ -114,7 +113,7 @@ public class UserAssignmentHandlerSpecs
                                          _projectId,
                                          _resourceFullName);
 
-        A.CallTo(() => _projectsService.RevokeUserAsync(A<UserAssignment>.That.Matches(ua => ua.ResourceFullName.Equals(_resourceFullName))))
+        A.CallTo(() => _projectsService.RevokeUserAsync(A<UserAssignment>.That.Matches(ua => ua.ResourceFullName.Equals($"{_projectId}/{_resourceFullName}"))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -182,7 +181,7 @@ public class UserAssignmentHandlerSpecs
                                          _projectId,
                                          _resourceFullName);
 
-        A.CallTo(() => _projectsService.AssignUserAsync(A<UserAssignment>.That.Matches(ua => ua.ResourceFullName.Equals(_resourceFullName))))
+        A.CallTo(() => _projectsService.AssignUserAsync(A<UserAssignment>.That.Matches(ua => ua.ResourceFullName.Equals($"{_projectId}/{_resourceFullName}"))))
          .MustHaveHappenedOnceExactly();
     }
 
@@ -192,7 +191,7 @@ public class UserAssignmentHandlerSpecs
         const string exceptionMessage = "The specified resource is already assigned to another user.";
 
         A.CallTo(() => _projectsService.AssignUserAsync(A<UserAssignment>.That.Matches(ua => ua.ProjectId.Equals(_projectId)
-                                                                                             && ua.ResourceFullName.Equals(_resourceFullName)
+                                                                                             && ua.ResourceFullName.Equals($"{_projectId}/{_resourceFullName}")
                                                                                              && ua.AssigneeUsername.Equals(_assigneeUsername))))
                                        .ThrowsAsync(new UserAssignmentException(_projectId,
                                                                                 _resourceFullName,

@@ -191,18 +191,9 @@ internal class ZippedQueueHandler(ISettingsProvider _settingsProvider,
 
     private static WebhookMessage GetResourceStorageWebhookMessage(InternalManifest internalManifest, string filePath, bool isStored)
     {
-        return isStored
-        ? new WebhookMessage
+        return new WebhookMessage
         {
-            Event = Events.Stored,
-            Level = Levels.Resource,
-            Name = filePath,
-            ProjectId = internalManifest.ProjectId,
-            Username = internalManifest.Username
-        }
-        : new WebhookMessage
-        {
-            Event = Events.StoreFailure,
+            Event = isStored ? Events.Stored : Events.StoreFailure,
             Level = Levels.Resource,
             Name = filePath,
             ProjectId = internalManifest.ProjectId,

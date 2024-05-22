@@ -41,7 +41,7 @@ public class ResourceDispatcherSpecs
 
         _httpClientFactory = A.Fake<IHttpClientFactory>();
         _oneTimeAuthService = A.Fake<IOneTimeAuthService>();
-        _testUri = new Uri($"{HostUrl}/projects/{_projectId}/resource/{FilePath}");
+        _testUri = new Uri($"{HostUrl}/projects/{_projectId}/resources/{FilePath}");
 
         A.CallTo(() => _oneTimeAuthService.GetAuthenticationHeaderAsync(Username, IsAdministrator)).Returns(_oneTimeAuthHeader);
 
@@ -122,7 +122,7 @@ public class ResourceDispatcherSpecs
                                                    Username,
                                                    IsAdministrator);
 
-        A.CallTo(() => _httpClientFactory.CreateClient(HttpClientNames.SelfWithoutAuth)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _httpClientFactory.CreateClient(HttpClientNames.OneTimeAuth)).MustHaveHappenedOnceExactly();
         A.CallTo(() => _oneTimeAuthService.GetAuthenticationHeaderAsync(Username, IsAdministrator)).MustHaveHappenedOnceExactly();
     }
 
